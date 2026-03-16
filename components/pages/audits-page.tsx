@@ -12,17 +12,6 @@ const statusC: Record<string, string> = { complete: 'emerald', completed: 'emera
 export default function AuditsPage() {
   const [clientName, setClientName] = useState('')
   const [auditType, setAuditType] = useState('Full Energy Audit')
-    id: a.id,
-    client: a.client,
-    type: a.audit_type,
-    status: a.status || 'scheduled',
-    date: a.date ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'TBC',
-    savings: a.savings || 'TBC',
-    co2: a.co2_reduction || 'TBC',
-  }))
-  
-  const [clientName, setClientName] = useState('')
-  const [auditType, setAuditType] = useState('Full Energy Audit')
   const [generating, setGenerating] = useState(false)
   const [report, setReport] = useState('')
 
