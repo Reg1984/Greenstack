@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { GsCard, PulseDot, AIChatWidget, StatCard } from '@/components/greenstack-ui'
 import { REPORTS } from '@/lib/data'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -46,6 +46,11 @@ export default function ReportsPage() {
   const [period, setPeriod] = useState('Q1 2026')
   const [generating, setGenerating] = useState(false)
   const [report, setReport] = useState('')
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setTimeout(() => setMounted(true), 80)
+  }, [])
 
   const generate = async () => {
     setGenerating(true)
@@ -152,6 +157,7 @@ GreenStack platform performance continues to exceed targets across all key metri
           </GsCard>
 
           {/* Charts Grid */}
+          {mounted && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Line Chart - Bids Over Time */}
             <GsCard className="p-5">
@@ -217,6 +223,7 @@ GreenStack platform performance continues to exceed targets across all key metri
               </ResponsiveContainer>
             </GsCard>
           </div>
+          )}
 
           {/* Generated Report */}
           {(generating || report) && (

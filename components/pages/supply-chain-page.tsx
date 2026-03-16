@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, ScoreRing, AIChatWidget, StatCard, FilterBar } from '@/components/greenstack-ui'
 import { CONTRACTORS } from '@/lib/data'
@@ -15,6 +15,11 @@ export default function SupplyChainPage() {
   const [query, setQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [results, setResults] = useState('')
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setTimeout(() => setMounted(true), 80)
+  }, [])
 
   const filtered = CONTRACTORS.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase())
@@ -220,6 +225,7 @@ export default function SupplyChainPage() {
             <>
               <GsCard className="p-5">
                 <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-4">Performance Profile</p>
+                {mounted && (
                 <ResponsiveContainer width="100%" height={200}>
                   <RadarChart data={radarData}>
                     <PolarGrid stroke="rgba(255,255,255,0.1)" />
@@ -228,6 +234,7 @@ export default function SupplyChainPage() {
                     <Radar name="Performance" dataKey="value" stroke="#00ff87" fill="#00ff8730" />
                   </RadarChart>
                 </ResponsiveContainer>
+                )}
               </GsCard>
 
               <GsCard className="p-5">
