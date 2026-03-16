@@ -3,251 +3,256 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-// Create a singleton supabase client
-let supabaseClient: ReturnType<typeof createClient> | null = null
-function getSupabase() {
-  if (!supabaseClient) {
-    supabaseClient = createClient()
-  }
-  return supabaseClient
+const supabase = createClient()
+
+interface Tender {
+  id: string
+  title: string
+  value: number
+  status: string
+  deadline: string
+  [key: string]: any
 }
 
-// Data fetching functions
-async function fetchTenders() {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-  
-  const { data } = await supabase
-    .from('tenders')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-  
-  return data || []
+interface Bid {
+  id: string
+  tender_id: string
+  status: string
+  [key: string]: any
 }
 
-async function fetchBids() {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-  
-  const { data } = await supabase
-    .from('bids')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('updated_at', { ascending: false })
-  
-  return data || []
+interface Contractor {
+  id: string
+  name: string
+  specialty?: string
+  [key: string]: any
 }
 
-async function fetchContractors() {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-  
-  const { data } = await supabase
-    .from('contractors')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('score', { ascending: false })
-  
-  return data || []
+interface Audit {
+  id: string
+  client: string
+  [key: string]: any
 }
 
-async function fetchAudits() {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-  
-  const { data } = await supabase
-    .from('audits')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-  
-  return data || []
+interface Report {
+  id: string
+  title: string
+  [key: string]: any
 }
 
-async function fetchReports() {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-  
-  const { data } = await supabase
-    .from('reports')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-  
-  return data || []
+interface DashboardStats {
+  totalBids: number
+  wonBids: number
+  winRate: number
+  pipelineValue: number
+  totalTenders: number
 }
 
-async function fetchDashboardStats() {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  
-  const [tendersRes, bidsRes, contractorsRes] = await Promise.all([
-    supabase.from('tenders').select('id, value, status').eq('user_id', user.id),
-    supabase.from('bids').select('id, status, value').eq('user_id', user.id),
-    supabase.from('contractors').select('id, status').eq('user_id', user.id),
-  ])
-  
-  const tenders = tendersRes.data || []
-  const bids = bidsRes.data || []
-  const contractors = contractorsRes.data || []
-  
-  const pipelineValue = tenders.reduce((sum: number, t: { value?: number }) => sum + (t.value || 0), 0)
-  const wonBids = bids.filter((b: { status?: string }) => b.status === 'won')
-  const winRate = bids.length > 0 ? Math.round((wonBids.length / bids.length) * 100) : 0
-  
-  return {
-    totalTenders: tenders.length,
-    activeTenders: tenders.filter((t: { status?: string }) => ['open', 'found', 'reviewing'].includes(t.status || '')).length,
-    totalBids: bids.length,
-    wonBids: wonBids.length,
-    winRate,
-    pipelineValue,
-    activeContractors: contractors.filter((c: { status?: string }) => c.status === 'active').length,
-  }
+export function useUser() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      setLoading(false)
+    })
+  }, [])
+
+  return { user, loading }
 }
 
-// Custom hooks using useState + useEffect (no SWR dependency)
 export function useTenders() {
-  const [tenders, setTenders] = useState<unknown[]>([])
+  const [tenders, setTenders] = useState<Tender[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
-  const mutate = useCallback(() => {
-    setIsLoading(true)
-    fetchTenders()
-      .then(setTenders)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
+  const fetchTenders = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tenders')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setTenders(data || [])
+    } catch (e) {
+      console.error('Error fetching tenders:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    mutate()
-  }, [mutate])
+    fetchTenders()
+  }, [fetchTenders])
 
-  return { tenders, error, isLoading, mutate }
+  const mutate = async () => {
+    await fetchTenders()
+  }
+
+  return { tenders, isLoading, mutate }
 }
 
 export function useBids() {
-  const [bids, setBids] = useState<unknown[]>([])
+  const [bids, setBids] = useState<Bid[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
-  const mutate = useCallback(() => {
-    setIsLoading(true)
-    fetchBids()
-      .then(setBids)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
+  const fetchBids = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bids')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setBids(data || [])
+    } catch (e) {
+      console.error('Error fetching bids:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    mutate()
-  }, [mutate])
+    fetchBids()
+  }, [fetchBids])
 
-  return { bids, error, isLoading, mutate }
+  const mutate = async () => {
+    await fetchBids()
+  }
+
+  return { bids, isLoading, mutate }
 }
 
 export function useContractors() {
-  const [contractors, setContractors] = useState<unknown[]>([])
+  const [contractors, setContractors] = useState<Contractor[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
-  const mutate = useCallback(() => {
-    setIsLoading(true)
-    fetchContractors()
-      .then(setContractors)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
+  const fetchContractors = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contractors')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setContractors(data || [])
+    } catch (e) {
+      console.error('Error fetching contractors:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    mutate()
-  }, [mutate])
+    fetchContractors()
+  }, [fetchContractors])
 
-  return { contractors, error, isLoading, mutate }
+  const mutate = async () => {
+    await fetchContractors()
+  }
+
+  return { contractors, isLoading, mutate }
 }
 
 export function useAudits() {
-  const [audits, setAudits] = useState<unknown[]>([])
+  const [audits, setAudits] = useState<Audit[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
-  const mutate = useCallback(() => {
-    setIsLoading(true)
-    fetchAudits()
-      .then(setAudits)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
+  const fetchAudits = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('audits')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setAudits(data || [])
+    } catch (e) {
+      console.error('Error fetching audits:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    mutate()
-  }, [mutate])
+    fetchAudits()
+  }, [fetchAudits])
 
-  return { audits, error, isLoading, mutate }
+  const mutate = async () => {
+    await fetchAudits()
+  }
+
+  return { audits, isLoading, mutate }
 }
 
 export function useReports() {
-  const [reports, setReports] = useState<unknown[]>([])
+  const [reports, setReports] = useState<Report[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
-  const mutate = useCallback(() => {
-    setIsLoading(true)
-    fetchReports()
-      .then(setReports)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
+  const fetchReports = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setReports(data || [])
+    } catch (e) {
+      console.error('Error fetching reports:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    mutate()
-  }, [mutate])
+    fetchReports()
+  }, [fetchReports])
 
-  return { reports, error, isLoading, mutate }
+  const mutate = async () => {
+    await fetchReports()
+  }
+
+  return { reports, isLoading, mutate }
 }
 
 export function useDashboardStats() {
-  const [stats, setStats] = useState<ReturnType<typeof fetchDashboardStats> extends Promise<infer T> ? T : never>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
-  const mutate = useCallback(() => {
-    setIsLoading(true)
-    fetchDashboardStats()
-      .then(setStats)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data: tenders } = await supabase.from('tenders').select('*')
+      const { data: bids } = await supabase.from('bids').select('*')
+      
+      const totalBids = bids?.length || 0
+      const wonBids = bids?.filter(b => b.status === 'won').length || 0
+      const winRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0
+      const pipelineValue = tenders?.reduce((sum: number, t: any) => sum + (t.value || 0), 0) || 0
+      const totalTenders = tenders?.length || 0
+
+      setStats({
+        totalBids,
+        wonBids,
+        winRate,
+        pipelineValue,
+        totalTenders,
+      })
+    } catch (e) {
+      console.error('Error fetching stats:', e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    mutate()
-  }, [mutate])
+    fetchStats()
+  }, [fetchStats])
 
-  return { stats, error, isLoading, mutate }
-}
+  const mutate = async () => {
+    await fetchStats()
+  }
 
-// Auth hook
-export function useUser() {
-  const [user, setUser] = useState<unknown>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  useEffect(() => {
-    const supabase = getSupabase()
-    setIsLoading(true)
-    supabase.auth.getUser()
-      .then(({ data: { user } }) => setUser(user))
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }, [])
-
-  return { user, error, isLoading }
+  return { stats, isLoading, mutate }
 }
