@@ -1,2 +1,0 @@
-# Bitcoin--
-bitedu files
