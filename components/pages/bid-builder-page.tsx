@@ -5,55 +5,17 @@ import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, ProgressBar, PulseDot, AIChatWidget, StatCard } from '@/components/greenstack-ui'
 import { BIDS, fmt } from '@/lib/data'
 import { CheckCircle2 } from 'lucide-react'
-import { useBids, useTenders, useUser } from '@/lib/hooks/use-data'
-import { createBid, updateBid } from '@/app/actions/database'
 
 const sections = ['overview', 'technical', 'pricing', 'timeline', 'team', 'compliance']
 const statusC: Record<string, string> = { drafting: 'yellow', review: 'cyan', submitted: 'purple', sourcing: 'blue' }
 
 export default function BidBuilderPage() {
-  const { user } = useUser()
-  const { bids: dbBids, isLoading, mutate } = useBids()
-  const { tenders } = useTenders()
-  
-  const isDemo = !user
-  
-  // Transform DB bids
-  const bids = isDemo ? BIDS : dbBids.map(b => ({
-    id: b.id,
-    tender: b.tender_title,
-    value: b.value || 0,
-    status: b.status || 'drafting',
-    progress: b.progress || 0,
-    aiScore: b.ai_score || 75,
-    lastEdit: b.last_edit ? new Date(b.last_edit).toLocaleDateString() : 'Now',
-    content: b.content || {},
-  }))
-
+  const bids = BIDS
   const [selected, setSelected] = useState(bids[0] || null)
   const [section, setSection] = useState('overview')
   const [generating, setGenerating] = useState(false)
   const [content, setContent] = useState('')
   const [completedSections, setCompletedSections] = useState<string[]>([])
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [newBid, setNewBid] = useState({ tender_id: '', tender_title: '', value: '' })
-
-  const handleAddBid = async () => {
-    if (!newBid.tender_title.trim()) return
-    try {
-      await createBid({
-        tender_id: newBid.tender_id || undefined,
-        tender_title: newBid.tender_title,
-        value: newBid.value ? parseInt(newBid.value) : undefined,
-        status: 'drafting',
-      })
-      mutate()
-      setShowAddModal(false)
-      setNewBid({ tender_id: '', tender_title: '', value: '' })
-    } catch (e) {
-      console.error('Failed to create bid:', e)
-    }
-  }
 
   const generate = async () => {
     if (!selected) return
@@ -83,92 +45,6 @@ This section references relevant UK legislation including the Climate Change Act
     setGenerating(false)
   }
 
-  const progress = (completedSections.length / sections.length) * 100
-
-  if (bids.length === 0 && !isDemo) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <GsCard className="p-8 text-center max-w-md">
-          <h2 className="text-xl font-bold text-white mb-2">No Bids Yet</h2>
-          <p className="text-sm text-slate-500 mb-6">Create your first bid to start building AI-powered proposals.</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all"
-          >
-            + Create First Bid
-          </button>
-          
-          {showAddModal && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAddModal(false)}>
-              <GsCard className="w-full max-w-lg p-6 text-left" onClick={e => e.stopPropagation()}>
-                <h2 className="text-lg font-bold text-white mb-4">Create New Bid</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-slate-500 mb-1.5 block">Tender Title *</label>
-                    <input
-                      value={newBid.tender_title}
-                      onChange={(e) => setNewBid({ ...newBid, tender_title: e.target.value })}
-                      placeholder="e.g. NHS Trust Solar PV Installation"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                  {tenders.length > 0 && (
-                    <div>
-                      <label className="text-xs text-slate-500 mb-1.5 block">Link to Tender (Optional)</label>
-                      <select
-                        value={newBid.tender_id}
-                        onChange={(e) => {
-                          const tender = tenders.find(t => t.id === e.target.value)
-                          setNewBid({ 
-                            ...newBid, 
-                            tender_id: e.target.value,
-                            tender_title: tender?.title || newBid.tender_title,
-                            value: tender?.value?.toString() || newBid.value
-                          })
-                        }}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/40"
-                      >
-                        <option value="" className="bg-slate-900">None</option>
-                        {tenders.map(t => (
-                          <option key={t.id} value={t.id} className="bg-slate-900">{t.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-xs text-slate-500 mb-1.5 block">Bid Value (GBP)</label>
-                    <input
-                      type="number"
-                      value={newBid.value}
-                      onChange={(e) => setNewBid({ ...newBid, value: e.target.value })}
-                      placeholder="e.g. 500000"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3 mt-6">
-                  <button
-                    onClick={() => setShowAddModal(false)}
-                    className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/10 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddBid}
-                    disabled={!newBid.tender_title.trim()}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all disabled:opacity-50"
-                  >
-                    Create Bid
-                  </button>
-                </div>
-              </GsCard>
-            </div>
-          )}
-        </GsCard>
-      </div>
-    )
-  }
-
   return (
     <div className="flex h-full bg-background">
       {/* Left - Bid List & Section Checklist */}
@@ -176,14 +52,6 @@ This section references relevant UK legislation including the Climate Change Act
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-mono text-slate-500 uppercase tracking-widest">Your Bids</p>
-            {!isDemo && (
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="text-xs text-emerald-400 hover:text-emerald-300"
-              >
-                + New
-              </button>
-            )}
           </div>
           <div className="space-y-2">
             {bids.map((b) => (
@@ -317,74 +185,6 @@ This section references relevant UK legislation including the Climate Change Act
           </button>
         </GsCard>
       </div>
-
-      {/* Add Bid Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAddModal(false)}>
-          <GsCard className="w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-4">Create New Bid</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-slate-500 mb-1.5 block">Tender Title *</label>
-                <input
-                  value={newBid.tender_title}
-                  onChange={(e) => setNewBid({ ...newBid, tender_title: e.target.value })}
-                  placeholder="e.g. NHS Trust Solar PV Installation"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
-                />
-              </div>
-              {tenders.length > 0 && (
-                <div>
-                  <label className="text-xs text-slate-500 mb-1.5 block">Link to Tender (Optional)</label>
-                  <select
-                    value={newBid.tender_id}
-                    onChange={(e) => {
-                      const tender = tenders.find(t => t.id === e.target.value)
-                      setNewBid({ 
-                        ...newBid, 
-                        tender_id: e.target.value,
-                        tender_title: tender?.title || newBid.tender_title,
-                        value: tender?.value?.toString() || newBid.value
-                      })
-                    }}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/40"
-                  >
-                    <option value="" className="bg-slate-900">None</option>
-                    {tenders.map(t => (
-                      <option key={t.id} value={t.id} className="bg-slate-900">{t.title}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div>
-                <label className="text-xs text-slate-500 mb-1.5 block">Bid Value (GBP)</label>
-                <input
-                  type="number"
-                  value={newBid.value}
-                  onChange={(e) => setNewBid({ ...newBid, value: e.target.value })}
-                  placeholder="e.g. 500000"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/10 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddBid}
-                disabled={!newBid.tender_title.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all disabled:opacity-50"
-              >
-                Create Bid
-              </button>
-            </div>
-          </GsCard>
-        </div>
-      )}
     </div>
   )
 }
