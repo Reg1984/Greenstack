@@ -9,9 +9,6 @@ type SortKey = "title" | "value" | "match" | "deadline"
 type SortDir = "asc" | "desc"
 
 export default function TendersPage() {
-  const { user } = useUser()
-  const { tenders: dbTenders, isLoading, mutate } = useTenders()
-  
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filter, setFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")

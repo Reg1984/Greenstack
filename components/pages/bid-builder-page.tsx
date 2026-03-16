@@ -10,14 +10,9 @@ const sections = ['overview', 'technical', 'pricing', 'timeline', 'team', 'compl
 const statusC: Record<string, string> = { drafting: 'yellow', review: 'cyan', submitted: 'purple', sourcing: 'blue' }
 
 export default function BidBuilderPage() {
-  const { user } = useUser()
-  const { bids: dbBids, isLoading, mutate } = useBids()
-  const { tenders } = useTenders()
+  const [selectedBidId, setSelectedBidId] = useState<string | number | null>(null)
   
-  const isDemo = !user
-  
-  // Transform DB bids
-  const bids = isDemo ? BIDS : dbBids.map(b => ({
+  const bids = BIDS
     id: b.id,
     tender: b.tender_title,
     value: b.value || 0,

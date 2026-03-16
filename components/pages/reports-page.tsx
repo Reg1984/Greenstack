@@ -42,32 +42,6 @@ const bidPerformanceData = [
 ]
 
 export default function ReportsPage() {
-  const { user } = useUser()
-  const { reports: dbReports, mutate } = useReports()
-  const { stats } = useDashboardStats()
-  
-  const isDemo = !user
-  
-  // Transform DB reports or use demo data
-  const allReports = isDemo ? REPORTS : dbReports.map(r => ({
-    id: r.id,
-    title: r.title,
-    type: r.report_type,
-    date: r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Today',
-    winRate: r.win_rate,
-    value: r.total_value,
-  }))
-  
-  // Dynamic KPIs based on real data if logged in
-  const dynamicKpis = isDemo ? kpis : [
-    { l: 'Total Bids', v: String(stats?.totalBids || 0), c: '#00ff87' },
-    { l: 'Won', v: String(stats?.wonBids || 0), c: '#60efff' },
-    { l: 'Win Rate', v: `${stats?.winRate || 0}%`, c: '#ffd166' },
-    { l: 'Revenue', v: `£${Math.round((stats?.pipelineValue || 0) * 0.34 / 1000)}K`, c: '#c084fc' },
-    { l: 'Pipeline', v: `£${((stats?.pipelineValue || 0) / 1000000).toFixed(1)}M`, c: '#00ff87' },
-    { l: 'Tenders', v: String(stats?.totalTenders || 0), c: '#60efff' },
-  ]
-  
   const [reportType, setReportType] = useState('Q1 2026 Performance Report')
   const [period, setPeriod] = useState('Q1 2026')
   const [generating, setGenerating] = useState(false)

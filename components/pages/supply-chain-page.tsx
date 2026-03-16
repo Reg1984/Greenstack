@@ -9,13 +9,9 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 const statusC: Record<string, string> = { preferred: 'emerald', active: 'cyan', flagged: 'red' }
 
 export default function SupplyChainPage() {
-  const { user } = useUser()
-  const { contractors: dbContractors, isLoading, mutate } = useContractors()
-  
-  const isDemo = !user
-  
-  // Transform DB contractors or use demo data
-  const allContractors = isDemo ? CONTRACTORS : dbContractors.map(c => ({
+  const [selected, setSelected] = useState<(typeof CONTRACTORS)[number] | null>(null)
+  const [search, setSearch] = useState('')
+  const [activeFilter, setActiveFilter] = useState('all')
     id: c.id,
     name: c.name,
     specialty: c.specialty || 'General',

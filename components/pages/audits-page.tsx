@@ -10,13 +10,8 @@ const types = ['Full Energy Audit', 'Carbon Baseline', 'ISO 50001 Gap Analysis',
 const statusC: Record<string, string> = { complete: 'emerald', completed: 'emerald', 'in-progress': 'yellow', scheduled: 'blue' }
 
 export default function AuditsPage() {
-  const { user } = useUser()
-  const { audits: dbAudits, isLoading, mutate } = useAudits()
-  
-  const isDemo = !user
-  
-  // Transform DB audits or use demo data
-  const allAudits = isDemo ? AUDITS : dbAudits.map(a => ({
+  const [clientName, setClientName] = useState('')
+  const [auditType, setAuditType] = useState('Full Energy Audit')
     id: a.id,
     client: a.client,
     type: a.audit_type,
