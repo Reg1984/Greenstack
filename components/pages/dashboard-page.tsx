@@ -88,8 +88,8 @@ export default function DashboardPage() {
         <GsCard className="lg:col-span-2 p-6">
           <h2 className="font-semibold text-sm text-white mb-1">Pipeline Growth</h2>
           <p className="text-xs text-slate-500 mb-4">Total pipeline value over 6 months</p>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 208 }}>
+            <ResponsiveContainer width="100%" height={208}>
               <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="pipelineGrad" x1="0" y1="0" x2="0" y2="1">
@@ -109,8 +109,8 @@ export default function DashboardPage() {
         <GsCard className="p-6">
           <h2 className="font-semibold text-sm text-white mb-1">Tender Status</h2>
           <p className="text-xs text-slate-500 mb-4">Breakdown by current stage</p>
-          <div className="h-40 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 160 }} className="flex items-center justify-center">
+            <ResponsiveContainer width="100%" height={160}>
               <PieChart>
                 <Pie
                   data={statusBreakdown}
