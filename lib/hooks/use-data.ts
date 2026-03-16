@@ -1,11 +1,11 @@
 'use client'
 
-import useSWR from 'swr'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
 
-// Generic fetcher for Supabase queries
+// Data fetching functions
 async function fetchTenders() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
@@ -85,57 +85,179 @@ async function fetchDashboardStats() {
   const bids = bidsRes.data || []
   const contractors = contractorsRes.data || []
   
-  const pipelineValue = tenders.reduce((sum, t) => sum + (t.value || 0), 0)
-  const wonBids = bids.filter(b => b.status === 'won')
+  const pipelineValue = tenders.reduce((sum: number, t: any) => sum + (t.value || 0), 0)
+  const wonBids = bids.filter((b: any) => b.status === 'won')
   const winRate = bids.length > 0 ? Math.round((wonBids.length / bids.length) * 100) : 0
   
   return {
     totalTenders: tenders.length,
-    activeTenders: tenders.filter(t => ['open', 'found', 'reviewing'].includes(t.status)).length,
+    activeTenders: tenders.filter((t: any) => ['open', 'found', 'reviewing'].includes(t.status)).length,
     totalBids: bids.length,
     wonBids: wonBids.length,
     winRate,
     pipelineValue,
-    activeContractors: contractors.filter(c => c.status === 'active').length,
+    activeContractors: contractors.filter((c: any) => c.status === 'active').length,
   }
 }
 
-// SWR Hooks
+// Custom hooks using useState + useEffect
 export function useTenders() {
-  const { data, error, isLoading, mutate } = useSWR('tenders', fetchTenders)
-  return { tenders: data || [], error, isLoading, mutate }
+  const [tenders, setTenders] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchTenders()
+      .then(setTenders)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const mutate = () => {
+    setIsLoading(true)
+    fetchTenders()
+      .then(setTenders)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }
+
+  return { tenders, error, isLoading, mutate }
 }
 
 export function useBids() {
-  const { data, error, isLoading, mutate } = useSWR('bids', fetchBids)
-  return { bids: data || [], error, isLoading, mutate }
+  const [bids, setBids] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchBids()
+      .then(setBids)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const mutate = () => {
+    setIsLoading(true)
+    fetchBids()
+      .then(setBids)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }
+
+  return { bids, error, isLoading, mutate }
 }
 
 export function useContractors() {
-  const { data, error, isLoading, mutate } = useSWR('contractors', fetchContractors)
-  return { contractors: data || [], error, isLoading, mutate }
+  const [contractors, setContractors] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchContractors()
+      .then(setContractors)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const mutate = () => {
+    setIsLoading(true)
+    fetchContractors()
+      .then(setContractors)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }
+
+  return { contractors, error, isLoading, mutate }
 }
 
 export function useAudits() {
-  const { data, error, isLoading, mutate } = useSWR('audits', fetchAudits)
-  return { audits: data || [], error, isLoading, mutate }
+  const [audits, setAudits] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchAudits()
+      .then(setAudits)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const mutate = () => {
+    setIsLoading(true)
+    fetchAudits()
+      .then(setAudits)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }
+
+  return { audits, error, isLoading, mutate }
 }
 
 export function useReports() {
-  const { data, error, isLoading, mutate } = useSWR('reports', fetchReports)
-  return { reports: data || [], error, isLoading, mutate }
+  const [reports, setReports] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchReports()
+      .then(setReports)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const mutate = () => {
+    setIsLoading(true)
+    fetchReports()
+      .then(setReports)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }
+
+  return { reports, error, isLoading, mutate }
 }
 
 export function useDashboardStats() {
-  const { data, error, isLoading, mutate } = useSWR('dashboard-stats', fetchDashboardStats)
-  return { stats: data, error, isLoading, mutate }
+  const [stats, setStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchDashboardStats()
+      .then(setStats)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const mutate = () => {
+    setIsLoading(true)
+    fetchDashboardStats()
+      .then(setStats)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }
+
+  return { stats, error, isLoading, mutate }
 }
 
 // Auth hook
 export function useUser() {
-  const { data, error, isLoading } = useSWR('user', async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    return user
-  })
-  return { user: data, error, isLoading }
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    setIsLoading(true)
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => setUser(user))
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  return { user, error, isLoading }
 }
