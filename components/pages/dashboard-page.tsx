@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { GsCard, StatCard, PulseDot, AnimNum, ProgressBar, GsBadge } from "@/components/greenstack-ui"
 import { TENDERS, PIPELINE_MONTHLY, fmt } from "@/lib/data"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { useDashboardStats, useTenders, useUser } from "@/lib/hooks/use-data"
 
 const activity = [
   { t: "2m", text: "Bid submitted: Manchester Airport Carbon Offset", type: "success", icon: ">" },
