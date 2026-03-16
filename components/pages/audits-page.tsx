@@ -5,8 +5,6 @@ import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, StatCard } from '@/components/greenstack-ui'
 import { AUDITS } from '@/lib/data'
 import { Check } from 'lucide-react'
-import { useAudits, useUser } from '@/lib/hooks/use-data'
-import { createAudit, updateAudit } from '@/app/actions/database'
 
 const types = ['Full Energy Audit', 'Carbon Baseline', 'ISO 50001 Gap Analysis', 'Net Zero Roadmap', 'ESOS Assessment', 'Renewable Feasibility']
 const statusC: Record<string, string> = { complete: 'emerald', completed: 'emerald', 'in-progress': 'yellow', scheduled: 'blue' }

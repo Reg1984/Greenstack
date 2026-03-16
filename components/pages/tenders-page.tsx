@@ -4,8 +4,6 @@ import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { GsCard, GsBadge, StatCard, DetailPanel, FilterBar, ProgressBar, PulseDot, ScoreRing, AIChatWidget } from "@/components/greenstack-ui"
 import { TENDERS, STATUS_MAP, fmt } from "@/lib/data"
-import { useTenders, useUser } from "@/lib/hooks/use-data"
-import { createTender, updateTender, deleteTender } from "@/app/actions/database"
 
 type SortKey = "title" | "value" | "match" | "deadline"
 type SortDir = "asc" | "desc"

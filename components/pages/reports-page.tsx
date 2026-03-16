@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { GsCard, PulseDot, AIChatWidget, StatCard } from '@/components/greenstack-ui'
 import { REPORTS } from '@/lib/data'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useReports, useDashboardStats, useUser } from '@/lib/hooks/use-data'
-import { createReport } from '@/app/actions/database'
 
 const reportTypes = [
   'Q1 2026 Performance Report',

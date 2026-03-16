@@ -5,8 +5,6 @@ import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, ProgressBar, PulseDot, AIChatWidget, StatCard } from '@/components/greenstack-ui'
 import { BIDS, fmt } from '@/lib/data'
 import { CheckCircle2 } from 'lucide-react'
-import { useBids, useTenders, useUser } from '@/lib/hooks/use-data'
-import { createBid, updateBid } from '@/app/actions/database'
 
 const sections = ['overview', 'technical', 'pricing', 'timeline', 'team', 'compliance']
 const statusC: Record<string, string> = { drafting: 'yellow', review: 'cyan', submitted: 'purple', sourcing: 'blue' }

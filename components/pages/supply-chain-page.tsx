@@ -5,8 +5,6 @@ import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, ScoreRing, AIChatWidget, StatCard, FilterBar } from '@/components/greenstack-ui'
 import { CONTRACTORS } from '@/lib/data'
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts'
-import { useContractors, useUser } from '@/lib/hooks/use-data'
-import { createContractor } from '@/app/actions/database'
 
 const statusC: Record<string, string> = { preferred: 'emerald', active: 'cyan', flagged: 'red' }
 
