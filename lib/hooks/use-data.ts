@@ -1,12 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const supabase = createClient()
+// Create a singleton supabase client
+let supabaseClient: ReturnType<typeof createClient> | null = null
+function getSupabase() {
+  if (!supabaseClient) {
+    supabaseClient = createClient()
+  }
+  return supabaseClient
+}
 
 // Data fetching functions
 async function fetchTenders() {
+  const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
   
@@ -20,6 +28,7 @@ async function fetchTenders() {
 }
 
 async function fetchBids() {
+  const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
   
@@ -33,6 +42,7 @@ async function fetchBids() {
 }
 
 async function fetchContractors() {
+  const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
   
@@ -46,6 +56,7 @@ async function fetchContractors() {
 }
 
 async function fetchAudits() {
+  const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
   
@@ -59,6 +70,7 @@ async function fetchAudits() {
 }
 
 async function fetchReports() {
+  const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
   
@@ -72,6 +84,7 @@ async function fetchReports() {
 }
 
 async function fetchDashboardStats() {
+  const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
   
@@ -85,28 +98,28 @@ async function fetchDashboardStats() {
   const bids = bidsRes.data || []
   const contractors = contractorsRes.data || []
   
-  const pipelineValue = tenders.reduce((sum: number, t: any) => sum + (t.value || 0), 0)
-  const wonBids = bids.filter((b: any) => b.status === 'won')
+  const pipelineValue = tenders.reduce((sum: number, t: { value?: number }) => sum + (t.value || 0), 0)
+  const wonBids = bids.filter((b: { status?: string }) => b.status === 'won')
   const winRate = bids.length > 0 ? Math.round((wonBids.length / bids.length) * 100) : 0
   
   return {
     totalTenders: tenders.length,
-    activeTenders: tenders.filter((t: any) => ['open', 'found', 'reviewing'].includes(t.status)).length,
+    activeTenders: tenders.filter((t: { status?: string }) => ['open', 'found', 'reviewing'].includes(t.status || '')).length,
     totalBids: bids.length,
     wonBids: wonBids.length,
     winRate,
     pipelineValue,
-    activeContractors: contractors.filter((c: any) => c.status === 'active').length,
+    activeContractors: contractors.filter((c: { status?: string }) => c.status === 'active').length,
   }
 }
 
-// Custom hooks using useState + useEffect
+// Custom hooks using useState + useEffect (no SWR dependency)
 export function useTenders() {
-  const [tenders, setTenders] = useState<any[]>([])
+  const [tenders, setTenders] = useState<unknown[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
+  const mutate = useCallback(() => {
     setIsLoading(true)
     fetchTenders()
       .then(setTenders)
@@ -114,23 +127,19 @@ export function useTenders() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const mutate = () => {
-    setIsLoading(true)
-    fetchTenders()
-      .then(setTenders)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    mutate()
+  }, [mutate])
 
   return { tenders, error, isLoading, mutate }
 }
 
 export function useBids() {
-  const [bids, setBids] = useState<any[]>([])
+  const [bids, setBids] = useState<unknown[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
+  const mutate = useCallback(() => {
     setIsLoading(true)
     fetchBids()
       .then(setBids)
@@ -138,23 +147,19 @@ export function useBids() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const mutate = () => {
-    setIsLoading(true)
-    fetchBids()
-      .then(setBids)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    mutate()
+  }, [mutate])
 
   return { bids, error, isLoading, mutate }
 }
 
 export function useContractors() {
-  const [contractors, setContractors] = useState<any[]>([])
+  const [contractors, setContractors] = useState<unknown[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
+  const mutate = useCallback(() => {
     setIsLoading(true)
     fetchContractors()
       .then(setContractors)
@@ -162,23 +167,19 @@ export function useContractors() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const mutate = () => {
-    setIsLoading(true)
-    fetchContractors()
-      .then(setContractors)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    mutate()
+  }, [mutate])
 
   return { contractors, error, isLoading, mutate }
 }
 
 export function useAudits() {
-  const [audits, setAudits] = useState<any[]>([])
+  const [audits, setAudits] = useState<unknown[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
+  const mutate = useCallback(() => {
     setIsLoading(true)
     fetchAudits()
       .then(setAudits)
@@ -186,23 +187,19 @@ export function useAudits() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const mutate = () => {
-    setIsLoading(true)
-    fetchAudits()
-      .then(setAudits)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    mutate()
+  }, [mutate])
 
   return { audits, error, isLoading, mutate }
 }
 
 export function useReports() {
-  const [reports, setReports] = useState<any[]>([])
+  const [reports, setReports] = useState<unknown[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
+  const mutate = useCallback(() => {
     setIsLoading(true)
     fetchReports()
       .then(setReports)
@@ -210,23 +207,19 @@ export function useReports() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const mutate = () => {
-    setIsLoading(true)
-    fetchReports()
-      .then(setReports)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    mutate()
+  }, [mutate])
 
   return { reports, error, isLoading, mutate }
 }
 
 export function useDashboardStats() {
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<ReturnType<typeof fetchDashboardStats> extends Promise<infer T> ? T : never>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
+  const mutate = useCallback(() => {
     setIsLoading(true)
     fetchDashboardStats()
       .then(setStats)
@@ -234,24 +227,21 @@ export function useDashboardStats() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const mutate = () => {
-    setIsLoading(true)
-    fetchDashboardStats()
-      .then(setStats)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    mutate()
+  }, [mutate])
 
   return { stats, error, isLoading, mutate }
 }
 
 // Auth hook
 export function useUser() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<unknown>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
+    const supabase = getSupabase()
     setIsLoading(true)
     supabase.auth.getUser()
       .then(({ data: { user } }) => setUser(user))
