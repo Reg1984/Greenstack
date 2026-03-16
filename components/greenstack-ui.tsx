@@ -255,17 +255,28 @@ export function AIChatWidget({
     setMsgs(next)
     setLoading(true)
 
-    // Demo mode — simulate AI response
-    await new Promise((r) => setTimeout(r, 1200))
-    const demoResponses = [
-      "Based on my analysis, this looks like a strong opportunity. The key differentiators will be demonstrating relevant experience and competitive pricing within the sustainability framework.",
-      "I recommend focusing on ISO 50001 compliance and highlighting your track record with similar UK public sector contracts. The evaluation criteria typically weight methodology at 40% and price at 30%.",
-      "The market analysis suggests strong demand in this sector. I'd recommend a competitive pricing strategy while emphasizing your unique value proposition around AI-powered monitoring and reporting.",
-      "Looking at comparable contracts, the typical margin ranges from 15-22%. Key risks include supply chain delays and regulatory changes. I suggest building in a 10% contingency buffer.",
-    ]
-    const response = demoResponses[Math.floor(Math.random() * demoResponses.length)]
-    setMsgs([...next, { role: "assistant", content: response }])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: next,
+          systemPrompt,
+        }),
+      })
+      
+      if (!res.ok) {
+        throw new Error(`Chat error: ${res.status}`)
+      }
+      
+      const data = await res.json()
+      setMsgs([...next, { role: "assistant", content: data.response }])
+    } catch (error) {
+      console.error('Chat error:', error)
+      setMsgs([...next, { role: "assistant", content: "Error connecting to AI. Please try again." }])
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
