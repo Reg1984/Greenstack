@@ -83,6 +83,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts row */}
+      {mounted && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <GsCard className="lg:col-span-2 p-6">
           <h2 className="font-semibold text-sm text-white mb-1">Pipeline Growth</h2>
@@ -97,7 +98,7 @@ export default function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `\u00A3${(v / 1000000).toFixed(1)}M`} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(1)}M`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="value" stroke="#00ff87" strokeWidth={2} fill="url(#pipelineGrad)" />
               </AreaChart>
@@ -138,6 +139,7 @@ export default function DashboardPage() {
           </div>
         </GsCard>
       </div>
+      )}
 
       {/* Pipeline + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
