@@ -1,13 +1,18 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import GreenStackShell from '@/components/greenstack-shell'
 
-export default async function Page() {
+export default async function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) {
-    redirect('/(protected)')
-  } else {
+  if (!user) {
     redirect('/auth/login')
   }
+
+  return <GreenStackShell />
 }
