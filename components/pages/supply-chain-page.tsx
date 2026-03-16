@@ -4,24 +4,65 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, ScoreRing, AIChatWidget, StatCard, FilterBar } from '@/components/greenstack-ui'
 import { CONTRACTORS } from '@/lib/data'
-import { BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts'
+import { useContractors, useUser } from '@/lib/hooks/use-data'
+import { createContractor } from '@/app/actions/database'
 
 const statusC: Record<string, string> = { preferred: 'emerald', active: 'cyan', flagged: 'red' }
 
 export default function SupplyChainPage() {
-  const [selected, setSelected] = useState<(typeof CONTRACTORS)[number] | null>(null)
+  const { user } = useUser()
+  const { contractors: dbContractors, isLoading, mutate } = useContractors()
+  
+  const isDemo = !user
+  
+  // Transform DB contractors or use demo data
+  const allContractors = isDemo ? CONTRACTORS : dbContractors.map(c => ({
+    id: c.id,
+    name: c.name,
+    specialty: c.specialty || 'General',
+    region: c.region || 'UK',
+    score: c.score || 75,
+    rating: c.rating || 4.0,
+    jobs: c.jobs || 0,
+    onTime: c.on_time || 95,
+    status: c.status || 'active',
+    accreditations: c.accreditations || [],
+    insurance: c.insurance || 'Valid',
+  }))
+
+  const [selected, setSelected] = useState<(typeof allContractors)[number] | null>(null)
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [query, setQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [results, setResults] = useState('')
   const [mounted, setMounted] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newContractor, setNewContractor] = useState({ name: '', specialty: '', region: '', score: '' })
   
   useEffect(() => {
     setTimeout(() => setMounted(true), 80)
   }, [])
+  
+  const handleAddContractor = async () => {
+    if (!newContractor.name.trim()) return
+    try {
+      await createContractor({
+        name: newContractor.name,
+        specialty: newContractor.specialty || undefined,
+        region: newContractor.region || undefined,
+        score: newContractor.score ? parseInt(newContractor.score) : 75,
+      })
+      mutate()
+      setShowAddModal(false)
+      setNewContractor({ name: '', specialty: '', region: '', score: '' })
+    } catch (e) {
+      console.error('Failed to add contractor:', e)
+    }
+  }
 
-  const filtered = CONTRACTORS.filter((c) => {
+  const filtered = allContractors.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase())
     const matchesFilter =
       activeFilter === 'all' || activeFilter === c.status || (activeFilter === 'high-score' && c.score >= 80)
@@ -84,8 +125,16 @@ export default function SupplyChainPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Supply Chain</h1>
-          <p className="text-sm text-slate-500 mt-1">AI-sourced contractors with real-time performance tracking</p>
+          <p className="text-sm text-slate-500 mt-1">{isDemo ? 'Demo: Sample contractors' : `Tracking ${allContractors.length} contractors`}</p>
         </div>
+        {!isDemo && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/25 transition-all"
+          >
+            + Add Contractor
+          </button>
+        )}
       </div>
 
       {/* Stats Row */}
@@ -268,6 +317,73 @@ export default function SupplyChainPage() {
           )}
         </div>
       </div>
+      
+      {/* Add Contractor Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAddModal(false)}>
+          <GsCard className="w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-white mb-4">Add New Contractor</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-500 mb-1.5 block">Company Name *</label>
+                <input
+                  value={newContractor.name}
+                  onChange={(e) => setNewContractor({ ...newContractor, name: e.target.value })}
+                  placeholder="e.g. SolarTech Solutions Ltd"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-500 mb-1.5 block">Specialty</label>
+                  <input
+                    value={newContractor.specialty}
+                    onChange={(e) => setNewContractor({ ...newContractor, specialty: e.target.value })}
+                    placeholder="e.g. Solar PV, BEMS"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1.5 block">Region</label>
+                  <input
+                    value={newContractor.region}
+                    onChange={(e) => setNewContractor({ ...newContractor, region: e.target.value })}
+                    placeholder="e.g. North West"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1.5 block">Initial Score (0-100)</label>
+                <input
+                  type="number"
+                  value={newContractor.score}
+                  onChange={(e) => setNewContractor({ ...newContractor, score: e.target.value })}
+                  placeholder="75"
+                  min="0"
+                  max="100"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/10 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddContractor}
+                disabled={!newContractor.name.trim()}
+                className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all disabled:opacity-50"
+              >
+                Add Contractor
+              </button>
+            </div>
+          </GsCard>
+        </div>
+      )}
     </div>
   )
 }

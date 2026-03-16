@@ -5,11 +5,29 @@ import { cn } from '@/lib/utils'
 import { GsCard, GsBadge, StatCard } from '@/components/greenstack-ui'
 import { AUDITS } from '@/lib/data'
 import { Check } from 'lucide-react'
+import { useAudits, useUser } from '@/lib/hooks/use-data'
+import { createAudit, updateAudit } from '@/app/actions/database'
 
 const types = ['Full Energy Audit', 'Carbon Baseline', 'ISO 50001 Gap Analysis', 'Net Zero Roadmap', 'ESOS Assessment', 'Renewable Feasibility']
-const statusC: Record<string, string> = { complete: 'emerald', 'in-progress': 'yellow', scheduled: 'blue' }
+const statusC: Record<string, string> = { complete: 'emerald', completed: 'emerald', 'in-progress': 'yellow', scheduled: 'blue' }
 
 export default function AuditsPage() {
+  const { user } = useUser()
+  const { audits: dbAudits, isLoading, mutate } = useAudits()
+  
+  const isDemo = !user
+  
+  // Transform DB audits or use demo data
+  const allAudits = isDemo ? AUDITS : dbAudits.map(a => ({
+    id: a.id,
+    client: a.client,
+    type: a.audit_type,
+    status: a.status || 'scheduled',
+    date: a.date ? new Date(a.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'TBC',
+    savings: a.savings || 'TBC',
+    co2: a.co2_reduction || 'TBC',
+  }))
+  
   const [clientName, setClientName] = useState('')
   const [auditType, setAuditType] = useState('Full Energy Audit')
   const [generating, setGenerating] = useState(false)
@@ -49,12 +67,28 @@ This audit was conducted in accordance with BS EN 16247 and ESOS regulations. Th
 • CO₂ reduction: 340 tCO₂e/yr
 • Combined payback: 3.2 years
 • 20-year NPV: £1.8M`)
+    
+    // Save to database if logged in
+    if (user) {
+      try {
+        await createAudit({
+          client: clientName,
+          audit_type: auditType,
+          status: 'completed',
+          savings: '£124K/yr',
+          co2_reduction: '340 tCO₂e/yr',
+        })
+        mutate()
+      } catch (e) {
+        console.error('Failed to save audit:', e)
+      }
+    }
     setGenerating(false)
   }
 
-  const completeAudits = AUDITS.filter((a) => a.status === 'complete').length
+  const completeAudits = allAudits.filter((a) => a.status === 'complete' || a.status === 'completed').length
   const avgSavings = Math.round(
-    AUDITS.filter((a) => a.savings !== 'TBC')
+    allAudits.filter((a) => a.savings !== 'TBC')
       .reduce((sum, a) => {
         const savings = parseInt(a.savings.replace(/[^0-9]/g, ''))
         return sum + savings
@@ -65,13 +99,13 @@ This audit was conducted in accordance with BS EN 16247 and ESOS regulations. Th
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-white">Energy Audits</h1>
-        <p className="text-sm text-slate-500 mt-1">AI-generated professional audit reports with compliance tracking</p>
+        <p className="text-sm text-slate-500 mt-1">{isDemo ? 'Demo: Sample audit reports' : `${allAudits.length} audits on record`}</p>
       </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Audits" value={AUDITS.length} color="#00ff87" />
-        <StatCard label="Completed" value={completeAudits} delta={`${Math.round((completeAudits / AUDITS.length) * 100)}% complete`} color="#60efff" />
+        <StatCard label="Total Audits" value={allAudits.length} color="#00ff87" />
+        <StatCard label="Completed" value={completeAudits} delta={allAudits.length > 0 ? `${Math.round((completeAudits / allAudits.length) * 100)}% complete` : '0%'} color="#60efff" />
         <StatCard label="Avg Savings" value={`£${avgSavings}K`} delta="Annual" color="#a78bfa" />
       </div>
 
@@ -174,10 +208,14 @@ This audit was conducted in accordance with BS EN 16247 and ESOS regulations. Th
         <div className="space-y-3">
           <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-3">Recent Audits</p>
           <div className="space-y-3">
-            {AUDITS.map((a, idx) => (
+            {allAudits.length === 0 ? (
+              <GsCard className="p-8 text-center">
+                <p className="text-sm text-slate-500">No audits yet. Generate your first audit above.</p>
+              </GsCard>
+            ) : allAudits.map((a, idx) => (
               <GsCard key={a.id} className="p-4 hover:border-white/10 transition-all relative">
                 {/* Timeline connector */}
-                {idx < AUDITS.length - 1 && (
+                {idx < allAudits.length - 1 && (
                   <div className="absolute left-[19px] top-[56px] w-0.5 h-6 bg-gradient-to-b from-slate-600 to-transparent" />
                 )}
 
