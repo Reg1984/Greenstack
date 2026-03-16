@@ -22,9 +22,9 @@ function Earth() {
   const texture = useLoader(TextureLoader, "/assets/3d/texture_earth.jpg")
   texture.colorSpace = THREE.SRGBColorSpace
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.03
+      ref.current.rotation.y += delta * 0.03
     }
   })
 
@@ -43,9 +43,9 @@ function Earth() {
 function GlobeContent({ selectedId, onSelectTender, showHeatmap, showTenders }: GlobeSceneProps) {
   const groupRef = useRef<THREE.Group>(null)
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = clock.getElapsedTime() * 0.03
+      groupRef.current.rotation.y += delta * 0.03
     }
   })
 
