@@ -432,6 +432,72 @@ export async function logActivity(action: string, entityType?: string, entityId?
     }])
 }
 
+// ============ AUTO-BID SETTINGS ============
+export async function getAutoBidSettings() {
+  const auth = await getAuthUser()
+  if (!auth) return null
+  
+  const { data } = await auth.supabase
+    .from('auto_bid_settings')
+    .select('*')
+    .eq('user_id', auth.user.id)
+    .single()
+  
+  return data
+}
+
+export async function createOrUpdateAutoBidSettings(settings: {
+  enabled?: boolean
+  match_threshold?: number
+  capabilities?: string[]
+  max_bid_value?: number
+  sectors?: string[]
+  notify_on_bid?: boolean
+  auto_submit?: boolean
+}) {
+  const auth = await getAuthUser()
+  if (!auth) throw new Error('Not authenticated')
+  
+  // First check if settings exist
+  const { data: existing } = await auth.supabase
+    .from('auto_bid_settings')
+    .select('id')
+    .eq('user_id', auth.user.id)
+    .single()
+  
+  if (existing) {
+    // Update existing
+    const { data, error } = await auth.supabase
+      .from('auto_bid_settings')
+      .update({ ...settings, updated_at: new Date().toISOString() })
+      .eq('user_id', auth.user.id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  } else {
+    // Create new
+    const { data, error } = await auth.supabase
+      .from('auto_bid_settings')
+      .insert([{
+        user_id: auth.user.id,
+        ...settings,
+        enabled: settings.enabled !== false,
+        match_threshold: settings.match_threshold || 65,
+        capabilities: settings.capabilities || [],
+        sectors: settings.sectors || [],
+        notify_on_bid: settings.notify_on_bid !== false,
+        auto_submit: settings.auto_submit !== false,
+      }])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+}
+
 // ============ DASHBOARD STATS ============
 export async function getDashboardStats() {
   const auth = await getAuthUser()

@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import useSWR from "swr"
 import { cn } from "@/lib/utils"
 import { GsCard, GsBadge, StatCard, DetailPanel, FilterBar, ProgressBar, PulseDot, ScoreRing, AIChatWidget } from "@/components/greenstack-ui"
-import { TENDERS, STATUS_MAP, fmt } from "@/lib/data"
+import { getTenders, createTender, updateTender } from "@/app/actions/database"
+import { STATUS_MAP, fmt } from "@/lib/data"
 
 type SortKey = "title" | "value" | "match" | "deadline"
 type SortDir = "asc" | "desc"
@@ -18,10 +20,15 @@ export default function TendersPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newTender, setNewTender] = useState({ title: '', client: '', sector: 'General', region: '', value: '', deadline: '' })
 
-  const isDemo = !user
-  
+  // Fetch real tenders from database
+  const { data: dbTenders = [], isLoading, mutate } = useSWR(
+    'tenders',
+    () => getTenders(),
+    { revalidateOnFocus: false }
+  )
+
   // Transform DB tenders to match UI format
-  const tenders = isDemo ? TENDERS : dbTenders.map(t => ({
+  const tenders = dbTenders.map(t => ({
     id: t.id,
     title: t.title,
     location: t.region || 'UK',
@@ -114,30 +121,28 @@ export default function TendersPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Tender Pipeline</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {isDemo ? `Demo: ${TENDERS.length} sample opportunities` : `AI monitoring ${tenders.length} opportunities`}
+            {isLoading ? 'Loading...' : `AI monitoring ${tenders.length} opportunities`}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {!isDemo && (
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/25 transition-all"
-            >
-              + Add Tender
-            </button>
-          )}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/25 transition-all"
+          >
+            + Add Tender
+          </button>
           <div className="flex items-center gap-2">
             <PulseDot size={1.5} />
-            <span className="text-xs font-mono text-emerald-400">{isDemo ? "DEMO MODE" : "LIVE"}</span>
+            <span className="text-xs font-mono text-emerald-400">LIVE</span>
           </div>
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Pipeline Value" value={fmt(totalPipeline)} delta={isDemo ? "+18% this quarter" : "total"} color="#00ff87" />
+        <StatCard label="Pipeline Value" value={fmt(totalPipeline)} delta="total" color="#00ff87" />
         <StatCard label="Active Tenders" value={tenders.length.toString()} delta={`${tenders.filter(t => t.status === "found").length} newly found`} color="#60efff" />
-        <StatCard label="Avg Match Score" value={`${avgMatch}%`} delta={isDemo ? "+4% vs last month" : "AI scored"} color="#ffd166" />
+        <StatCard label="Avg Match Score" value={`${avgMatch}%`} delta="AI scored" color="#ffd166" />
         <StatCard label="Closing This Week" value={closingThisWeek.toString()} delta="Requires action" color="#c084fc" />
       </div>
 
@@ -190,7 +195,7 @@ export default function TendersPage() {
             <p className="text-sm text-slate-500">
               {tenders.length === 0 ? "No tenders yet. Add your first tender to get started." : "No tenders match your filters"}
             </p>
-            {!isDemo && tenders.length === 0 && (
+            {tenders.length === 0 && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="mt-4 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/25 transition-all"
