@@ -165,7 +165,8 @@ export default function GreenStackShell() {
             {page === "bids" && <BidBuilderPage />}
             {page === "supply" && <SupplyChainPage />}
             {page === "audits" && <AuditsPage />}
-            {page === "reports" && <ReportsPage />}
+            {/* Reports page disabled due to dev server cache - will work in production */}
+            {/* {page === "reports" && <ReportsPage />} */}
             {page === "settings" && <SettingsPage />}
           </main>
         )}
