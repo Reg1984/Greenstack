@@ -8,11 +8,10 @@ import TendersPage from "@/components/pages/tenders-page"
 import BidBuilderPage from "@/components/pages/bid-builder-page"
 import SupplyChainPage from "@/components/pages/supply-chain-page"
 import AuditsPage from "@/components/pages/audits-page"
-import ReportsPage from "@/components/pages/reports-page"
 import UniversePage from "@/components/pages/universe-page"
 import SettingsPage from "@/components/pages/settings-page"
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "reports" | "settings" | "universe"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe"
 
 const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; accent?: boolean }> = [
   { id: "dashboard", icon: "\u2B21", label: "Dashboard" },
@@ -20,7 +19,6 @@ const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; acce
   { id: "bids", icon: "\u25CE", label: "Bid Builder", badge: 4 },
   { id: "supply", icon: "\u2B22", label: "Supply Chain" },
   { id: "audits", icon: "\u25C7", label: "Audits" },
-  { id: "reports", icon: "\u25A3", label: "Reports" },
   { id: "settings", icon: "\u2699", label: "Settings" },
   { id: "universe", icon: "\u2726", label: "Universe", accent: true },
 ]
@@ -165,8 +163,6 @@ export default function GreenStackShell() {
             {page === "bids" && <BidBuilderPage />}
             {page === "supply" && <SupplyChainPage />}
             {page === "audits" && <AuditsPage />}
-            {/* Reports page disabled due to dev server cache - will work in production */}
-            {/* {page === "reports" && <ReportsPage />} */}
             {page === "settings" && <SettingsPage />}
           </main>
         )}
