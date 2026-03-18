@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import { GsCard, PulseDot, AIChatWidget, StatCard } from '@/components/greenstack-ui'
-import { REPORTS } from '@/lib/data'
+import { getReports, createReport, getDashboardStats } from '@/app/actions/database'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const reportTypes = [
@@ -47,6 +48,29 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState(false)
   const [report, setReport] = useState('')
   const [mounted, setMounted] = useState(false)
+
+  const { data: dbReports = [], mutate } = useSWR('reports', () => getReports(), { revalidateOnFocus: false })
+  const { data: stats } = useSWR('dashboard-stats', () => getDashboardStats(), { revalidateOnFocus: false })
+
+  // Transform DB reports for display
+  const allReports = dbReports.map(r => ({
+    id: r.id,
+    title: r.title,
+    type: r.report_type || 'Performance',
+    date: new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    winRate: r.win_rate,
+    value: r.total_value,
+  }))
+
+  // Dynamic KPIs based on real stats from database
+  const dynamicKpis = [
+    { l: 'Total Bids', v: stats?.totalBids?.toString() || '0', c: '#00ff87' },
+    { l: 'Won', v: stats?.wonBids?.toString() || '0', c: '#60efff' },
+    { l: 'Win Rate', v: `${stats?.winRate || 0}%`, c: '#ffd166' },
+    { l: 'Revenue', v: `£${Math.round((stats?.pipelineValue || 0) * 0.34 / 1000)}K`, c: '#c084fc' },
+    { l: 'Pipeline', v: `£${((stats?.pipelineValue || 0) / 1000000).toFixed(1)}M`, c: '#00ff87' },
+    { l: 'Avg Bid', v: `£${stats?.totalBids ? Math.round((stats?.pipelineValue || 0) / stats.totalBids / 1000) : 0}K`, c: '#60efff' },
+  ]
   
   useEffect(() => {
     setTimeout(() => setMounted(true), 80)
@@ -86,20 +110,18 @@ GreenStack platform performance continues to exceed targets across all key metri
 3. **Contractor network growth** — Add 4 new preferred suppliers in Heat Pump and BEMS
 4. **Win rate target** — Aim for 38% by end of Q2 through improved pricing models`)
     
-    // Save to database if logged in
-    if (user) {
-      try {
-        await createReport({
-          title: reportType,
-          report_type: 'Performance',
-          period: period,
-          win_rate: `${stats?.winRate || 34}%`,
-          total_value: `£${((stats?.pipelineValue || 0) / 1000000).toFixed(1)}M`,
-        })
-        mutate()
-      } catch (e) {
-        console.error('Failed to save report:', e)
-      }
+    // Save to database
+    try {
+      await createReport({
+        title: reportType,
+        report_type: 'Performance',
+        period: period,
+        win_rate: `${stats?.winRate || 34}%`,
+        total_value: `£${((stats?.pipelineValue || 0) / 1000000).toFixed(1)}M`,
+      })
+      mutate()
+    } catch (e) {
+      console.error('Failed to save report:', e)
     }
     setGenerating(false)
   }
