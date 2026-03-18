@@ -5,25 +5,27 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { PulseDot } from "@/components/greenstack-ui"
 
-// Page imports - NO ReportsPage
+// Page imports
 import DashboardPage from "@/components/pages/dashboard-page"
 import TendersPage from "@/components/pages/tenders-page"
 import BidBuilderPage from "@/components/pages/bid-builder-page"
 import SupplyChainPage from "@/components/pages/supply-chain-page"
 import AuditsPage from "@/components/pages/audits-page"
+import ReportsPage from "@/components/pages/reports-page"
 import UniversePage from "@/components/pages/universe-page"
 import SettingsPage from "@/components/pages/settings-page"
 
-// Page type - NO reports
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe"
+// Page type
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "reports" | "settings" | "universe"
 
-// Navigation items - NO reports
+// Navigation items
 const NAV_ITEMS: Array<{ id: PageId; icon: string; label: string; badge?: number; accent?: boolean }> = [
   { id: "dashboard", icon: "\u2B21", label: "Dashboard" },
   { id: "tenders", icon: "\u25C8", label: "Tenders", badge: 8 },
   { id: "bids", icon: "\u25CE", label: "Bid Builder", badge: 4 },
   { id: "supply", icon: "\u2B22", label: "Supply Chain" },
   { id: "audits", icon: "\u25C7", label: "Audits" },
+  { id: "reports", icon: "\u25A3", label: "Reports" },
   { id: "settings", icon: "\u2699", label: "Settings" },
   { id: "universe", icon: "\u2726", label: "Universe", accent: true },
 ]
@@ -36,6 +38,7 @@ function PageContent({ page }: { page: PageId }) {
     case "bids": return <BidBuilderPage />
     case "supply": return <SupplyChainPage />
     case "audits": return <AuditsPage />
+    case "reports": return <ReportsPage />
     case "settings": return <SettingsPage />
     default: return null
   }
