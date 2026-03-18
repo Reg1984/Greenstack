@@ -8,11 +8,10 @@ import TendersPage from "@/components/pages/tenders-page"
 import BidBuilderPage from "@/components/pages/bid-builder-page"
 import SupplyChainPage from "@/components/pages/supply-chain-page"
 import AuditsPage from "@/components/pages/audits-page"
-import ReportsPage from "@/components/pages/reports-page"
 import UniversePage from "@/components/pages/universe-page"
 import SettingsPage from "@/components/pages/settings-page"
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "reports" | "settings" | "universe"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe"
 
 const NAV = [
   { id: "dashboard" as PageId, icon: "⬡", label: "Dashboard" },
@@ -20,7 +19,6 @@ const NAV = [
   { id: "bids" as PageId, icon: "◎", label: "Bid Builder", badge: 4 },
   { id: "supply" as PageId, icon: "⬢", label: "Supply Chain" },
   { id: "audits" as PageId, icon: "◇", label: "Audits" },
-  { id: "reports" as PageId, icon: "◫", label: "Reports" },
   { id: "settings" as PageId, icon: "⚙", label: "Settings" },
   { id: "universe" as PageId, icon: "✦", label: "Universe", accent: true },
 ]
@@ -35,7 +33,6 @@ export default function Page() {
     if (page === "bids") return <BidBuilderPage />
     if (page === "supply") return <SupplyChainPage />
     if (page === "audits") return <AuditsPage />
-    if (page === "reports") return <ReportsPage />
     if (page === "settings") return <SettingsPage />
     if (page === "universe") return <UniversePage />
     return <DashboardPage />
