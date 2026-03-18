@@ -1,5 +1,5 @@
 "use client"
-
+// GreenStack AI Auto-Bidding Platform v2.0
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
