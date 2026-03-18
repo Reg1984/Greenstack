@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { runAutoBidding, extractTenderFromURL } from "@/app/actions/ai"
+import { scoutForTenders, runFullAutoPipeline } from "@/app/actions/tender-scout"
 import { 
   BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -72,6 +73,8 @@ export default function GreenStackApp() {
   const [autoBidRunning, setAutoBidRunning] = useState(false)
   const [autoBidResult, setAutoBidResult] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
+  const [scoutRunning, setScoutRunning] = useState(false)
+  const [scoutResult, setScoutResult] = useState<any>(null)
   
   const supabase = createClient()
 
@@ -372,6 +375,64 @@ export default function GreenStackApp() {
           <div className="space-y-6 max-w-2xl">
             <h2 className="text-2xl font-bold text-white">Auto-Bid Settings</h2>
             
+            {/* Scout for Tenders - AI searches the web */}
+            <div className="bg-gradient-to-r from-blue-900/50 to-cyan-800/30 border border-cyan-500/50 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-bold text-lg">Scout for Tenders</h3>
+                  <p className="text-cyan-400/80 text-sm mt-1">AI searches Contracts Finder, Find a Tender, and other UK portals for matching opportunities</p>
+                </div>
+                <button 
+                  onClick={async () => {
+                    setScoutRunning(true)
+                    setScoutResult(null)
+                    try {
+                      const result = await scoutForTenders({
+                        user_id: user?.id || '',
+                        sectors: ['Healthcare', 'Education', 'Local Government', 'Housing', 'Energy'],
+                        capabilities: ['Energy Audits', 'Solar PV', 'Heat Pumps', 'BEMS', 'LED Retrofits', 'Decarbonisation'],
+                        max_value: 5000000
+                      })
+                      setScoutResult(result)
+                      // Refresh tenders list
+                      const { data } = await supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20)
+                      if (data) setTenders(data)
+                    } catch (err) {
+                      console.error('Scout error:', err)
+                      setScoutResult({ found: 0, added: 0, message: 'Error scouting for tenders' })
+                    }
+                    setScoutRunning(false)
+                  }}
+                  disabled={scoutRunning}
+                  className={cn(
+                    "px-6 py-3 rounded-lg font-bold text-white transition flex items-center gap-2",
+                    scoutRunning ? "bg-cyan-700 cursor-wait" : "bg-cyan-500 hover:bg-cyan-400"
+                  )}
+                >
+                  {scoutRunning ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Searching...
+                    </>
+                  ) : (
+                    <>
+                      <span>🔍</span> Scout Now
+                    </>
+                  )}
+                </button>
+              </div>
+              {scoutResult && (
+                <div className="mt-4 p-4 bg-[#061208] rounded-lg">
+                  <p className="text-cyan-400 font-semibold">Found {scoutResult.found} tenders, added {scoutResult.added} new to database</p>
+                  {scoutResult.tenders?.slice(0, 5).map((t: any, i: number) => (
+                    <div key={i} className="text-sm text-cyan-300/80 mt-2">
+                      + {t.title} ({t.source_portal}) - £{t.value?.toLocaleString() || 'TBC'}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Run Auto-Bidding Now */}
             <div className="bg-gradient-to-r from-emerald-900/50 to-emerald-800/30 border border-emerald-500/50 rounded-xl p-6">
               <div className="flex items-center justify-between">
