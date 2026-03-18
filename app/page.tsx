@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
+import { runAutoBidding, extractTenderFromURL } from "@/app/actions/ai"
 import { 
   BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -68,12 +69,20 @@ export default function GreenStackApp() {
   const [bids, setBids] = useState<Bid[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [autoBidRunning, setAutoBidRunning] = useState(false)
+  const [autoBidResult, setAutoBidResult] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
   
   const supabase = createClient()
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
+      
+      // Get user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      setUser(currentUser)
+      
       const [tendersRes, bidsRes, activitiesRes] = await Promise.all([
         supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("bids").select("*").order("created_at", { ascending: false }).limit(20),
@@ -362,6 +371,68 @@ export default function GreenStackApp() {
         return (
           <div className="space-y-6 max-w-2xl">
             <h2 className="text-2xl font-bold text-white">Auto-Bid Settings</h2>
+            
+            {/* Run Auto-Bidding Now */}
+            <div className="bg-gradient-to-r from-emerald-900/50 to-emerald-800/30 border border-emerald-500/50 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-bold text-lg">Run Auto-Bidding Now</h3>
+                  <p className="text-emerald-400/80 text-sm mt-1">AI will scan your tenders, score them, and auto-generate bids for matches above threshold</p>
+                </div>
+                <button 
+                  onClick={async () => {
+                    setAutoBidRunning(true)
+                    setAutoBidResult(null)
+                    try {
+                      const result = await runAutoBidding({
+                        user_id: user?.id || '',
+                        match_threshold: 65,
+                        capabilities: ['Energy Audits', 'Solar PV', 'Heat Pumps', 'BEMS', 'LED Retrofits'],
+                        max_bid_value: 5000000,
+                        sectors: ['Healthcare', 'Education', 'Local Government', 'Housing'],
+                        notify_on_bid: true
+                      })
+                      setAutoBidResult(result)
+                    } catch (err) {
+                      console.error('Auto-bidding error:', err)
+                      setAutoBidResult({ results: [], message: 'Error running auto-bidding' })
+                    }
+                    setAutoBidRunning(false)
+                  }}
+                  disabled={autoBidRunning}
+                  className={cn(
+                    "px-6 py-3 rounded-lg font-bold text-white transition flex items-center gap-2",
+                    autoBidRunning ? "bg-emerald-700 cursor-wait" : "bg-emerald-500 hover:bg-emerald-400"
+                  )}
+                >
+                  {autoBidRunning ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Running...
+                    </>
+                  ) : (
+                    <>
+                      <span>⚡</span> Run Now
+                    </>
+                  )}
+                </button>
+              </div>
+              {autoBidResult && (
+                <div className="mt-4 p-4 bg-[#061208] rounded-lg">
+                  <p className="text-emerald-400 font-semibold">{autoBidResult.message}</p>
+                  {autoBidResult.results?.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {autoBidResult.results.map((r: any, i: number) => (
+                        <div key={i} className="text-sm text-emerald-300/80">
+                          ✓ Bid submitted for "{r.tenderTitle}" (Score: {r.matchScore}%)
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <div>
