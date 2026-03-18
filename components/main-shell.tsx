@@ -41,7 +41,7 @@ function PageContent({ page }: { page: PageId }) {
   }
 }
 
-export default function GreenStackShell() {
+export default function MainShell() {
   const [page, setPage] = useState<PageId>("dashboard")
   const isUniverse = page === "universe"
 
