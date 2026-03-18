@@ -57,7 +57,7 @@ export default function BidBuilderPage() {
       const generatedContent = await generateBidContent(
         section,
         selected.tenderData?.title || selected.tender_title || 'Tender',
-        selected.tenderData?.description || ''
+        selected.tenderData?.value || selected.value || 0
       )
       setContent(generatedContent)
       
