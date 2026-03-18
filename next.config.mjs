@@ -6,13 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Force cache clear
-  generateBuildId: async () => {
-    return 'build-' + Date.now()
-  },
-  turbopack: {
-    root: '.',
-  },
 }
 
 export default nextConfig
