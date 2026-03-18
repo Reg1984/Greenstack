@@ -1,6 +1,5 @@
 "use client"
 
-// Cache buster v2
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { PulseDot } from "@/components/greenstack-ui"
@@ -26,7 +25,6 @@ const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; acce
 
 export default function GreenStackShell() {
   const [page, setPage] = useState<PageId>("dashboard")
-
   const isUniverse = page === "universe"
 
   return (
@@ -34,7 +32,6 @@ export default function GreenStackShell() {
       className="flex h-screen overflow-hidden text-white"
       style={{ background: "linear-gradient(135deg,#020c18 0%,#041220 50%,#020e1a 100%)" }}
     >
-      {/* Background grid */}
       {!isUniverse && (
         <>
           <div
@@ -56,7 +53,6 @@ export default function GreenStackShell() {
         </>
       )}
 
-      {/* Sidebar */}
       <aside
         className="relative z-20 flex flex-col w-60 shrink-0 border-r border-white/5"
         style={{ background: "rgba(2,10,20,0.92)", backdropFilter: "blur(20px)" }}
@@ -119,13 +115,12 @@ export default function GreenStackShell() {
               <span className="text-xs font-mono text-emerald-400">AI ONLINE</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              4 agents active \u00B7 8 tenders scanning \u00B7 2 bids in draft
+              4 agents active · 8 tenders scanning · 2 bids in draft
             </p>
           </div>
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
         {!isUniverse && (
           <header
@@ -139,7 +134,7 @@ export default function GreenStackShell() {
             </div>
             <div className="flex items-center gap-3">
               <button className="relative p-2 rounded-xl hover:bg-white/5 transition-colors" aria-label="Notifications">
-                <span className="text-sm">{"🔔"}</span>
+                <span className="text-sm">🔔</span>
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
               </button>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/[0.08]">
@@ -165,7 +160,6 @@ export default function GreenStackShell() {
             {page === "supply" && <SupplyChainPage />}
             {page === "audits" && <AuditsPage />}
             {page === "settings" && <SettingsPage />}
-            {page === "universe" && <UniversePage />}
           </main>
         )}
       </div>
