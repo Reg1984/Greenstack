@@ -164,6 +164,7 @@ export default function GreenStackShell() {
             {page === "supply" && <SupplyChainPage />}
             {page === "audits" && <AuditsPage />}
             {page === "settings" && <SettingsPage />}
+            {page === "universe" && <UniversePage />}
           </main>
         )}
       </div>
