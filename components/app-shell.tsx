@@ -23,7 +23,7 @@ const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; acce
   { id: "universe", icon: "\u2726", label: "Universe", accent: true },
 ]
 
-export default function GreenStackShell() {
+export default function AppShell() {
   const [page, setPage] = useState<PageId>("dashboard")
   const isUniverse = page === "universe"
 
@@ -115,7 +115,7 @@ export default function GreenStackShell() {
               <span className="text-xs font-mono text-emerald-400">AI ONLINE</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              4 agents active · 8 tenders scanning · 2 bids in draft
+              4 agents active | 8 tenders scanning | 2 bids in draft
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function GreenStackShell() {
             </div>
             <div className="flex items-center gap-3">
               <button className="relative p-2 rounded-xl hover:bg-white/5 transition-colors" aria-label="Notifications">
-                <span className="text-sm">🔔</span>
+                <span className="text-sm">*</span>
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
               </button>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/[0.08]">

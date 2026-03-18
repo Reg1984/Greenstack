@@ -1,4 +1,4 @@
-import GreenStackShell from '@/components/greenstack-shell'
+import AppShell from '@/components/app-shell'
 import { AppHeader } from '@/components/app-header'
 import { createClient } from '@/lib/supabase/server'
 
@@ -12,7 +12,7 @@ export default async function ProtectedPage() {
     <div className="flex flex-col h-screen">
       <AppHeader user={user!} />
       <main className="flex-1 overflow-y-auto">
-        <GreenStackShell />
+        <AppShell />
       </main>
     </div>
   )

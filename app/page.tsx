@@ -1,5 +1,5 @@
-import GreenStackShell from '@/components/greenstack-shell'
+import AppShell from '@/components/app-shell'
 
 export default function Page() {
-  return <GreenStackShell />
+  return <AppShell />
 }
