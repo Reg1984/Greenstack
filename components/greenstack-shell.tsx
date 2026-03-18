@@ -10,8 +10,9 @@ import SupplyChainPage from "@/components/pages/supply-chain-page"
 import AuditsPage from "@/components/pages/audits-page"
 import ReportsPage from "@/components/pages/reports-page"
 import UniversePage from "@/components/pages/universe-page"
+import SettingsPage from "@/components/pages/settings-page"
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "reports" | "universe"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "reports" | "settings" | "universe"
 
 const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; accent?: boolean }> = [
   { id: "dashboard", icon: "\u2B21", label: "Dashboard" },
@@ -20,6 +21,7 @@ const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; acce
   { id: "supply", icon: "\u2B22", label: "Supply Chain" },
   { id: "audits", icon: "\u25C7", label: "Audits" },
   { id: "reports", icon: "\u25A3", label: "Reports" },
+  { id: "settings", icon: "\u2699", label: "Settings" },
   { id: "universe", icon: "\u2726", label: "Universe", accent: true },
 ]
 
@@ -164,6 +166,7 @@ export default function GreenStackShell() {
             {page === "supply" && <SupplyChainPage />}
             {page === "audits" && <AuditsPage />}
             {page === "reports" && <ReportsPage />}
+            {page === "settings" && <SettingsPage />}
           </main>
         )}
       </div>
