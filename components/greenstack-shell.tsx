@@ -1,8 +1,11 @@
 "use client"
 
+// Fresh rebuild - v2
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { PulseDot } from "@/components/greenstack-ui"
+
+// Page imports - NO ReportsPage
 import DashboardPage from "@/components/pages/dashboard-page"
 import TendersPage from "@/components/pages/tenders-page"
 import BidBuilderPage from "@/components/pages/bid-builder-page"
@@ -11,9 +14,11 @@ import AuditsPage from "@/components/pages/audits-page"
 import UniversePage from "@/components/pages/universe-page"
 import SettingsPage from "@/components/pages/settings-page"
 
+// Page type - NO reports
 type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe"
 
-const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; accent?: boolean }> = [
+// Navigation items - NO reports
+const NAV_ITEMS: Array<{ id: PageId; icon: string; label: string; badge?: number; accent?: boolean }> = [
   { id: "dashboard", icon: "\u2B21", label: "Dashboard" },
   { id: "tenders", icon: "\u25C8", label: "Tenders", badge: 8 },
   { id: "bids", icon: "\u25CE", label: "Bid Builder", badge: 4 },
@@ -22,6 +27,19 @@ const nav: Array<{ id: PageId; icon: string; label: string; badge?: number; acce
   { id: "settings", icon: "\u2699", label: "Settings" },
   { id: "universe", icon: "\u2726", label: "Universe", accent: true },
 ]
+
+// Page renderer component
+function PageContent({ page }: { page: PageId }) {
+  switch (page) {
+    case "dashboard": return <DashboardPage />
+    case "tenders": return <TendersPage />
+    case "bids": return <BidBuilderPage />
+    case "supply": return <SupplyChainPage />
+    case "audits": return <AuditsPage />
+    case "settings": return <SettingsPage />
+    default: return null
+  }
+}
 
 export default function GreenStackShell() {
   const [page, setPage] = useState<PageId>("dashboard")
@@ -46,10 +64,6 @@ export default function GreenStackShell() {
             className="fixed top-0 left-1/3 w-96 h-96 rounded-full pointer-events-none"
             style={{ background: "radial-gradient(circle,rgba(0,255,135,0.05) 0%,transparent 70%)" }}
           />
-          <div
-            className="fixed bottom-1/4 right-1/4 w-64 h-64 rounded-full pointer-events-none"
-            style={{ background: "radial-gradient(circle,rgba(96,239,255,0.04) 0%,transparent 70%)" }}
-          />
         </>
       )}
 
@@ -72,8 +86,8 @@ export default function GreenStackShell() {
           </div>
         </div>
 
-        <nav className="flex-1 p-3 space-y-0.5" aria-label="Main navigation">
-          {nav.map((n) => (
+        <nav className="flex-1 p-3 space-y-0.5">
+          {NAV_ITEMS.map((n) => (
             <button
               key={n.id}
               onClick={() => setPage(n.id)}
@@ -86,20 +100,13 @@ export default function GreenStackShell() {
                   : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
               )}
             >
-              <span
-                className="text-base w-5 text-center"
-                style={n.accent && page === n.id ? { filter: "drop-shadow(0 0 6px #00ff87)" } : {}}
-              >
-                {n.icon}
-              </span>
+              <span className="text-base w-5 text-center">{n.icon}</span>
               <span className="flex-1 text-left">{n.label}</span>
               {n.badge && (
-                <span
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 rounded-md font-mono",
-                    page === n.id ? "bg-emerald-500/30 text-emerald-300" : "bg-white/[0.08] text-slate-500"
-                  )}
-                >
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded-md font-mono",
+                  page === n.id ? "bg-emerald-500/30 text-emerald-300" : "bg-white/[0.08] text-slate-500"
+                )}>
                   {n.badge}
                 </span>
               )}
@@ -114,9 +121,7 @@ export default function GreenStackShell() {
               <PulseDot size={1.5} />
               <span className="text-xs font-mono text-emerald-400">AI ONLINE</span>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              4 agents active | 8 tenders scanning | 2 bids in draft
-            </p>
+            <p className="text-xs text-slate-500">4 agents active</p>
           </div>
         </div>
       </aside>
@@ -133,10 +138,6 @@ export default function GreenStackShell() {
               <span className="text-slate-400 capitalize">{page}</span>
             </div>
             <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-xl hover:bg-white/5 transition-colors" aria-label="Notifications">
-                <span className="text-sm">*</span>
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-              </button>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/[0.08]">
                 <div
                   className="w-6 h-6 rounded-lg flex items-center justify-center text-black font-bold text-xs"
@@ -154,12 +155,7 @@ export default function GreenStackShell() {
           <UniversePage />
         ) : (
           <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 scroll-smooth">
-            {page === "dashboard" && <DashboardPage />}
-            {page === "tenders" && <TendersPage />}
-            {page === "bids" && <BidBuilderPage />}
-            {page === "supply" && <SupplyChainPage />}
-            {page === "audits" && <AuditsPage />}
-            {page === "settings" && <SettingsPage />}
+            <PageContent page={page} />
           </main>
         )}
       </div>
