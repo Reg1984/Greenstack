@@ -10,6 +10,9 @@ const nextConfig = {
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
+  turbopack: {
+    root: '.',
+  },
 }
 
 export default nextConfig
