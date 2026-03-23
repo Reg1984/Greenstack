@@ -1,19 +1,18 @@
-import { AppHeader } from '@/components/app-header'
-import { createClient } from '@/lib/supabase/server'
-import GreenStackApp from '@/app/page'
+'use client'
 
-export default async function ProtectedPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function ProtectedPage() {
+  const router = useRouter()
+  
+  useEffect(() => {
+    router.replace('/')
+  }, [router])
 
   return (
-    <div className="flex flex-col h-screen">
-      <AppHeader user={user!} />
-      <main className="flex-1 overflow-y-auto">
-        <GreenStackApp />
-      </main>
+    <div className="flex min-h-screen items-center justify-center bg-[#030808]">
+      <div className="text-emerald-400">Loading...</div>
     </div>
   )
 }
