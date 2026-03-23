@@ -7,10 +7,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Only run middleware on protected routes that require authentication.
-     * All other routes are publicly accessible for preview/demo mode.
-     */
-    '/protected/:path*',
+    '/dashboard/:path*',
   ],
 }
