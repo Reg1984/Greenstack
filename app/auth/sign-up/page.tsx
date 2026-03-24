@@ -39,9 +39,6 @@ export default function Page() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
       })
       if (error) throw error
       router.push('/auth/sign-up-success')
@@ -53,63 +50,70 @@ export default function Page() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-[#030808]">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-6">
-          <Card>
+          <div className="text-center">
+            <div className="text-emerald-400 text-3xl font-bold mb-1">G</div>
+            <div className="text-white font-semibold">GreenStack</div>
+            <div className="text-emerald-500/60 text-sm">AI Tender Platform</div>
+          </div>
+          <Card className="bg-[#0a1a0f] border-emerald-900/50">
             <CardHeader>
-              <CardTitle className="text-2xl">Sign up</CardTitle>
-              <CardDescription>Create a new account</CardDescription>
+              <CardTitle className="text-2xl text-white">Sign up</CardTitle>
+              <CardDescription className="text-emerald-500/60">
+                Create your GreenStack account
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSignUp}>
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-emerald-400">Email</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="m@example.com"
+                      placeholder="you@example.com"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="bg-[#061208] border-emerald-900/50 text-white"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="password">Password</Label>
-                    </div>
+                    <Label htmlFor="password" className="text-emerald-400">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      className="bg-[#061208] border-emerald-900/50 text-white"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="repeat-password">Repeat Password</Label>
-                    </div>
+                    <Label htmlFor="repeat-password" className="text-emerald-400">Repeat Password</Label>
                     <Input
                       id="repeat-password"
                       type="password"
                       required
                       value={repeatPassword}
                       onChange={(e) => setRepeatPassword(e.target.value)}
+                      className="bg-[#061208] border-emerald-900/50 text-white"
                     />
                   </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating an account...' : 'Sign up'}
+                  {error && <p className="text-sm text-red-400">{error}</p>}
+                  <Button
+                    type="submit"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Creating account...' : 'Sign up'}
                   </Button>
                 </div>
-                <div className="mt-4 text-center text-sm">
+                <div className="mt-4 text-center text-sm text-emerald-500/60">
                   Already have an account?{' '}
-                  <Link
-                    href="/auth/login"
-                    className="underline underline-offset-4"
-                  >
+                  <Link href="/auth/login" className="text-emerald-400 underline underline-offset-4">
                     Login
                   </Link>
                 </div>
