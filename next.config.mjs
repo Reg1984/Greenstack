@@ -6,6 +6,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/protected',
+        destination: '/',
+        permanent: false,
+      },
+    ]
+  },
 }
 
 export default nextConfig
