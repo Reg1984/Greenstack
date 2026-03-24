@@ -83,4 +83,41 @@ export default function Page() {
                       id="password"
                       type="password"
                       required
-                      valu
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="repeat-password">Repeat Password</Label>
+                    </div>
+                    <Input
+                      id="repeat-password"
+                      type="password"
+                      required
+                      value={repeatPassword}
+                      onChange={(e) => setRepeatPassword(e.target.value)}
+                    />
+                  </div>
+                  {error && <p className="text-sm text-red-500">{error}</p>}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Creating an account...' : 'Sign up'}
+                  </Button>
+                </div>
+                <div className="mt-4 text-center text-sm">
+                  Already have an account?{' '}
+                  <Link
+                    href="/auth/login"
+                    className="underline underline-offset-4"
+                  >
+                    Login
+                  </Link>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
