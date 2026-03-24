@@ -40,8 +40,6 @@ export default function Page() {
         email,
         password,
         options: {
-          emailRedirectTo:
-        options: {
   emailRedirectTo: `${window.location.origin}/`,
 },   
         },
