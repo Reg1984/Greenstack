@@ -41,8 +41,9 @@ export default function Page() {
         password,
         options: {
           emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/protected`,
+        options: {
+  emailRedirectTo: `${window.location.origin}/`,
+},   
         },
       })
       if (error) throw error
