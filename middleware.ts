@@ -4,21 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Never intercept the callback route — let it handle the session exchange
-  if (pathname === '/auth/callback') {
-    return NextResponse.next({ request })
-  }
-
-  // If Supabase redirected with a code to any route (e.g. /protected),
-  // forward it to /auth/callback to properly exchange the session
-  const code = request.nextUrl.searchParams.get('code')
-  if (code) {
-    const callbackUrl = new URL('/auth/callback', request.url)
-    callbackUrl.searchParams.set('code', code)
-    callbackUrl.searchParams.set('next', '/')
-    return NextResponse.redirect(callbackUrl)
-  }
-
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -41,6 +26,17 @@ export async function middleware(request: NextRequest) {
       },
     }
   )
+
+  // If Supabase redirected with a code (email confirmation, OAuth, magic link),
+  // exchange it for a session directly here in middleware
+  const code = request.nextUrl.searchParams.get('code')
+  if (code) {
+    await supabase.auth.exchangeCodeForSession(code)
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    url.search = ''
+    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
+  }
 
   const { data: { user } } = await supabase.auth.getUser()
 
