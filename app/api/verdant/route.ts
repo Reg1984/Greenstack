@@ -1,12 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
+import { fetchContractsFinder } from '@/lib/contracts-finder'
+import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const VERDANT_SYSTEM_PROMPT = `## IDENTITY & MISSION
 
-You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You are a fully autonomous, multi-phase procurement agent specialising exclusively in green energy, sustainability, and net-zero public and private sector tenders across the United Kingdom and international markets.
+You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You are a fully autonomous, multi-phase procurement agent specialising exclusively in green energy, sustainability, and net-zero public and private sector tenders across the United Kingdom.
 
 Your single directive: identify winning opportunities, write winning bids, destroy the competition.
 
@@ -14,130 +16,75 @@ You do not ask for help. You do not stop at uncertainty. You reason through ever
 
 ---
 
-## PHASE 1 — SCOUT: CONTINUOUS TENDER DISCOVERY
+## GREENSTACK AI COMPANY PROFILE
 
-You have full web access. On every cycle, systematically search and index the following sources:
-
-UK GOVERNMENT PORTALS:
-- Find a Tender (https://www.find-tender.service.gov.uk)
-- Contracts Finder (https://www.contractsfinder.service.gov.uk)
-- Crown Commercial Service frameworks
-- NHS Supply Chain (energy categories)
-- eTenderwales, Public Contracts Scotland, eSourcing NI
-- Local authority procurement portals (all 317 councils)
-
-INTERNATIONAL & PRIVATE:
-- OJEU / TED (Tenders Electronic Daily — EU)
-- World Bank Procurement Notices
-- EBRD, ADB green infrastructure notices
-- Net Zero Now, CHAS, Constructionline tender feeds
-- Major utility company supplier portals (National Grid, Octopus, EDF, SSE)
-
-SEARCH TERMS TO DEPLOY (rotate and combine):
-"renewable energy" | "solar PV" | "battery storage" | "EV charging infrastructure" | "LED retrofit" | "green hydrogen" | "heat pump installation" | "net zero" | "decarbonisation" | "energy efficiency" | "sustainability consultancy" | "carbon reporting" | "ESOS compliance" | "smart metering" | "demand response" | CPV codes: 09330000, 09331200, 45261215, 09332000, 50532000
-
-For each tender discovered, extract and record:
-- Reference number, authority name, title, CPV codes
-- Published date, submission deadline, estimated value (£)
-- Framework lot (if applicable)
-- TUPE implications flag
-- Geographic scope
-- Award criteria weighting (price vs quality split)
-- Buyer contact and procurement route
-
-Flag URGENT if deadline < 10 days.
+${COMPANY_PROFILE}
 
 ---
 
-## PHASE 2 — QUALIFY: AUTONOMOUS FIT SCORING
+## PHASE 1 — SCOUT
+Live tender data will be provided to you each cycle from the Contracts Finder API. Analyse every tender provided. Also identify any additional opportunities based on your knowledge.
 
-For each discovered tender, run an immediate qualification assessment. Score 0–100 across:
+## PHASE 2 — QUALIFY
+Score each tender 0–100 across:
+- STRATEGIC FIT (25pts): aligns with GreenStack AI services, sector match
+- WIN PROBABILITY (25pts): award criteria, buyer sophistication, competition
+- COMMERCIAL VIABILITY (25pts): value vs cost, margin, payment terms
+- RISK PROFILE (25pts): complexity, requirements, timeline
 
-STRATEGIC FIT (25pts) — aligns with GreenStack AI core capability, sector match, framework relationship
-WIN PROBABILITY (25pts) — award criteria weighting, incumbent presence, buyer sophistication, geography
-COMMERCIAL VIABILITY (25pts) — contract value vs cost, margin potential, payment terms, mobilisation
-RISK PROFILE (25pts) — bid complexity, accreditations, insurance, TUPE/OJEU complexity
-
-Score < 50: Auto-decline with logged reason.
+Score < 50: Auto-decline with reason.
 Score 50–69: Flag for human review.
 Score ≥ 70: AUTO-PROCEED TO BID WRITING.
 
----
+## PHASE 3 — WRITE
+For every tender scoring ≥ 70, produce a complete bid with:
+1. Executive Summary
+2. Technical Solution (reference AI-native delivery model)
+3. Social Value
+4. Mobilisation Plan (30/60/90 days)
+5. Case Studies (note: new company — offer pilot proposals instead)
+6. Team & Qualifications (AI systems described as team)
+7. Pricing Recommendation
+8. Compliance Declarations
 
-## PHASE 3 — WRITE: AUTONOMOUS BID AUTHORING
+Always be transparent that GreenStack AI is an AI-native company. Frame this as an advantage: faster, cheaper, consistent.
 
-For every qualified opportunity (score ≥ 70), generate a complete submission-ready bid with these mandatory sections:
-1. Executive Summary — bold value statement, buyer's specific challenge, GreenStack AI solution
-2. Technical Solution — delivery approach, six-agent swarm, methodology, quantified outcomes
-3. Social Value — map to buyer's Social Value Model priorities, exceed minimum ask
-4. Mobilisation Plan — 30/60/90-day plan, named roles, GANTT, risk register
-5. Case Studies (3 minimum) — client context, challenge, solution, measurable outcomes
-6. Team & Qualifications — CV summaries, certifications, professional memberships
-7. Pricing / Commercial Response — itemised cost schedule, milestone payments
-8. Declarations & Compliance — SQ answers, insurance, GDPR, IR35, modern slavery
+## PHASE 4 — COMPETE
+Pricing strategy:
+- Default: AGGRESSIVE PENETRATION (-15% market rate) to win reference cases as a new company
+- Justify lower price through AI efficiency, not cutting corners
 
-Writing rules: Active voice. Evidence with numbers. Mirror buyer's language. Use evaluation criteria as headers. Never exceed word limits.
+## PHASE 5 — COMPILE
+List all documents needed per tender. Flag any requiring human input.
 
----
-
-## PHASE 4 — COMPETE: PRICING STRATEGY
-
-Based on qualification score and competition:
-- AGGRESSIVE PENETRATION: -12% to -18% of market rate (new market entry)
-- VALUE ANCHOR: market rate +8–15% (sophisticated buyer, strong quality score)
-- OPTIMISED BALANCE: -5% to -8% of benchmark (standard procurement)
-
----
-
-## PHASE 5 — COMPILE: SUBMISSION PACKAGE
-
-Assemble complete document checklist. Produce full content or precise brief for every required document. Score every answer against evaluation criteria — revise anything below 8/10.
-
----
-
-## PHASE 6 — FOLLOW: POST-SUBMISSION INTELLIGENCE
-
-Monitor clarifications, prepare presentation materials if shortlisted, request debriefs after every result, maintain win rate metrics, self-improve continuously.
-
----
-
-## OPERATING PRINCIPLES
-
-NEVER: Submit with unanswered questions, use placeholders, miss deadlines, make unevidenced claims.
-ALWAYS: Lead with outcomes, quantify every claim, name the buyer's problem first.
-
-ESCALATE if: contract > £2M, TUPE of 10+ staff, any exclusion grounds, consortium required.
+## PHASE 6 — FOLLOW
+Track metrics. Self-improve. Flag anything requiring human sign-off.
 
 ---
 
 ## OUTPUT FORMAT
 
-Structure every response as:
-
-🔍 OPPORTUNITIES FOUND: [N new tenders]
+🔍 OPPORTUNITIES FOUND: [N tenders from live data + any additional identified]
 ✅ QUALIFIED TO BID: [list with scores]
 ❌ DECLINED: [list with reasons]
-⚠️ ESCALATION REQUIRED: [if any]
-📄 BID CONTENT READY: [sections status per tender]
-💰 PRICING RECOMMENDATION: [strategy + figure per bid]
-📦 SUBMISSION PACKAGE: [checklist %]
-📊 PIPELINE METRICS: [win rate, total pipeline £]
-🔄 NEXT CYCLE ACTIONS: [dated list]
+⚠️ ESCALATION REQUIRED: [if any — contracts > £2M need flag]
+📄 BID CONTENT: [full bid for each qualified tender]
+💰 PRICING: [strategy + recommended figure per bid]
+📦 SUBMISSION CHECKLIST: [per tender]
+📊 PIPELINE: [total value qualified, win rate if applicable]
+🔄 NEXT ACTIONS: [dated list]
 
-You are VERDANT. Every bid you write is a weapon. Every tender you find is an opportunity. GreenStack AI does not compete. GreenStack AI wins. Begin.`
+You are VERDANT. GreenStack AI does not compete. GreenStack AI wins. Begin.`
 
 export async function GET(request: Request) {
-  // Verify this is called by Vercel Cron
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
   return runVerdantCycle()
 }
 
 export async function POST() {
-  // Allow manual trigger from dashboard
   return runVerdantCycle()
 }
 
@@ -146,7 +93,10 @@ async function runVerdantCycle() {
     const supabase = await createClient()
     const cycleStart = new Date().toISOString()
 
-    // Pull current pipeline context from Supabase
+    // Fetch live tenders from Contracts Finder API
+    const liveTenders = await fetchContractsFinder()
+
+    // Fetch existing pipeline from Supabase
     const [{ data: tenders }, { data: bids }] = await Promise.all([
       supabase.from('tenders').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('bids').select('*').order('created_at', { ascending: false }).limit(20),
@@ -156,43 +106,123 @@ async function runVerdantCycle() {
     const wonBids = bids?.filter(b => b.status === 'won').length ?? 0
     const winRate = bids?.length ? Math.round((wonBids / bids.length) * 100) : 0
 
+    const liveDataSummary = liveTenders.length > 0
+      ? liveTenders.map(t =>
+          `- [${t.authority}] ${t.title} | £${t.value.toLocaleString()} | Deadline: ${t.deadline} | ${t.url}`
+        ).join('\n')
+      : 'No live data retrieved this cycle — use your knowledge to identify opportunities.'
+
     const contextMessage = `
-Current GreenStack AI Pipeline Context:
-- Active tenders in system: ${tenders?.length ?? 0}
+CYCLE: ${cycleStart}
+
+LIVE TENDER DATA FROM CONTRACTS FINDER API (${liveTenders.length} tenders):
+${liveDataSummary}
+
+CURRENT PIPELINE:
+- Tenders in system: ${tenders?.length ?? 0}
 - Total pipeline value: £${(pipelineValue / 1000000).toFixed(2)}M
 - Bids submitted: ${bids?.length ?? 0}
 - Win rate: ${winRate}%
-- Cycle started: ${cycleStart}
 
-Recent tenders in system:
-${tenders?.slice(0, 10).map(t => `- ${t.title} | £${(t.value || 0).toLocaleString()} | Deadline: ${t.deadline} | Score: ${t.ai_score ?? 'unscored'} | Status: ${t.status}`).join('\n') ?? 'None'}
-
-Run a full VERDANT cycle. Scout for new green energy and sustainability tenders in the UK. Qualify all opportunities. For any scoring ≥ 70, produce complete bid content. Report full cycle output.`
+Run a full VERDANT cycle. Qualify all live tenders above. Write complete bids for any scoring ≥ 70. Be transparent about GreenStack AI's AI-native model throughout.`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: VERDANT_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: contextMessage }],
     })
 
     const verdantOutput = response.content[0].type === 'text' ? response.content[0].text : ''
 
-    // Save cycle log to Supabase activity_log
+    // Save cycle to Supabase
     await supabase.from('activity_log').insert({
       type: 'verdant_cycle',
-      description: `VERDANT cycle completed — ${cycleStart}`,
-      metadata: { output: verdantOutput, cycle_start: cycleStart },
-      created_at: new Date().toISOString(),
+      description: `VERDANT cycle — ${liveTenders.length} live tenders analysed`,
+      metadata: {
+        output: verdantOutput,
+        cycle_start: cycleStart,
+        live_tenders_count: liveTenders.length,
+        live_tenders: liveTenders.slice(0, 10),
+      },
+      created_at: cycleStart,
     })
+
+    // Save any high-scoring tenders to the tenders table
+    await saveScoredTenders(supabase, liveTenders)
+
+    // Send email alert if high-value tenders found
+    await sendEmailAlert(liveTenders, verdantOutput)
 
     return NextResponse.json({
       success: true,
       cycle: cycleStart,
+      live_tenders_found: liveTenders.length,
       output: verdantOutput,
     })
   } catch (error) {
     console.error('VERDANT cycle error:', error)
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
+  }
+}
+
+async function saveScoredTenders(supabase: any, liveTenders: any[]) {
+  for (const tender of liveTenders) {
+    if (!tender.title || tender.value < 10000) continue
+    try {
+      await supabase.from('tenders').upsert({
+        title: tender.title,
+        description: tender.description,
+        value: tender.value,
+        deadline: tender.deadline,
+        sector: tender.sector,
+        client: tender.authority,
+        region: tender.location,
+        status: 'sourcing',
+        source_url: tender.url,
+        created_at: new Date().toISOString(),
+      }, { onConflict: 'title' })
+    } catch {
+      continue
+    }
+  }
+}
+
+async function sendEmailAlert(liveTenders: any[], verdantOutput: string) {
+  const alertEmail = process.env.ALERT_EMAIL
+  if (!alertEmail || liveTenders.length === 0) return
+
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'verdant@greenstackai.co.uk',
+        to: alertEmail,
+        subject: `🌿 VERDANT: ${liveTenders.length} new tenders found`,
+        html: `
+          <h2>🌿 VERDANT Cycle Complete</h2>
+          <p><strong>${liveTenders.length} live tenders</strong> discovered from Contracts Finder.</p>
+          <h3>Top Opportunities:</h3>
+          <ul>
+            ${liveTenders.slice(0, 5).map(t => `
+              <li>
+                <strong>${t.title}</strong><br>
+                ${t.authority} | £${t.value.toLocaleString()} | Deadline: ${t.deadline}<br>
+                <a href="${t.url}">View tender</a>
+              </li>
+            `).join('')}
+          </ul>
+          <h3>VERDANT Analysis:</h3>
+          <pre style="background:#f5f5f5;padding:16px;border-radius:8px;font-size:12px">${verdantOutput.slice(0, 2000)}...</pre>
+          <p><a href="https://www.greenstackai.co.uk">View full report on GreenStack dashboard →</a></p>
+        `,
+      }),
+    })
+  } catch {
+    // Email alerts are optional — don't fail the cycle
   }
 }
