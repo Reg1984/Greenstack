@@ -40,7 +40,14 @@ type Activity = {
   created_at: string
 }
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant"
+
+type VerdantLog = {
+  id: string
+  description: string
+  metadata: { output: string; cycle_start: string }
+  created_at: string
+}
 
 const NAV_ITEMS = [
   { id: "dashboard" as PageId, icon: "⬡", label: "Dashboard" },
@@ -50,6 +57,7 @@ const NAV_ITEMS = [
   { id: "audits" as PageId, icon: "◇", label: "Audits" },
   { id: "settings" as PageId, icon: "⚙", label: "Settings" },
   { id: "universe" as PageId, icon: "✦", label: "Universe", accent: true },
+  { id: "verdant" as PageId, icon: "🌿", label: "VERDANT", accent: true },
 ]
 
 const CHART_COLORS = ["#00ff87", "#60efff", "#ffd166", "#c084fc", "#ff6b6b", "#4ecdc4"]
@@ -72,6 +80,9 @@ export default function GreenStackApp() {
   const [loading, setLoading] = useState(true)
   const [autoBidRunning, setAutoBidRunning] = useState(false)
   const [autoBidResult, setAutoBidResult] = useState<any>(null)
+  const [verdantLogs, setVerdantLogs] = useState<VerdantLog[]>([])
+  const [verdantRunning, setVerdantRunning] = useState(false)
+  const [verdantExpanded, setVerdantExpanded] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [scoutRunning, setScoutRunning] = useState(false)
   const [scoutResult, setScoutResult] = useState<any>(null)
@@ -86,14 +97,16 @@ export default function GreenStackApp() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
       
-      const [tendersRes, bidsRes, activitiesRes] = await Promise.all([
+      const [tendersRes, bidsRes, activitiesRes, verdantRes] = await Promise.all([
         supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("bids").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(10),
+        supabase.from("activity_log").select("*").eq("type", "verdant_cycle").order("created_at", { ascending: false }).limit(20),
       ])
       if (tendersRes.data) setTenders(tendersRes.data)
       if (bidsRes.data) setBids(bidsRes.data)
       if (activitiesRes.data) setActivities(activitiesRes.data)
+      if (verdantRes.data) setVerdantLogs(verdantRes.data as VerdantLog[])
       setLoading(false)
     }
     loadData()
@@ -559,6 +572,101 @@ export default function GreenStackApp() {
                 <div className="p-4 bg-[#061208] rounded-lg"><div className="text-3xl font-bold text-emerald-400">{stats.avgScore}%</div><div className="text-emerald-500/60 text-sm">Avg Match Rate</div></div>
                 <div className="p-4 bg-[#061208] rounded-lg"><div className="text-3xl font-bold text-emerald-400">{stats.winRate}%</div><div className="text-emerald-500/60 text-sm">Win Rate</div></div>
               </div>
+            </div>
+          </div>
+        )
+
+      case "verdant":
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">🌿 VERDANT Agent</h2>
+                <p className="text-emerald-500/60 text-sm mt-1">Sovereign Tender Intelligence — running every hour, 24/7</p>
+              </div>
+              <button
+                onClick={async () => {
+                  setVerdantRunning(true)
+                  try {
+                    const res = await fetch('/api/verdant', { method: 'POST' })
+                    const data = await res.json()
+                    if (data.success) {
+                      setVerdantLogs(prev => [{
+                        id: Date.now().toString(),
+                        description: `VERDANT cycle completed — ${data.cycle}`,
+                        metadata: { output: data.output, cycle_start: data.cycle },
+                        created_at: new Date().toISOString(),
+                      }, ...prev])
+                    }
+                  } finally {
+                    setVerdantRunning(false)
+                  }
+                }}
+                disabled={verdantRunning}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2"
+              >
+                <span className={verdantRunning ? "animate-spin" : ""}>🌿</span>
+                {verdantRunning ? "Running cycle..." : "Run Now"}
+              </button>
+            </div>
+
+            {/* Status bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-400">{verdantLogs.length}</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Cycles Run</div>
+              </div>
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-400">24/7</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Operating Mode</div>
+              </div>
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-400">1hr</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Cron Interval</div>
+              </div>
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className={cn("text-2xl font-bold", verdantLogs.length > 0 ? "text-green-400" : "text-yellow-400")}>
+                  {verdantLogs.length > 0 ? "ACTIVE" : "PENDING"}
+                </div>
+                <div className="text-emerald-500/60 text-xs mt-1">Status</div>
+              </div>
+            </div>
+
+            {/* Cycle logs */}
+            <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-4">Cycle History</h3>
+              {verdantLogs.length === 0 ? (
+                <div className="text-center py-12 text-emerald-500/40">
+                  <div className="text-4xl mb-3">🌿</div>
+                  <div>No cycles run yet. Click "Run Now" to trigger VERDANT manually, or wait for the next hourly cron.</div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {verdantLogs.map((log) => (
+                    <div key={log.id} className="border border-emerald-900/30 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setVerdantExpanded(verdantExpanded === log.id ? null : log.id)}
+                        className="w-full flex items-center justify-between p-3 hover:bg-emerald-500/5 transition text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                          <span className="text-white text-sm font-medium">
+                            {new Date(log.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                        <span className="text-emerald-500/60 text-xs">{verdantExpanded === log.id ? "▲ hide" : "▼ expand"}</span>
+                      </button>
+                      {verdantExpanded === log.id && (
+                        <div className="p-4 bg-[#061208] border-t border-emerald-900/30">
+                          <pre className="text-emerald-300 text-xs whitespace-pre-wrap font-mono leading-relaxed">
+                            {log.metadata?.output ?? "No output recorded."}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )
