@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/protected",
-      "destination": "/protected"
+      "source": "/(.*)",
+      "destination": "/$1"
     }
   ]
 }
