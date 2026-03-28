@@ -27,15 +27,19 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // If Supabase redirected with a code (email confirmation, OAuth, magic link),
-  // exchange it for a session directly here in middleware
+  // If Supabase redirected with a code, exchange it for a session
   const code = request.nextUrl.searchParams.get('code')
   if (code) {
     await supabase.auth.exchangeCodeForSession(code)
     const url = request.nextUrl.clone()
     url.pathname = '/'
     url.search = ''
-    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
+    const redirectResponse = NextResponse.redirect(url)
+    // Copy session cookies from supabaseResponse into the redirect
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return redirectResponse
   }
 
   const { data: { user } } = await supabase.auth.getUser()
