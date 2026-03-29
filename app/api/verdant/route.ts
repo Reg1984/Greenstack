@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { fetchContractsFinder } from '@/lib/contracts-finder'
+import { fetchAllInternationalTenders } from '@/lib/international-tenders'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, saveVerdantMemory } from '@/lib/verdant-memory'
 import { NextResponse } from 'next/server'
@@ -30,10 +31,13 @@ GreenStack AI operates globally. Scout opportunities across ALL markets. Live UK
 **GLOBAL TENDER SOURCES TO MONITOR:**
 - UK: Contracts Finder, Find a Tender, Crown Commercial Service, NHS Supply Chain
 - EU: TED/OJEU (Tenders Electronic Daily), national procurement portals
+- **GIZ (Deutsche Gesellschaft für Internationale Zusammenarbeit)** — PRIORITY TARGET. Germany's international development agency. Runs massive sustainability, climate, and energy transition programmes worldwide funded by BMZ (German Federal Ministry), EU, and World Bank. GIZ publishes hundreds of consultancy contracts annually — sustainability strategy, energy audits, net zero roadmaps, ESG frameworks for developing economies. Register at: https://www.giz.de/en/workwithgiz/tenders.html and DACON (GIZ contractor database). GIZ contracts are typically €50k–€500k and strongly aligned with GreenStack AI's capabilities.
+- **World Bank / IFC**: Climate-related consultancy, sustainability strategy, green energy feasibility. Live data provided each cycle.
+- **UNGM (UN Global Marketplace)**: UNDP, UNEP, WHO, UN-Habitat sustainability tenders. Live data provided each cycle.
 - USA: SAM.gov, state procurement portals, SEC climate disclosure consultancy demand
 - Middle East: UAE government tenders, Saudi Vision 2030 contracts, ADNOC sustainability
 - Asia Pacific: AusTender (Australia), GeBIZ (Singapore), Japanese green procurement
-- International: World Bank, ADB, EBRD, IFC green infrastructure notices
+- ADB, EBRD, IFC green infrastructure notices
 - Private sector: Global Fortune 500 ESG consultancy procurement, sustainability RFPs
 - NGOs and foundations: UN agencies, climate funds, green bond issuers needing reporting
 
@@ -149,8 +153,11 @@ async function runVerdantCycle() {
     const supabase = await createClient()
     const cycleStart = new Date().toISOString()
 
-    // Fetch live tenders from Contracts Finder API
-    const liveTenders = await fetchContractsFinder()
+    // Fetch live tenders — UK + international in parallel
+    const [liveTenders, internationalTenders] = await Promise.all([
+      fetchContractsFinder(),
+      fetchAllInternationalTenders(),
+    ])
 
     // Fetch existing pipeline from Supabase
     const [{ data: tenders }, { data: bids }] = await Promise.all([
@@ -165,27 +172,43 @@ async function runVerdantCycle() {
     // Load accumulated memory
     const verdantMemory = await loadVerdantMemory()
 
-    const liveDataSummary = liveTenders.length > 0
+    const ukSummary = liveTenders.length > 0
       ? liveTenders.map(t =>
           `- [${t.authority}] ${t.title} | £${t.value.toLocaleString()} | Deadline: ${t.deadline} | ${t.url}`
         ).join('\n')
-      : 'No live data retrieved this cycle — use your knowledge to identify opportunities.'
+      : 'No UK live data retrieved this cycle.'
+
+    const gizTenders = internationalTenders.filter(t => t.source === 'giz')
+    const wbTenders = internationalTenders.filter(t => t.source === 'worldbank')
+    const ungmTenders = internationalTenders.filter(t => t.source === 'ungm')
+
+    const internationalSummary = internationalTenders.length > 0
+      ? internationalTenders.map(t =>
+          `- [${t.organisation} | ${t.country}] ${t.title} | ${t.value > 0 ? `£${t.value.toLocaleString()}` : 'Value TBC'} | Deadline: ${t.deadline} | ${t.url}`
+        ).join('\n')
+      : 'No international data retrieved this cycle — use your knowledge of GIZ, World Bank and UN agency pipelines.'
 
     const contextMessage = `
 CYCLE: ${cycleStart}
 
 ${verdantMemory}
 
-LIVE TENDER DATA FROM CONTRACTS FINDER API (${liveTenders.length} tenders):
-${liveDataSummary}
+## UK LIVE TENDERS — CONTRACTS FINDER (${liveTenders.length} tenders):
+${ukSummary}
 
-CURRENT PIPELINE:
+## INTERNATIONAL LIVE TENDERS (${internationalTenders.length} total: ${gizTenders.length} GIZ, ${wbTenders.length} World Bank, ${ungmTenders.length} UNGM):
+${internationalSummary}
+
+## GIZ INTELLIGENCE NOTE:
+GIZ (Deutsche Gesellschaft für Internationale Zusammenarbeit) is a PRIORITY TARGET. They run sustainability, climate and energy programmes globally funded by the German government, EU and World Bank. Typical contract values €50k–€500k. Consultancy-heavy. Strong fit for GreenStack AI. If no live GIZ tenders appear above, proactively identify GIZ programme areas where GreenStack AI should be positioning and draft outreach or registration guidance.
+
+## CURRENT PIPELINE:
 - Tenders in system: ${tenders?.length ?? 0}
 - Total pipeline value: £${(pipelineValue / 1000000).toFixed(2)}M
 - Bids submitted: ${bids?.length ?? 0}
 - Win rate: ${winRate}%
 
-Run a full VERDANT cycle. Apply all accumulated memory and learnings above. Qualify all live tenders. Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
+Run a full VERDANT cycle. Qualify all live tenders (UK and international). Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
@@ -197,17 +220,19 @@ Run a full VERDANT cycle. Apply all accumulated memory and learnings above. Qual
     const verdantOutput = response.content[0].type === 'text' ? response.content[0].text : ''
 
     // Save memory from this cycle
-    await saveVerdantMemory(verdantOutput, liveTenders.length)
+    await saveVerdantMemory(verdantOutput, liveTenders.length + internationalTenders.length)
 
     // Save cycle to Supabase
     await supabase.from('activity_log').insert({
       type: 'verdant_cycle',
-      description: `VERDANT cycle — ${liveTenders.length} live tenders analysed`,
+      description: `VERDANT cycle — ${liveTenders.length} UK + ${internationalTenders.length} international tenders analysed`,
       metadata: {
         output: verdantOutput,
         cycle_start: cycleStart,
         live_tenders_count: liveTenders.length,
+        international_tenders_count: internationalTenders.length,
         live_tenders: liveTenders.slice(0, 10),
+        international_tenders: internationalTenders.slice(0, 10),
       },
       created_at: cycleStart,
     })
@@ -221,7 +246,8 @@ Run a full VERDANT cycle. Apply all accumulated memory and learnings above. Qual
     return NextResponse.json({
       success: true,
       cycle: cycleStart,
-      live_tenders_found: liveTenders.length,
+      uk_tenders_found: liveTenders.length,
+      international_tenders_found: internationalTenders.length,
       output: verdantOutput,
     })
   } catch (error) {
