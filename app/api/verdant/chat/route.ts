@@ -24,18 +24,44 @@ async function browseUrl(url: string): Promise<string> {
   }
 }
 
-// Search the web via Jina AI search (free)
+// Search the web via Exa (better semantic search for AI agents, free endpoint)
+// Falls back to Jina search if Exa is unavailable
 async function searchWeb(query: string): Promise<string> {
+  // Try Exa first — built for AI agents, better results
+  const exaKey = process.env.EXA_API_KEY
+  if (exaKey) {
+    try {
+      const res = await fetch('https://api.exa.ai/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': exaKey,
+        },
+        body: JSON.stringify({
+          query,
+          numResults: 8,
+          useAutoprompt: true,
+          type: 'neural',
+          contents: { text: { maxCharacters: 800 } },
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const results = data?.results ?? []
+        return results.map((r: any) =>
+          `## ${r.title}\n${r.url}\n${r.text ?? ''}`
+        ).join('\n\n').slice(0, 6000)
+      }
+    } catch { /* fall through to Jina */ }
+  }
+
+  // Fallback: Jina search (no API key needed)
   try {
     const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-      headers: {
-        Accept: 'text/plain',
-        'X-Return-Format': 'markdown',
-      },
+      headers: { Accept: 'text/plain', 'X-Return-Format': 'markdown' },
     })
     if (!res.ok) return `Search failed for "${query}" — status ${res.status}`
-    const text = await res.text()
-    return text.slice(0, 6000)
+    return (await res.text()).slice(0, 6000)
   } catch (err) {
     return `Search error: ${String(err)}`
   }
