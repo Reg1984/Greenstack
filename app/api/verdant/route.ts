@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { fetchContractsFinder } from '@/lib/contracts-finder'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
+import { loadVerdantMemory, saveVerdantMemory } from '@/lib/verdant-memory'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -149,6 +150,9 @@ async function runVerdantCycle() {
     const wonBids = bids?.filter(b => b.status === 'won').length ?? 0
     const winRate = bids?.length ? Math.round((wonBids / bids.length) * 100) : 0
 
+    // Load accumulated memory
+    const verdantMemory = await loadVerdantMemory()
+
     const liveDataSummary = liveTenders.length > 0
       ? liveTenders.map(t =>
           `- [${t.authority}] ${t.title} | £${t.value.toLocaleString()} | Deadline: ${t.deadline} | ${t.url}`
@@ -157,6 +161,8 @@ async function runVerdantCycle() {
 
     const contextMessage = `
 CYCLE: ${cycleStart}
+
+${verdantMemory}
 
 LIVE TENDER DATA FROM CONTRACTS FINDER API (${liveTenders.length} tenders):
 ${liveDataSummary}
@@ -167,7 +173,7 @@ CURRENT PIPELINE:
 - Bids submitted: ${bids?.length ?? 0}
 - Win rate: ${winRate}%
 
-Run a full VERDANT cycle. Qualify all live tenders above. Write complete bids for any scoring ≥ 70. Be transparent about GreenStack AI's AI-native model throughout.`
+Run a full VERDANT cycle. Apply all accumulated memory and learnings above. Qualify all live tenders. Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
@@ -177,6 +183,9 @@ Run a full VERDANT cycle. Qualify all live tenders above. Write complete bids fo
     })
 
     const verdantOutput = response.content[0].type === 'text' ? response.content[0].text : ''
+
+    // Save memory from this cycle
+    await saveVerdantMemory(verdantOutput, liveTenders.length)
 
     // Save cycle to Supabase
     await supabase.from('activity_log').insert({
