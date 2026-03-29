@@ -88,6 +88,7 @@ export default function GreenStackApp() {
   const [verdantChat, setVerdantChat] = useState<{role: string, content: string}[]>([])
   const [verdantInput, setVerdantInput] = useState('')
   const [verdantChatLoading, setVerdantChatLoading] = useState(false)
+  const [verdantBrowsing, setVerdantBrowsing] = useState<string | null>(null)
   const [verdantBuildMode, setVerdantBuildMode] = useState(false)
   const [pendingBuildPlan, setPendingBuildPlan] = useState<any>(null)
   const [buildApplying, setBuildApplying] = useState(false)
@@ -740,11 +741,18 @@ export default function GreenStackApp() {
                 {verdantChatLoading && (
                   <div className="bg-[#061208] rounded-lg p-3 mr-8">
                     <div className="text-xs mb-1 opacity-60">🌿 VERDANT</div>
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}} />
-                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}} />
-                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}} />
-                    </div>
+                    {verdantBrowsing ? (
+                      <div className="text-xs text-cyan-400 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shrink-0" />
+                        <span className="truncate">Browsing: {verdantBrowsing}</span>
+                      </div>
+                    ) : (
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}} />
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}} />
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -763,6 +771,7 @@ export default function GreenStackApp() {
                       setVerdantChat(newMessages)
                       setVerdantChatLoading(true)
                       setPendingBuildPlan(null)
+                      setVerdantBrowsing(null)
                       try {
                         const endpoint = verdantBuildMode ? '/api/verdant/build' : '/api/verdant/chat'
                         const res = await fetch(endpoint, {
@@ -771,10 +780,14 @@ export default function GreenStackApp() {
                           body: JSON.stringify({ messages: newMessages }),
                         })
                         const data = await res.json()
-                        setVerdantChat([...newMessages, { role: 'assistant', content: data.reply }])
+                        const toolNote = data.toolsUsed?.length
+                          ? `\n\n🌐 *Browsed ${data.toolsUsed.length} source${data.toolsUsed.length > 1 ? 's' : ''}: ${data.toolsUsed.map((t: any) => t.input).join(', ')}*`
+                          : ''
+                        setVerdantChat([...newMessages, { role: 'assistant', content: data.reply + toolNote }])
                         if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
                       } finally {
                         setVerdantChatLoading(false)
+                        setVerdantBrowsing(null)
                       }
                     }
                   }}
