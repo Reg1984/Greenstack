@@ -581,11 +581,11 @@ export default function GreenStackApp() {
 
       case "verdant":
         return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 pb-24 md:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">🌿 VERDANT Agent</h2>
-                <p className="text-emerald-500/60 text-sm mt-1">Sovereign Tender Intelligence — running every hour, 24/7</p>
+                <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">🌿 VERDANT Agent</h2>
+                <p className="text-emerald-500/60 text-xs md:text-sm mt-1">Sovereign Tender Intelligence — running every hour, 24/7</p>
               </div>
               <button
                 onClick={async () => {
@@ -614,7 +614,7 @@ export default function GreenStackApp() {
             </div>
 
             {/* Status bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-emerald-400">{verdantLogs.length}</div>
                 <div className="text-emerald-500/60 text-xs mt-1">Cycles Run</div>
@@ -664,7 +664,7 @@ export default function GreenStackApp() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 fixed bottom-0 left-0 right-0 md:static bg-[#0a1a0f] md:bg-transparent p-3 md:p-0 border-t border-emerald-900/30 md:border-0 z-40">
                 <input
                   type="text"
                   value={verdantInput}
