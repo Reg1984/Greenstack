@@ -87,6 +87,9 @@ export default function GreenStackApp() {
   const [verdantChat, setVerdantChat] = useState<{role: string, content: string}[]>([])
   const [verdantInput, setVerdantInput] = useState('')
   const [verdantChatLoading, setVerdantChatLoading] = useState(false)
+  const [verdantBuildMode, setVerdantBuildMode] = useState(false)
+  const [pendingBuildPlan, setPendingBuildPlan] = useState<any>(null)
+  const [buildApplying, setBuildApplying] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [scoutRunning, setScoutRunning] = useState(false)
   const [scoutResult, setScoutResult] = useState<any>(null)
@@ -638,10 +641,29 @@ export default function GreenStackApp() {
 
             {/* Chat with VERDANT */}
             <div className="bg-[#0a1a0f] border border-emerald-500/30 rounded-xl p-4">
-              <h3 className="text-emerald-400 font-semibold mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Chat with VERDANT
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-emerald-400 font-semibold flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Chat with VERDANT
+                </h3>
+                <button
+                  onClick={() => { setVerdantBuildMode(!verdantBuildMode); setPendingBuildPlan(null) }}
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-medium transition",
+                    verdantBuildMode
+                      ? "bg-violet-500/20 border-violet-500/50 text-violet-300"
+                      : "bg-emerald-500/10 border-emerald-900/50 text-emerald-500/60 hover:text-emerald-400"
+                  )}
+                >
+                  <span>{verdantBuildMode ? '🔧' : '🔧'}</span>
+                  {verdantBuildMode ? 'Build Mode ON' : 'Build Mode'}
+                </button>
+              </div>
+              {verdantBuildMode && (
+                <div className="mb-3 text-xs text-violet-400/80 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
+                  Build Mode active — VERDANT can propose and apply changes to the GreenStack platform. Review all proposals before applying.
+                </div>
+              )}
               <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
                 {verdantChat.length === 0 && (
                   <div className="text-emerald-500/40 text-sm text-center py-6">
@@ -650,10 +672,54 @@ export default function GreenStackApp() {
                 )}
                 {verdantChat.map((msg, i) => (
                   <div key={i} className={cn("rounded-lg p-3 text-sm", msg.role === 'user' ? "bg-emerald-500/10 text-white ml-8" : "bg-[#061208] text-emerald-300 mr-8")}>
-                    <div className="text-xs mb-1 opacity-60">{msg.role === 'user' ? 'You' : '🌿 VERDANT'}</div>
-                    <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
+                    <div className="text-xs mb-1 opacity-60">{msg.role === 'user' ? 'You' : verdantBuildMode ? '🔧 VERDANT (Build)' : '🌿 VERDANT'}</div>
+                    <pre className="whitespace-pre-wrap font-sans">{msg.content.replace(/```buildplan[\s\S]*?```/g, '[Build plan attached below]')}</pre>
                   </div>
                 ))}
+                {pendingBuildPlan && (
+                  <div className="bg-violet-900/20 border border-violet-500/30 rounded-lg p-3 text-sm mr-8">
+                    <div className="text-xs mb-2 text-violet-400 font-semibold">🔧 VERDANT Build Proposal — {pendingBuildPlan.description}</div>
+                    <div className="space-y-1 mb-3">
+                      {pendingBuildPlan.changes?.map((c: any, i: number) => (
+                        <div key={i} className="text-xs bg-[#0d0820] rounded px-2 py-1 text-violet-300 font-mono">
+                          {c.operation === 'create' ? '+ CREATE' : '~ EDIT'} {c.file}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => {
+                          setBuildApplying(true)
+                          try {
+                            const res = await fetch('/api/verdant/build', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ plan: pendingBuildPlan }),
+                            })
+                            const data = await res.json()
+                            setPendingBuildPlan(null)
+                            const resultMsg = data.success
+                              ? `✅ Build applied successfully! ${pendingBuildPlan.changes.length} file(s) updated. Redeploy to see changes.`
+                              : `⚠️ Some changes failed: ${data.results?.filter((r: any) => !r.success).map((r: any) => `${r.file}: ${r.error}`).join(', ')}`
+                            setVerdantChat(prev => [...prev, { role: 'assistant', content: resultMsg }])
+                          } finally {
+                            setBuildApplying(false)
+                          }
+                        }}
+                        disabled={buildApplying}
+                        className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-semibold rounded transition"
+                      >
+                        {buildApplying ? 'Applying...' : '✓ Apply Changes'}
+                      </button>
+                      <button
+                        onClick={() => setPendingBuildPlan(null)}
+                        className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-semibold rounded transition"
+                      >
+                        ✗ Discard
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {verdantChatLoading && (
                   <div className="bg-[#061208] rounded-lg p-3 mr-8">
                     <div className="text-xs mb-1 opacity-60">🌿 VERDANT</div>
@@ -679,14 +745,17 @@ export default function GreenStackApp() {
                       const newMessages = [...verdantChat, { role: 'user', content: userMsg }]
                       setVerdantChat(newMessages)
                       setVerdantChatLoading(true)
+                      setPendingBuildPlan(null)
                       try {
-                        const res = await fetch('/api/verdant/chat', {
+                        const endpoint = verdantBuildMode ? '/api/verdant/build' : '/api/verdant/chat'
+                        const res = await fetch(endpoint, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ messages: newMessages }),
                         })
                         const data = await res.json()
                         setVerdantChat([...newMessages, { role: 'assistant', content: data.reply }])
+                        if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
                       } finally {
                         setVerdantChatLoading(false)
                       }
@@ -703,14 +772,17 @@ export default function GreenStackApp() {
                     const newMessages = [...verdantChat, { role: 'user', content: userMsg }]
                     setVerdantChat(newMessages)
                     setVerdantChatLoading(true)
+                    setPendingBuildPlan(null)
                     try {
-                      const res = await fetch('/api/verdant/chat', {
+                      const endpoint = verdantBuildMode ? '/api/verdant/build' : '/api/verdant/chat'
+                      const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ messages: newMessages }),
                       })
                       const data = await res.json()
                       setVerdantChat([...newMessages, { role: 'assistant', content: data.reply }])
+                      if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
                     } finally {
                       setVerdantChatLoading(false)
                     }
