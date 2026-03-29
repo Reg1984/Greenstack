@@ -90,6 +90,11 @@ export default function GreenStackApp() {
   const [verdantChatLoading, setVerdantChatLoading] = useState(false)
   const [verdantBrowsing, setVerdantBrowsing] = useState<string | null>(null)
   const [verdantBuildMode, setVerdantBuildMode] = useState(false)
+  const [pendingBrowserSession, setPendingBrowserSession] = useState<any>(null)
+  const [browserSubmitting, setBrowserSubmitting] = useState(false)
+  const [browserFormUrl, setBrowserFormUrl] = useState('')
+  const [browserFormPurpose, setBrowserFormPurpose] = useState('')
+  const [browserFilling, setBrowserFilling] = useState(false)
   const [pendingBuildPlan, setPendingBuildPlan] = useState<any>(null)
   const [buildApplying, setBuildApplying] = useState(false)
   const [invoices, setInvoices] = useState<any[]>([])
@@ -823,6 +828,142 @@ export default function GreenStackApp() {
                   Send
                 </button>
               </div>
+            </div>
+
+            {/* Browser Agent — form filling */}
+            <div className="bg-[#0a1a0f] border border-cyan-500/20 rounded-xl p-4">
+              <h3 className="text-cyan-400 font-semibold mb-1 flex items-center gap-2">
+                <span>🤖 Browser Agent</span>
+                <span className="text-xs font-normal text-cyan-500/50">— VERDANT fills forms, you approve before submit</span>
+              </h3>
+              <p className="text-emerald-500/50 text-xs mb-3">Paste a registration or application form URL. VERDANT fills it using GreenStack AI's profile, shows you a screenshot, and waits for your approval.</p>
+
+              {!pendingBrowserSession ? (
+                <div className="space-y-2">
+                  <input
+                    value={browserFormUrl}
+                    onChange={e => setBrowserFormUrl(e.target.value)}
+                    placeholder="https://www.giz.de/... or any form URL"
+                    className="w-full bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-cyan-500/50"
+                  />
+                  <input
+                    value={browserFormPurpose}
+                    onChange={e => setBrowserFormPurpose(e.target.value)}
+                    placeholder="What is this form? e.g. DACON supplier registration, G-Cloud application"
+                    className="w-full bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-cyan-500/50"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!browserFormUrl.trim() || browserFilling) return
+                      setBrowserFilling(true)
+                      try {
+                        const res = await fetch('/api/verdant/browser', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ url: browserFormUrl.trim(), purpose: browserFormPurpose.trim() }),
+                        })
+                        const data = await res.json()
+                        if (data.error) {
+                          alert('Browser agent error: ' + data.error)
+                        } else {
+                          setPendingBrowserSession(data)
+                        }
+                      } finally {
+                        setBrowserFilling(false)
+                      }
+                    }}
+                    disabled={browserFilling || !browserFormUrl.trim()}
+                    className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+                  >
+                    {browserFilling ? '🤖 VERDANT is filling the form...' : '🤖 Fill Form with VERDANT'}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="text-sm text-white font-medium">{pendingBrowserSession.purpose}</div>
+
+                  {/* What was filled */}
+                  <div className="bg-[#061208] rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto">
+                    <div className="text-xs text-cyan-400 font-semibold mb-2">Fields filled:</div>
+                    {Object.entries(pendingBrowserSession.form_data ?? {}).map(([k, v]: any) => (
+                      <div key={k} className="flex gap-2 text-xs">
+                        <span className="text-emerald-500/60 shrink-0 w-40 truncate">{k}:</span>
+                        <span className="text-white truncate">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Notes / warnings */}
+                  {pendingBrowserSession.notes && (
+                    <div className="text-xs text-yellow-400 bg-yellow-500/10 rounded p-2">{pendingBrowserSession.notes}</div>
+                  )}
+                  {pendingBrowserSession.needs_human?.length > 0 && (
+                    <div className="text-xs text-red-400 bg-red-500/10 rounded p-2">
+                      <strong>Needs your input before submitting:</strong> {pendingBrowserSession.needs_human.join(', ')}
+                    </div>
+                  )}
+
+                  {/* Screenshot */}
+                  {pendingBrowserSession.screenshot_base64 && (
+                    <div>
+                      <div className="text-xs text-emerald-500/60 mb-1">Form as filled — review before approving:</div>
+                      <img
+                        src={`data:image/png;base64,${pendingBrowserSession.screenshot_base64}`}
+                        alt="Form screenshot"
+                        className="w-full rounded-lg border border-emerald-900/30 max-h-96 object-top object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        setBrowserSubmitting(true)
+                        try {
+                          const res = await fetch('/api/verdant/browser', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ session_id: pendingBrowserSession.session_id }),
+                          })
+                          const data = await res.json()
+                          if (data.success) {
+                            setPendingBrowserSession(null)
+                            setBrowserFormUrl('')
+                            setBrowserFormPurpose('')
+                            setVerdantChat(prev => [...prev, {
+                              role: 'assistant',
+                              content: `✅ Form submitted successfully. Screenshot confirmation saved to Browserbase session log.`,
+                            }])
+                          } else {
+                            alert('Submission failed: ' + data.message)
+                          }
+                        } finally {
+                          setBrowserSubmitting(false)
+                        }
+                      }}
+                      disabled={browserSubmitting || (pendingBrowserSession.needs_human?.length > 0)}
+                      className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+                    >
+                      {browserSubmitting ? 'Submitting...' : '✓ Approve & Submit'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (pendingBrowserSession.session_id) {
+                          await fetch('/api/verdant/browser', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ session_id: pendingBrowserSession.session_id }),
+                          })
+                        }
+                        setPendingBrowserSession(null)
+                      }}
+                      className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-semibold rounded-lg transition"
+                    >
+                      ✗ Reject
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Cycle logs */}
