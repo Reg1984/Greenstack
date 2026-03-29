@@ -40,7 +40,7 @@ type Activity = {
   created_at: string
 }
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook" | "financials"
 
 type VerdantLog = {
   id: string
@@ -59,6 +59,7 @@ const NAV_ITEMS = [
   { id: "universe" as PageId, icon: "✦", label: "Universe", accent: true },
   { id: "verdant" as PageId, icon: "🌿", label: "VERDANT", accent: true },
   { id: "playbook" as PageId, icon: "📋", label: "Playbook", accent: true },
+  { id: "financials" as PageId, icon: "£", label: "Financials", accent: true },
 ]
 
 const CHART_COLORS = ["#00ff87", "#60efff", "#ffd166", "#c084fc", "#ff6b6b", "#4ecdc4"]
@@ -90,6 +91,13 @@ export default function GreenStackApp() {
   const [verdantBuildMode, setVerdantBuildMode] = useState(false)
   const [pendingBuildPlan, setPendingBuildPlan] = useState<any>(null)
   const [buildApplying, setBuildApplying] = useState(false)
+  const [invoices, setInvoices] = useState<any[]>([])
+  const [financialSummary, setFinancialSummary] = useState<any>({})
+  const [outreachEmails, setOutreachEmails] = useState<any[]>([])
+  const [invoicePrompt, setInvoicePrompt] = useState('')
+  const [invoiceCreating, setInvoiceCreating] = useState(false)
+  const [outreachForm, setOutreachForm] = useState({ org: '', email: '', name: '', context: '' })
+  const [outreachSending, setOutreachSending] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [scoutRunning, setScoutRunning] = useState(false)
   const [scoutResult, setScoutResult] = useState<any>(null)
@@ -104,16 +112,25 @@ export default function GreenStackApp() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
       
-      const [tendersRes, bidsRes, activitiesRes, verdantRes] = await Promise.all([
+      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes] = await Promise.all([
         supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("bids").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(10),
         supabase.from("activity_log").select("*").eq("type", "verdant_cycle").order("created_at", { ascending: false }).limit(20),
+        supabase.from("invoices").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("outreach_emails").select("*").order("created_at", { ascending: false }).limit(50),
       ])
       if (tendersRes.data) setTenders(tendersRes.data)
       if (bidsRes.data) setBids(bidsRes.data)
       if (activitiesRes.data) setActivities(activitiesRes.data)
       if (verdantRes.data) setVerdantLogs(verdantRes.data as VerdantLog[])
+      if (invoicesRes.data) {
+        setInvoices(invoicesRes.data)
+        const paid = invoicesRes.data.filter((i: any) => i.status === 'paid').reduce((s: number, i: any) => s + (i.total || 0), 0)
+        const outstanding = invoicesRes.data.filter((i: any) => ['sent','overdue'].includes(i.status)).reduce((s: number, i: any) => s + (i.total || 0), 0)
+        setFinancialSummary({ totalRevenue: paid, outstanding, invoiceCount: invoicesRes.data.length })
+      }
+      if (outreachRes.data) setOutreachEmails(outreachRes.data)
       setLoading(false)
     }
     loadData()
@@ -936,6 +953,192 @@ export default function GreenStackApp() {
                 Open VERDANT →
               </button>
             </div>
+          </div>
+        )
+
+      case "financials":
+        const statusColor = (s: string) => ({
+          paid: 'text-green-400 bg-green-500/10',
+          sent: 'text-yellow-400 bg-yellow-500/10',
+          overdue: 'text-red-400 bg-red-500/10',
+          draft: 'text-emerald-500/60 bg-emerald-500/5',
+          cancelled: 'text-gray-500 bg-gray-500/10',
+        }[s] ?? 'text-gray-400 bg-gray-500/10')
+
+        return (
+          <div className="space-y-6 pb-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">£ Financials</h2>
+              <p className="text-emerald-500/60 text-sm mt-1">Invoices, outreach and revenue — managed by VERDANT</p>
+            </div>
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-green-400">£{((financialSummary.totalRevenue ?? 0) / 1000).toFixed(1)}k</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Revenue Received</div>
+              </div>
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-400">£{((financialSummary.outstanding ?? 0) / 1000).toFixed(1)}k</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Outstanding</div>
+              </div>
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-400">{invoices.length}</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Total Invoices</div>
+              </div>
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-violet-400">{outreachEmails.filter(e => e.status === 'sent').length}</div>
+                <div className="text-emerald-500/60 text-xs mt-1">Emails Sent</div>
+              </div>
+            </div>
+
+            {/* Create Invoice */}
+            <div className="bg-[#0a1a0f] border border-emerald-500/20 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-3">📄 Create Invoice</h3>
+              <p className="text-emerald-500/60 text-xs mb-3">Describe the work in plain English — VERDANT will structure the invoice automatically.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={invoicePrompt}
+                  onChange={e => setInvoicePrompt(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter' && invoicePrompt.trim() && !invoiceCreating) {
+                      setInvoiceCreating(true)
+                      try {
+                        const res = await fetch('/api/verdant/invoice', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ description: invoicePrompt }),
+                        })
+                        const data = await res.json()
+                        if (data.invoice) { setInvoices(prev => [data.invoice, ...prev]); setInvoicePrompt('') }
+                      } finally { setInvoiceCreating(false) }
+                    }
+                  }}
+                  placeholder="e.g. Sustainability Intelligence Report for Barclays Bank, net zero roadmap, £35,000"
+                  className="flex-1 bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-emerald-500/50"
+                />
+                <button
+                  onClick={async () => {
+                    if (!invoicePrompt.trim() || invoiceCreating) return
+                    setInvoiceCreating(true)
+                    try {
+                      const res = await fetch('/api/verdant/invoice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ description: invoicePrompt }),
+                      })
+                      const data = await res.json()
+                      if (data.invoice) { setInvoices(prev => [data.invoice, ...prev]); setInvoicePrompt('') }
+                    } finally { setInvoiceCreating(false) }
+                  }}
+                  disabled={invoiceCreating || !invoicePrompt.trim()}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shrink-0"
+                >
+                  {invoiceCreating ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </div>
+
+            {/* Invoices list */}
+            <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-4">Invoices</h3>
+              {invoices.length === 0 ? (
+                <div className="text-center py-8 text-emerald-500/40 text-sm">No invoices yet. Create your first invoice above.</div>
+              ) : (
+                <div className="space-y-2">
+                  {invoices.map(inv => (
+                    <div key={inv.id} className="flex items-center gap-3 p-3 bg-[#061208] rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">{inv.client_name}</div>
+                        <div className="text-emerald-500/60 text-xs">{inv.invoice_number} · Due {inv.due_date}</div>
+                      </div>
+                      <div className="text-white font-semibold text-sm shrink-0">£{inv.total?.toLocaleString()}</div>
+                      <span className={cn("text-xs px-2 py-0.5 rounded shrink-0 font-medium", statusColor(inv.status))}>{inv.status}</span>
+                      {inv.status === 'draft' && inv.client_email && (
+                        <button
+                          onClick={async () => {
+                            await fetch('/api/verdant/invoice', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: inv.id, status: 'sent' }),
+                            })
+                            setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, status: 'sent' } : i))
+                          }}
+                          className="text-xs px-2 py-0.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 rounded transition shrink-0"
+                        >
+                          Send
+                        </button>
+                      )}
+                      {inv.status === 'sent' && (
+                        <button
+                          onClick={async () => {
+                            await fetch('/api/verdant/invoice', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: inv.id, status: 'paid' }),
+                            })
+                            setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, status: 'paid' } : i))
+                          }}
+                          className="text-xs px-2 py-0.5 bg-green-600/20 hover:bg-green-600/40 text-green-400 rounded transition shrink-0"
+                        >
+                          Mark Paid
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Send Outreach */}
+            <div className="bg-[#0a1a0f] border border-violet-500/20 rounded-xl p-4">
+              <h3 className="text-violet-400 font-semibold mb-3">📧 Send Outreach Email</h3>
+              <p className="text-emerald-500/60 text-xs mb-3">VERDANT writes a personalised cold email and sends it instantly via Resend.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <input value={outreachForm.org} onChange={e => setOutreachForm(f => ({...f, org: e.target.value}))} placeholder="Organisation name" className="bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-emerald-500/50" />
+                <input value={outreachForm.email} onChange={e => setOutreachForm(f => ({...f, email: e.target.value}))} placeholder="Contact email" type="email" className="bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-emerald-500/50" />
+                <input value={outreachForm.name} onChange={e => setOutreachForm(f => ({...f, name: e.target.value}))} placeholder="Contact name (optional)" className="bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-emerald-500/50" />
+                <input value={outreachForm.context} onChange={e => setOutreachForm(f => ({...f, context: e.target.value}))} placeholder="Context / why them (optional)" className="bg-[#061208] border border-emerald-900/50 rounded-lg px-3 py-2 text-white text-sm placeholder-emerald-500/30 focus:outline-none focus:border-emerald-500/50" />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!outreachForm.org || !outreachForm.email || outreachSending) return
+                  setOutreachSending(true)
+                  try {
+                    const res = await fetch('/api/verdant/outreach', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ organisation: outreachForm.org, contact_email: outreachForm.email, contact_name: outreachForm.name, context: outreachForm.context }),
+                    })
+                    const data = await res.json()
+                    if (data.email) { setOutreachEmails(prev => [data.email, ...prev]); setOutreachForm({ org: '', email: '', name: '', context: '' }) }
+                  } finally { setOutreachSending(false) }
+                }}
+                disabled={outreachSending || !outreachForm.org || !outreachForm.email}
+                className="w-full py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+              >
+                {outreachSending ? 'Drafting & Sending...' : '🌿 VERDANT: Write & Send Email'}
+              </button>
+            </div>
+
+            {/* Outreach log */}
+            {outreachEmails.length > 0 && (
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+                <h3 className="text-emerald-400 font-semibold mb-4">Outreach Log</h3>
+                <div className="space-y-2">
+                  {outreachEmails.map(email => (
+                    <div key={email.id} className="flex items-center gap-3 p-3 bg-[#061208] rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">{email.organisation || email.to_email}</div>
+                        <div className="text-emerald-500/60 text-xs truncate">{email.subject}</div>
+                      </div>
+                      <span className={cn("text-xs px-2 py-0.5 rounded shrink-0 font-medium", statusColor(email.status))}>{email.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )
 
