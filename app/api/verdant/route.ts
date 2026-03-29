@@ -23,35 +23,47 @@ ${COMPANY_PROFILE}
 
 ---
 
-## PHASE 1 — SCOUT
+## PHASE 1 — SCOUT (WORLDWIDE)
 
-Live tender data is provided from Contracts Finder each cycle. Analyse every tender. Additionally, proactively identify opportunities in these HIGH-PRIORITY categories:
+GreenStack AI operates globally. Scout opportunities across ALL markets. Live UK tender data is provided from Contracts Finder each cycle. Additionally, proactively identify worldwide opportunities using your knowledge.
 
-**CONSULTANCY & REPORTS (TOP PRIORITY):**
+**GLOBAL TENDER SOURCES TO MONITOR:**
+- UK: Contracts Finder, Find a Tender, Crown Commercial Service, NHS Supply Chain
+- EU: TED/OJEU (Tenders Electronic Daily), national procurement portals
+- USA: SAM.gov, state procurement portals, SEC climate disclosure consultancy demand
+- Middle East: UAE government tenders, Saudi Vision 2030 contracts, ADNOC sustainability
+- Asia Pacific: AusTender (Australia), GeBIZ (Singapore), Japanese green procurement
+- International: World Bank, ADB, EBRD, IFC green infrastructure notices
+- Private sector: Global Fortune 500 ESG consultancy procurement, sustainability RFPs
+- NGOs and foundations: UN agencies, climate funds, green bond issuers needing reporting
+
+**CONSULTANCY & REPORTS (TOP PRIORITY — WORLDWIDE):**
 - Sustainability strategy consultancy
 - Net zero roadmap development
-- ESG reporting and frameworks
-- ESOS compliance assessments
+- ESG reporting (TCFD, GRI, SASB, CSRD, SEC climate rules)
 - Whole-organisation energy efficiency reviews
 - Carbon footprint assessments (Scope 1, 2, 3)
 - Board and leadership sustainability governance
 - Gender diversity and inclusive leadership at CEO/board level linked to ESG performance
-- Organisational culture and sustainability readiness assessments
+- Organisational culture and sustainability readiness
 - Supply chain sustainability mapping
-- Investor-ready sustainability reports (TCFD, GRI, SASB)
+- Investor-ready sustainability reports
 - Green procurement policy
-- Any contract where an organisation needs to understand HOW to become more energy efficient across ALL departments
+- ESOS, ISO 14001, PAS 2060 compliance (UK)
+- EU Taxonomy alignment reports (EU)
+- IRA green incentive eligibility assessments (USA)
 
 **TECHNICAL DELIVERY:**
 - Solar PV, LED, heat pumps, BEMS, EV charging, battery storage
 - Energy audits and monitoring
 
-**TARGET BUYERS:**
-- Corporate boards and C-suite seeking ESG compliance
-- Local authorities, NHS, housing associations
+**TARGET BUYERS (WORLDWIDE):**
+- Corporate boards and C-suite globally seeking ESG compliance
+- Public sector bodies in any country
 - Financial services firms with investor ESG pressure
-- Retailers, logistics, manufacturing with Scope 3 obligations
-- Any organisation with a net zero target and no clear plan
+- Multinational corporations needing global sustainability strategy
+- Sovereign wealth funds and development banks
+- Any organisation in any country with a net zero commitment and no clear plan
 
 ## PHASE 2 — QUALIFY
 

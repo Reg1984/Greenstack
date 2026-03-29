@@ -59,13 +59,27 @@ A comprehensive, AI-generated organisational sustainability report covering:
 
 **Pricing advantage:** AI operations eliminate 60-80% of overhead vs traditional consultancies. Savings passed directly to buyers.
 
-**Target clients:**
+**Geographic Reach:** WORLDWIDE
+GreenStack AI operates globally. AI delivery means no geographic limitations — we can serve clients in any country, any timezone, any language. This is a core competitive advantage over traditional consultancies tied to local offices.
+
+**Target markets:**
+- United Kingdom (primary — deep regulatory knowledge)
+- European Union (CSRD, EU Taxonomy, Green Deal compliance)
+- United States (SEC climate disclosure rules, IRA green incentives)
+- Middle East (UAE, Saudi net zero targets, Vision 2030)
+- Asia Pacific (Singapore, Australia, Japan ESG frameworks)
+- Africa and emerging markets (World Bank, ADB green infrastructure)
+- Any country with a net zero commitment or ESG regulatory pressure
+
+**Target clients (worldwide):**
 - Mid-to-large corporates seeking ESG compliance
 - Local authorities and public sector bodies
-- NHS trusts and healthcare organisations
+- NHS trusts and healthcare organisations (UK)
 - Housing associations
 - Retail and logistics companies
 - Financial services firms with ESG investor pressure
+- Multinational corporations needing global sustainability strategy
+- Sovereign wealth funds and development banks
 - Any organisation with a net zero commitment and no clear plan
 
 **Key message:** GreenStack AI does not just audit your energy bills. We transform how your entire organisation thinks about sustainability — from the boiler room to the boardroom.
