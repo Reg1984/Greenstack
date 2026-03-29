@@ -40,7 +40,7 @@ type Activity = {
   created_at: string
 }
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook"
 
 type VerdantLog = {
   id: string
@@ -58,6 +58,7 @@ const NAV_ITEMS = [
   { id: "settings" as PageId, icon: "⚙", label: "Settings" },
   { id: "universe" as PageId, icon: "✦", label: "Universe", accent: true },
   { id: "verdant" as PageId, icon: "🌿", label: "VERDANT", accent: true },
+  { id: "playbook" as PageId, icon: "📋", label: "Playbook", accent: true },
 ]
 
 const CHART_COLORS = ["#00ff87", "#60efff", "#ffd166", "#c084fc", "#ff6b6b", "#4ecdc4"]
@@ -757,6 +758,111 @@ export default function GreenStackApp() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )
+
+      case "playbook":
+        const foundations = [
+          { item: "Company Statement", status: "done", note: "AI-native, fast, cheap, brilliant" },
+          { item: "Value Proposition", status: "done", note: "60-80% cheaper, days not months" },
+          { item: "Methodology Document", status: "todo", note: "How GreenStack AI delivers work" },
+          { item: "AI Capability Showcase", status: "todo", note: "Replaces traditional team profiles" },
+          { item: "Demonstration Intelligence Reports", status: "urgent", note: "Pick 2-3 public companies, build full reports as proof" },
+          { item: "Pricing Framework", status: "todo", note: "Day rates, project rates, tiered pricing" },
+          { item: "Health & Safety Policy", status: "urgent", note: "Required in almost every bid" },
+          { item: "Equality & Diversity Policy", status: "urgent", note: "Required in almost every bid" },
+          { item: "Environmental Policy", status: "urgent", note: "Required in almost every bid" },
+          { item: "Data Protection Policy", status: "urgent", note: "Required in almost every bid" },
+          { item: "Professional Indemnity Insurance", status: "urgent", note: "Hard requirement in most tenders" },
+          { item: "Public Liability Insurance", status: "urgent", note: "Hard requirement in most tenders" },
+          { item: "G-Cloud Registration", status: "todo", note: "Fastest route to public sector revenue — no competitive tender needed" },
+        ]
+        const gaps = [
+          { gap: "No Case Studies", severity: "high", fix: "Build 2-3 demonstration GreenStack Intelligence Reports on public companies. Use as proof of capability. Offer free pilot to first clients." },
+          { gap: "No Accreditations", severity: "medium", fix: "Target tenders that don't mandate them. Be upfront and reframe. Consider a named accredited partner for high-value tenders." },
+          { gap: "New Company", severity: "medium", fix: "Filter out tenders with minimum turnover thresholds. Offer milestone payments and satisfaction guarantees. Target SME-friendly buyers." },
+        ]
+        const priorities = [
+          { rank: 1, action: "Build 2-3 demonstration Intelligence Reports", why: "Solves case study gap immediately — biggest single risk", color: "text-red-400", urgent: true },
+          { rank: 2, action: "Write core policy documents (H&S, Equality, Environmental, Data)", why: "Required in almost every bid — without these you can't submit", color: "text-red-400", urgent: true },
+          { rank: 3, action: "Confirm PI & Public Liability insurance", why: "Hard requirement — non-negotiable", color: "text-red-400", urgent: true },
+          { rank: 4, action: "Register on G-Cloud (Crown Commercial Service)", why: "Huge shortcut — public sector can award directly without tender", color: "text-yellow-400", urgent: false },
+          { rank: 5, action: "Set up Contracts Finder & FTS keyword alerts", why: "Pipeline visibility — never miss an opportunity", color: "text-yellow-400", urgent: false },
+          { rank: 6, action: "Identify 3 live tenders to qualify and bid NOW", why: "Start building pipeline and track record", color: "text-green-400", urgent: false },
+        ]
+        return (
+          <div className="space-y-6 pb-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">📋 Tender Winning Playbook</h2>
+              <p className="text-emerald-500/60 text-sm mt-1">Built by VERDANT — your end-to-end system for winning tenders</p>
+            </div>
+
+            {/* Priority Actions */}
+            <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-4">🔴 Immediate Priority List</h3>
+              <div className="space-y-3">
+                {priorities.map(p => (
+                  <div key={p.rank} className="flex items-start gap-3 p-3 bg-[#061208] rounded-lg">
+                    <div className={cn("text-lg font-bold w-6 shrink-0", p.color)}>#{p.rank}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-medium text-sm">{p.action}</div>
+                      <div className="text-emerald-500/60 text-xs mt-1">{p.why}</div>
+                    </div>
+                    {p.urgent && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded shrink-0">URGENT</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* G-Cloud callout */}
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-2">⭐ The Shortcut — G-Cloud Framework</h3>
+              <p className="text-white text-sm">If GreenStack AI gets listed on G-Cloud (Crown Commercial Service), public sector buyers can <strong>directly award contracts without a competitive tender</strong>. No case studies required in the same way. This could be your fastest route to first revenue.</p>
+              <a href="https://www.crowncommercial.gov.uk/suppliers/g-cloud" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-emerald-400 text-sm underline">Apply for G-Cloud →</a>
+            </div>
+
+            {/* Foundation Assets */}
+            <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-4">🏗️ Foundation Assets</h3>
+              <div className="space-y-2">
+                {foundations.map(f => (
+                  <div key={f.item} className="flex items-start gap-3 p-2 rounded-lg hover:bg-emerald-500/5 transition">
+                    <span className="text-lg shrink-0">
+                      {f.status === 'done' ? '✅' : f.status === 'urgent' ? '🔴' : '⬜'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white text-sm font-medium">{f.item}</div>
+                      <div className="text-emerald-500/60 text-xs">{f.note}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Gaps */}
+            <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-4">⚠️ Current Gaps & Fixes</h3>
+              <div className="space-y-3">
+                {gaps.map(g => (
+                  <div key={g.gap} className="p-3 bg-[#061208] rounded-lg border-l-2 border-yellow-500/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-yellow-400 font-semibold text-sm">{g.gap}</span>
+                      <span className={cn("text-xs px-2 py-0.5 rounded", g.severity === 'high' ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400")}>{g.severity}</span>
+                    </div>
+                    <p className="text-emerald-500/70 text-xs">{g.fix}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Ask VERDANT */}
+            <div className="bg-[#0a1a0f] border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-emerald-400 font-semibold mb-2">Ready to act on any of this?</p>
+              <p className="text-emerald-500/60 text-sm mb-3">Go to the VERDANT tab and ask it to build a demonstration report, write your policy documents, or find live tenders to bid on right now.</p>
+              <button onClick={() => setPage('verdant')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition">
+                Open VERDANT →
+              </button>
             </div>
           </div>
         )
