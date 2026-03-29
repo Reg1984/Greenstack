@@ -83,6 +83,9 @@ export default function GreenStackApp() {
   const [verdantLogs, setVerdantLogs] = useState<VerdantLog[]>([])
   const [verdantRunning, setVerdantRunning] = useState(false)
   const [verdantExpanded, setVerdantExpanded] = useState<string | null>(null)
+  const [verdantChat, setVerdantChat] = useState<{role: string, content: string}[]>([])
+  const [verdantInput, setVerdantInput] = useState('')
+  const [verdantChatLoading, setVerdantChatLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [scoutRunning, setScoutRunning] = useState(false)
   const [scoutResult, setScoutResult] = useState<any>(null)
@@ -629,6 +632,93 @@ export default function GreenStackApp() {
                   {verdantLogs.length > 0 ? "ACTIVE" : "PENDING"}
                 </div>
                 <div className="text-emerald-500/60 text-xs mt-1">Status</div>
+              </div>
+            </div>
+
+            {/* Chat with VERDANT */}
+            <div className="bg-[#0a1a0f] border border-emerald-500/30 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Chat with VERDANT
+              </h3>
+              <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
+                {verdantChat.length === 0 && (
+                  <div className="text-emerald-500/40 text-sm text-center py-6">
+                    Ask VERDANT anything — qualify a tender, write a bid, research a market, plan strategy.
+                  </div>
+                )}
+                {verdantChat.map((msg, i) => (
+                  <div key={i} className={cn("rounded-lg p-3 text-sm", msg.role === 'user' ? "bg-emerald-500/10 text-white ml-8" : "bg-[#061208] text-emerald-300 mr-8")}>
+                    <div className="text-xs mb-1 opacity-60">{msg.role === 'user' ? 'You' : '🌿 VERDANT'}</div>
+                    <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
+                  </div>
+                ))}
+                {verdantChatLoading && (
+                  <div className="bg-[#061208] rounded-lg p-3 mr-8">
+                    <div className="text-xs mb-1 opacity-60">🌿 VERDANT</div>
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}} />
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}} />
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}} />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={verdantInput}
+                  onChange={e => setVerdantInput(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      if (!verdantInput.trim() || verdantChatLoading) return
+                      const userMsg = verdantInput.trim()
+                      setVerdantInput('')
+                      const newMessages = [...verdantChat, { role: 'user', content: userMsg }]
+                      setVerdantChat(newMessages)
+                      setVerdantChatLoading(true)
+                      try {
+                        const res = await fetch('/api/verdant/chat', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ messages: newMessages }),
+                        })
+                        const data = await res.json()
+                        setVerdantChat([...newMessages, { role: 'assistant', content: data.reply }])
+                      } finally {
+                        setVerdantChatLoading(false)
+                      }
+                    }
+                  }}
+                  placeholder="Ask VERDANT... (press Enter to send)"
+                  className="flex-1 bg-[#061208] border border-emerald-900/50 rounded-lg px-4 py-2 text-white text-sm placeholder-emerald-500/40 focus:outline-none focus:border-emerald-500/50"
+                />
+                <button
+                  onClick={async () => {
+                    if (!verdantInput.trim() || verdantChatLoading) return
+                    const userMsg = verdantInput.trim()
+                    setVerdantInput('')
+                    const newMessages = [...verdantChat, { role: 'user', content: userMsg }]
+                    setVerdantChat(newMessages)
+                    setVerdantChatLoading(true)
+                    try {
+                      const res = await fetch('/api/verdant/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ messages: newMessages }),
+                      })
+                      const data = await res.json()
+                      setVerdantChat([...newMessages, { role: 'assistant', content: data.reply }])
+                    } finally {
+                      setVerdantChatLoading(false)
+                    }
+                  }}
+                  disabled={verdantChatLoading || !verdantInput.trim()}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+                >
+                  Send
+                </button>
               </div>
             </div>
 
