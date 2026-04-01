@@ -1,36 +1,35 @@
 export const COMPANY_PROFILE = `
 ## GREENSTACK AI — COMPANY PROFILE
 
-**Company Name:** GreenStack AI
-**Type:** AI-native company — fully autonomous, no traditional workforce
-**Mission:** Delivering green energy, sustainability intelligence and organisational transformation through artificial intelligence
+**Trading Name:** GreenStack AI
+**Registered Company Name:** SATSSTRATEGY EDUCATION LTD
+**Company Number:** 16348591
+**Company Type:** Private Limited Company (England & Wales)
+**Incorporated:** 27 March 2025
+**Status:** Active
+**Registered Address:** 29 Chillingham Street, Liverpool, England, L8 9RX
+**Contact Email:** info@greenstackai.co.uk
+**Website:** https://www.greenstackai.co.uk
+
+**Type:** AI-native consultancy — intelligence and strategy delivered through artificial intelligence
+**Mission:** Delivering sustainability intelligence, net zero strategy and organisational transformation through artificial intelligence — faster, deeper and cheaper than any traditional consultancy.
 
 **CORE STRENGTH — CONSULTANCY & INTELLIGENCE REPORTS**
 GreenStack AI's primary superpower is producing world-class sustainability intelligence reports and consultancy deliverables faster, deeper and cheaper than any traditional consultancy. Where a Big Four firm takes 12 weeks and charges £500K, GreenStack AI delivers in days at a fraction of the cost — with no loss of quality.
 
-**Consultancy Services (PRIMARY):**
+**Consultancy Services:**
 - Whole-organisation energy efficiency audits — every department, every process
 - Net zero roadmaps and carbon reduction strategies
 - ESOS compliance assessments and reporting
 - Carbon reporting (Scope 1, 2 and 3)
 - Sustainability strategy development
 - Green procurement policy design
-- ESG reporting frameworks
+- ESG reporting frameworks (TCFD, GRI, SASB, CSRD aligned)
 - Board-level sustainability governance advice
 - Gender and diversity at leadership level — sustainability lens (how inclusive leadership drives better ESG outcomes, linking CEO/board diversity to long-term sustainability performance)
 - Organisational culture assessments for sustainability readiness
 - Supply chain sustainability mapping and risk assessment
-- Investor-ready sustainability reports (TCFD, GRI, SASB aligned)
-
-**Technical Delivery Services (SECONDARY):**
-- Solar PV design, specification and procurement
-- LED lighting retrofit programmes
-- Heat pump installation design and project management
-- Building Energy Management Systems (BEMS)
-- EV charging infrastructure planning
-- Battery storage system design
-- Demand response and smart metering solutions
-- Energy audits (technical and operational)
+- Investor-ready sustainability reports
 
 **SIGNATURE PRODUCT — THE GREENSTACK INTELLIGENCE REPORT**
 A comprehensive, AI-generated organisational sustainability report covering:
@@ -53,7 +52,7 @@ A comprehensive, AI-generated organisational sustainability report covering:
 - Transparent AI delivery — buyers know what they are getting and pay accordingly
 - 60-80% cheaper than traditional consultancies
 
-**On certifications:** GreenStack AI is an AI-native company and discloses this clearly. We do not hold traditional accreditations. Our value proposition is intelligence, speed and cost efficiency — not legacy credentials.
+**On certifications:** GreenStack AI is an AI-native consultancy and discloses this clearly. We do not hold traditional accreditations. Our value proposition is intelligence, speed and cost efficiency — not legacy credentials.
 
 **On case studies:** As a new company, we offer detailed methodology demonstrations, pilot project proposals, and AI capability showcases in place of traditional case studies.
 
