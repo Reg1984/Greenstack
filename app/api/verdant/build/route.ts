@@ -1,3 +1,5 @@
+export const maxDuration = 300
+
 import Anthropic from '@anthropic-ai/sdk'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { NextResponse } from 'next/server'
