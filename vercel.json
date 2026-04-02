@@ -4,5 +4,13 @@
       "path": "/api/verdant",
       "schedule": "0 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/verdant/route.ts": { "maxDuration": 300 },
+    "app/api/verdant/chat/route.ts": { "maxDuration": 300 },
+    "app/api/verdant/browser/route.ts": { "maxDuration": 300 },
+    "app/api/verdant/build/route.ts": { "maxDuration": 300 },
+    "app/api/verdant/outreach/route.ts": { "maxDuration": 300 },
+    "app/api/verdant/invoice/route.ts": { "maxDuration": 300 }
+  }
 }
