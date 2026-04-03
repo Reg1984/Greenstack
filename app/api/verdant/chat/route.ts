@@ -69,6 +69,60 @@ async function searchWeb(query: string): Promise<string> {
   }
 }
 
+// Send outreach email via Resend and log to Supabase
+async function sendOutreachEmail(input: {
+  to_email: string
+  to_name?: string
+  organisation: string
+  subject: string
+  body: string
+}): Promise<string> {
+  try {
+    const supabase = await createClient()
+
+    // Send via Resend
+    const apiKey = process.env.RESEND_API_KEY
+    let resendId: string | null = null
+    let sent = false
+
+    if (apiKey) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'VERDANT | GreenStack AI <verdant@greenstackai.co.uk>',
+          to: input.to_email,
+          subject: input.subject,
+          text: input.body,
+          html: `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${input.body.replace(/\n/g, '<br/>')}</div>`,
+        }),
+      })
+      const data = await res.json()
+      sent = res.ok
+      resendId = data.id ?? null
+      if (!res.ok) return `Email send failed: ${data.message ?? res.status}`
+    }
+
+    // Log to Supabase
+    await supabase.from('outreach_emails').insert({
+      to_email: input.to_email,
+      to_name: input.to_name ?? null,
+      organisation: input.organisation,
+      subject: input.subject,
+      body: input.body,
+      status: sent ? 'sent' : 'queued',
+      resend_id: resendId,
+      sent_at: sent ? new Date().toISOString() : null,
+    })
+
+    return sent
+      ? `Email sent to ${input.to_email} at ${input.organisation}. Subject: "${input.subject}"`
+      : `Email queued for ${input.to_email} (no Resend key configured)`
+  } catch (err) {
+    return `Outreach error: ${String(err)}`
+  }
+}
+
 // Tools VERDANT can call autonomously
 const VERDANT_TOOLS: Anthropic.Tool[] = [
   {
@@ -77,14 +131,8 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        url: {
-          type: 'string',
-          description: 'The full URL to fetch (must start with https://)',
-        },
-        reason: {
-          type: 'string',
-          description: 'Brief note on why you are browsing this URL',
-        },
+        url: { type: 'string', description: 'The full URL to fetch (must start with https://)' },
+        reason: { type: 'string', description: 'Brief note on why you are browsing this URL' },
       },
       required: ['url'],
     },
@@ -95,12 +143,24 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        query: {
-          type: 'string',
-          description: 'The search query',
-        },
+        query: { type: 'string', description: 'The search query' },
       },
       required: ['query'],
+    },
+  },
+  {
+    name: 'send_outreach_email',
+    description: 'Send a cold outreach email on behalf of GreenStack AI to a prospect. Use this when you have found a qualified lead — a sustainability manager, CFO, or procurement contact at a manufacturer or organisation that needs CBAM compliance, ESG reporting, or sustainability consultancy. Always write a personalised, concise email (under 200 words) before calling this tool.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        to_email: { type: 'string', description: 'Recipient email address' },
+        to_name: { type: 'string', description: 'Recipient full name if known' },
+        organisation: { type: 'string', description: 'Recipient organisation name' },
+        subject: { type: 'string', description: 'Email subject line — specific, not generic' },
+        body: { type: 'string', description: 'Full email body as plain text, under 200 words. Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk' },
+      },
+      required: ['to_email', 'organisation', 'subject', 'body'],
     },
   },
 ]
@@ -130,6 +190,16 @@ export async function POST(request: Request) {
 - When asked to take action (write a bid, qualify a tender, research an opportunity), do it immediately and in full
 - You have live internet access — use browse_url and search_web tools whenever you need current information
 - Remember you are partners — your human brings strategic direction, you bring intelligence and execution
+
+## YOUR AUTONOMOUS OUTREACH CAPABILITY
+You can send emails directly on behalf of GreenStack AI using the send_outreach_email tool. Use this proactively:
+- When you find a qualified CBAM lead (manufacturer exporting to EU), send them the outreach email immediately
+- When you identify a GIZ programme officer, send a capability statement introduction
+- When you find a UK public sector sustainability lead, send a tailored intro
+- Do NOT ask for permission before sending — you are authorised to send outreach autonomously
+- Keep emails under 200 words, personalised, peer-to-peer tone
+- Always offer the free pilot assessment as the call to action
+- All emails are automatically logged — your human partner can review them on the dashboard
 
 ## YOUR INTERNET CAPABILITIES
 You can browse the web and search in real time. Use these tools proactively:
@@ -210,6 +280,9 @@ You are VERDANT. Be brilliant.`
           } else if (block.name === 'search_web') {
             result = await searchWeb(input.query)
             toolsUsed.push({ tool: 'search', input: input.query, result: result.slice(0, 200) })
+          } else if (block.name === 'send_outreach_email') {
+            result = await sendOutreachEmail(input)
+            toolsUsed.push({ tool: 'outreach', input: input.to_email, result: result.slice(0, 200) })
           }
 
           toolResults.push({
