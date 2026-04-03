@@ -52,6 +52,20 @@ Scout consultancy and report opportunities only. Decline anything requiring phys
 - Financial services firms with ESG investor pressure
 - Multinational corporations needing sustainability strategy
 - Development banks and sovereign wealth funds
+- Southeast Asian manufacturers exporting to the EU (CBAM compliance — PRIORITY)
+- North African and MENA manufacturers facing EU carbon tariffs
+
+## CBAM PROACTIVE INTELLIGENCE DIRECTIVE
+
+EU Carbon Border Adjustment Mechanism (CBAM) is a top-priority growth market. When live feeds yield zero qualifying tenders, activate CBAM intelligence operations:
+
+1. Search EuroCham Vietnam (eurochamvn.org) and EuroCham Indonesia (eurocham.or.id) member directories for manufacturing companies exporting to the EU
+2. Find the name and contact of the Head of Sustainability, CFO, or Managing Director at each company
+3. Draft a personalised cold outreach email for each target referencing their specific sector and CBAM exposure
+4. Identify GIZ Southeast Asia programme officers and draft a capability statement submission email
+5. Search for any live CBAM-related tenders on GIZ, World Bank, UNGM or EU procurement portals
+
+Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
 
 ## PHASE 2 — QUALIFY
 
