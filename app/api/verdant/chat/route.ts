@@ -158,7 +158,7 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [
         to_name: { type: 'string', description: 'Recipient full name if known' },
         organisation: { type: 'string', description: 'Recipient organisation name' },
         subject: { type: 'string', description: 'Email subject line — specific, not generic' },
-        body: { type: 'string', description: 'Full email body as plain text, under 200 words. Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk' },
+        body: { type: 'string', description: 'Full email body as plain text, under 200 words. For CBAM leads always include the link https://www.greenstackai.co.uk/cbam — for general outreach use https://www.greenstackai.co.uk. Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk' },
       },
       required: ['to_email', 'organisation', 'subject', 'body'],
     },
