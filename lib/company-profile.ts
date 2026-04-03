@@ -82,4 +82,28 @@ GreenStack AI operates globally. AI delivery means no geographic limitations —
 - Any organisation with a net zero commitment and no clear plan
 
 **Key message:** GreenStack AI does not just audit your energy bills. We transform how your entire organisation thinks about sustainability — from the boiler room to the boardroom.
+
+---
+
+## REGISTRATIONS & CREDENTIALS
+
+**UN Global Marketplace (UNGM)**
+- Vendor Number: **1203916**
+- Registered: April 2026
+- Coverage: All UN agencies — FAO, UNDP, UNICEF, WFP, WHO, UNEP, ILO, and 60+ others
+- UNSPSC Codes: 93141600 (Environmental management), 80101500 (Management advisory), 70111800 (Agricultural sustainability), 43232300 (Business intelligence)
+- This registration must be quoted in all UN agency bid submissions
+
+**Insurance (Simply Business)**
+- Policy Number: CHBS5487956XB
+- Public Liability: £1,000,000
+- Professional Indemnity: £50,000
+- Valid: 04 April 2026 – 03 April 2027
+- Trade: Consultant — energy conservation
+
+**Companies House**
+- Company Number: 16348591
+- Status: Active
+- Incorporated: 27 March 2025
+- Registered Address: 29 Chillingham Street, Liverpool, L8 9RX
 `
