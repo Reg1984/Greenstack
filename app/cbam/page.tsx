@@ -1,324 +1,539 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
+import { Leaf, ArrowRight, Globe, Instagram, Twitter } from "lucide-react";
 
-function StarField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    let w: number, h: number;
-    let stars: { x: number; y: number; r: number; o: number; speed: number }[] = [];
-    const resize = () => {
-      w = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      h = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      stars = Array.from({ length: 80 }, () => ({
-        x: Math.random() * w, y: Math.random() * h,
-        r: Math.random() * 1.2 + 0.3,
-        o: Math.random() * 0.4 + 0.1,
-        speed: Math.random() * 0.3 + 0.05,
-      }));
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    let t = 0, raf: number;
-    const animate = () => {
-      t += 0.01;
-      ctx.clearRect(0, 0, w, h);
-      stars.forEach((s) => {
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r * window.devicePixelRatio, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${s.o * (0.5 + 0.5 * Math.sin(t * s.speed * 10))})`;
-        ctx.fill();
-      });
-      raf = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
-  }, []);
-  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0 }} />;
+const VIDEO_URL = "/hero.mp4";
+const VIDEO_URL_2 = "/video2.mp4";
+const VIDEO_URL_3 = "/video3.mp4";
+
+const globalStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; font-family: ui-sans-serif, system-ui, sans-serif; color: #fff; }
+  .liquid-glass {
+    background: rgba(255,255,255,0.01);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+      180deg,
+      rgba(255,255,255,0.45) 0%,
+      rgba(255,255,255,0.15) 20%,
+      rgba(255,255,255,0) 40%,
+      rgba(255,255,255,0) 60%,
+      rgba(255,255,255,0.15) 80%,
+      rgba(255,255,255,0.45) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+`;
+
+const SI = ({ children, dim }: { children: React.ReactNode; dim?: boolean }) => (
+  <span
+    style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
+    className={dim ? "text-white/60" : ""}
+  >
+    {children}
+  </span>
+);
+
+function Navbar() {
+  return (
+    <nav style={{
+      position: "absolute", top: 0, left: 0, right: 0,
+      zIndex: 20, padding: "20px 24px", display: "flex", justifyContent: "center",
+    }}>
+      <div className="liquid-glass" style={{
+        borderRadius: "9999px", maxWidth: "800px", width: "100%",
+        padding: "12px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
+          <Leaf size={20} color="rgba(134,239,172,0.8)" />
+          <span style={{ color: "#fff", fontWeight: 600, fontSize: "1.05rem", letterSpacing: "-0.02em" }}>
+            Green<SI>stack</SI>
+          </span>
+        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+          {["Tenders", "Platform", "About"].map(l => (
+            <a key={l} href="/" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, cursor: "pointer", textDecoration: "none" }}>{l}</a>
+          ))}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <a href="mailto:info@greenstackai.co.uk" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", textDecoration: "none" }}>Contact</a>
+          <a href="/dashboard" className="liquid-glass" style={{ borderRadius: "9999px", padding: "8px 20px", cursor: "pointer", textDecoration: "none" }}>
+            <span style={{ color: "#fff", fontSize: "0.85rem", fontWeight: 500 }}>Dashboard</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function Hero() {
+  return (
+    <section style={{
+      minHeight: "100vh", background: "#000", position: "relative",
+      display: "flex", flexDirection: "column", overflow: "hidden",
+    }}>
+      <video
+        src={VIDEO_URL}
+        muted autoPlay loop playsInline preload="auto"
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover", opacity: 0.4,
+          zIndex: 0,
+        }}
+      />
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.8) 100%)",
+        zIndex: 1,
+      }} />
+
+      <Navbar />
+
+      <div style={{
+        position: "relative", zIndex: 10, flex: 1,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "100px 24px 24px", textAlign: "center",
+      }}>
+        <div className="liquid-glass" style={{
+          borderRadius: "9999px", padding: "6px 20px", marginBottom: "28px", display: "inline-block",
+        }}>
+          <span style={{ color: "rgba(134,239,172,0.9)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+            CBAM Compliance Advisory
+          </span>
+        </div>
+
+        <h1 style={{
+          fontFamily: "'Instrument Serif', serif",
+          fontSize: "clamp(2.5rem, 7vw, 5rem)",
+          color: "#fff", letterSpacing: "-0.02em",
+          marginBottom: "24px", lineHeight: 1.05,
+        }}>
+          Your EU buyers need your<br />
+          <SI>carbon data. Now.</SI>
+        </h1>
+
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.95rem", maxWidth: "520px", lineHeight: 1.8, marginBottom: "36px" }}>
+          From 2026, the EU Carbon Border Adjustment Mechanism requires verified carbon footprints for all goods exported to Europe. Act now or face tariff penalties.
+        </p>
+
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+          <a href="mailto:info@greenstackai.co.uk?subject=CBAM Free Pilot Assessment"
+            className="liquid-glass"
+            style={{ borderRadius: "9999px", padding: "14px 32px", textDecoration: "none", cursor: "pointer" }}>
+            <span style={{ color: "rgba(134,239,172,0.9)", fontSize: "0.9rem", fontWeight: 500 }}>Claim Free Pilot →</span>
+          </a>
+          <a href="mailto:info@greenstackai.co.uk?subject=CBAM Enquiry"
+            className="liquid-glass"
+            style={{ borderRadius: "9999px", padding: "14px 32px", textDecoration: "none", cursor: "pointer" }}>
+            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", fontWeight: 500 }}>Speak to a specialist</span>
+          </a>
+        </div>
+      </div>
+
+      <div style={{
+        position: "relative", zIndex: 10,
+        display: "flex", justifyContent: "center", gap: "12px", padding: "24px",
+      }}>
+        {[Instagram, Twitter, Globe].map((Icon, i) => (
+          <div key={i} className="liquid-glass" style={{ borderRadius: "50%", padding: "14px", cursor: "pointer" }}>
+            <Icon size={18} color="rgba(255,255,255,0.7)" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TimelineSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  const rows = [
+    { date: "2023–2025", label: "Transitional period", detail: "Reporting only — no financial penalties yet", active: false, urgent: false },
+    { date: "Jan 2026", label: "Full obligations begin", detail: "Importers must purchase CBAM certificates for embedded carbon", active: true, urgent: false },
+    { date: "2027+", label: "Free allowances phase out", detail: "Costs escalate dramatically — unverified exporters lose EU access", active: false, urgent: true },
+  ];
+
+  return (
+    <section style={{ background: "#000", padding: "140px 24px 80px" }}>
+      <div ref={ref} style={{ maxWidth: "900px", margin: "0 auto" }}>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "24px" }}
+        >
+          Timeline
+        </motion.p>
+        <motion.h2
+          initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          style={{ fontSize: "clamp(2rem, 5vw, 4rem)", letterSpacing: "-0.03em", marginBottom: "56px", lineHeight: 1.1 }}
+        >
+          The clock is <SI dim>already running.</SI>
+        </motion.h2>
+
+        {rows.map((row, i) => (
+          <motion.div
+            key={row.date}
+            initial={{ opacity: 0, x: -30 }} animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.7, delay: 0.2 + i * 0.15 }}
+            className="liquid-glass"
+            style={{
+              borderRadius: "16px", padding: "24px 32px", marginBottom: "12px",
+              display: "flex", gap: "32px", alignItems: "center",
+              borderLeft: row.active ? "2px solid rgba(134,239,172,0.6)" : "none",
+            }}
+          >
+            <div style={{
+              minWidth: 110, fontFamily: "monospace", fontSize: "0.9rem",
+              color: row.active ? "rgba(134,239,172,0.9)" : row.urgent ? "rgba(255,100,100,0.7)" : "rgba(255,255,255,0.3)",
+            }}>
+              {row.date}
+              {row.active && <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "rgba(134,239,172,0.9)", boxShadow: "0 0 8px rgba(134,239,172,0.6)", marginLeft: 8, animation: "pulse 2s infinite", verticalAlign: "middle" }} />}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: "1rem", color: row.active ? "#fff" : "rgba(255,255,255,0.5)", marginBottom: 4 }}>{row.label}</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.85rem", lineHeight: 1.6 }}>{row.detail}</div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ComparisonSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  const rows = [
+    ["Delivery time", "16–24 weeks", "14 working days"],
+    ["Cost", "€200,000–€500,000", "€35,000–€80,000"],
+    ["On-site visits", "4–6 weeks of travel", "None — fully remote"],
+    ["SME accessible", "No", "Yes"],
+    ["Carbon from consultancy", "High — flights, hotels", "Zero"],
+  ];
+
+  return (
+    <section style={{ background: "#000", padding: "80px 24px 140px" }}>
+      <div ref={ref} style={{ maxWidth: "960px", margin: "0 auto" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7 }}
+          style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "56px" }}
+        >
+          <h2 style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", letterSpacing: "-0.03em" }}>
+            14 days. <SI dim>Not 6 months.</SI>
+          </h2>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Why us</span>
+        </motion.div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px" }}>
+          {/* Traditional */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }} animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="liquid-glass"
+            style={{ borderRadius: "24px 0 0 24px", padding: "36px" }}
+          >
+            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "28px" }}>Traditional consultancy</p>
+            {rows.map(([label, bad]) => (
+              <div key={label} style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+                <div style={{ color: "rgba(255,100,100,0.7)", fontSize: "0.95rem" }}>{bad}</div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* GreenStack */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }} animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="liquid-glass"
+            style={{ borderRadius: "0 24px 24px 0", padding: "36px", borderLeft: "1px solid rgba(134,239,172,0.2)" }}
+          >
+            <p style={{ color: "rgba(134,239,172,0.6)", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "28px" }}>GreenStack AI</p>
+            {rows.map(([label, , good]) => (
+              <div key={label} style={{ padding: "14px 0", borderBottom: "1px solid rgba(134,239,172,0.05)" }}>
+                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+                <div style={{ color: "rgba(134,239,172,0.9)", fontSize: "0.95rem" }}>{good}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DeliverablesSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  const items = [
+    { num: "01", title: "Full Carbon Footprint", desc: "Scope 1, 2 and 3 emissions — facility by facility, product by product. CBAM-compatible format." },
+    { num: "02", title: "CBAM Financial Exposure", desc: "Exact tariff liability at current EU ETS carbon price. Know your number before your buyers do." },
+    { num: "03", title: "Decarbonisation Roadmap", desc: "Quick wins, medium-term strategy and long-term net zero pathway with full ROI modelling." },
+    { num: "04", title: "Buyer-Ready Report", desc: "Publication-quality ESG report formatted for EU procurement teams and investor due diligence." },
+  ];
+
+  return (
+    <section style={{
+      background: "#000", padding: "140px 24px",
+      backgroundImage: "radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, transparent 60%)",
+    }}>
+      <div ref={ref} style={{ maxWidth: "960px", margin: "0 auto" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7 }}
+          style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "64px" }}
+        >
+          <h2 style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", letterSpacing: "-0.03em" }}>
+            Everything your <SI dim>buyers need.</SI>
+          </h2>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Deliverables</span>
+        </motion.div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          {items.map((item, i) => (
+            <motion.div
+              key={item.num}
+              initial={{ opacity: 0, y: 50 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: i * 0.15 }}
+              className="liquid-glass"
+              style={{ borderRadius: "24px", overflow: "hidden" }}
+            >
+              <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
+                <video src={i < 2 ? VIDEO_URL_2 : VIDEO_URL_3} muted autoPlay loop playsInline preload="auto"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
+              </div>
+              <div style={{ padding: "28px 32px" }}>
+                <div style={{ color: "rgba(134,239,172,0.4)", fontSize: "0.75rem", fontFamily: "monospace", marginBottom: "12px" }}>{item.num}</div>
+                <h3 style={{ fontSize: "1.3rem", letterSpacing: "-0.02em", marginBottom: "10px" }}>{item.title}</h3>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", lineHeight: 1.7 }}>{item.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  const tiers = [
+    { name: "Essential", price: "€35,000", scope: "Single facility · Scope 1+2 · CBAM calculation", featured: false },
+    { name: "Standard", price: "€55,000", scope: "Full organisation · Scope 1+2+3 · CBAM + Roadmap", featured: true },
+    { name: "Premium", price: "€80,000", scope: "Multi-site · Full inventory · CBAM + ESG report + Investor narrative", featured: false },
+  ];
+
+  return (
+    <section style={{ background: "#000", padding: "80px 24px 140px" }}>
+      <div ref={ref} style={{ maxWidth: "960px", margin: "0 auto" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7 }}
+          style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "64px" }}
+        >
+          <h2 style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", letterSpacing: "-0.03em" }}>
+            Transparent. <SI dim>Fixed. No surprises.</SI>
+          </h2>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Pricing</span>
+        </motion.div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px" }}>
+          {tiers.map((tier, i) => (
+            <motion.div
+              key={tier.name}
+              initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: i * 0.1 }}
+              className="liquid-glass"
+              style={{
+                borderRadius: i === 0 ? "24px 0 0 24px" : i === 2 ? "0 24px 24px 0" : "0",
+                padding: "36px 28px",
+                borderTop: tier.featured ? "1px solid rgba(134,239,172,0.3)" : "none",
+                position: "relative",
+              }}
+            >
+              {tier.featured && (
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0,
+                  background: "rgba(134,239,172,0.08)", padding: "6px 0",
+                  textAlign: "center", fontSize: "0.7rem", letterSpacing: "0.2em",
+                  color: "rgba(134,239,172,0.7)", textTransform: "uppercase",
+                  borderRadius: "0 0 0 0",
+                }}>Most Popular</div>
+              )}
+              <div style={{ marginTop: tier.featured ? "24px" : 0 }}>
+                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "16px" }}>{tier.name}</p>
+                <div style={{
+                  fontFamily: "'Instrument Serif', serif",
+                  fontSize: "2.8rem", color: tier.featured ? "rgba(134,239,172,0.9)" : "#fff",
+                  letterSpacing: "-0.02em", marginBottom: "16px",
+                }}>{tier.price}</div>
+                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.85rem", lineHeight: 1.7, marginBottom: "32px" }}>{tier.scope}</p>
+                <a
+                  href={`mailto:info@greenstackai.co.uk?subject=CBAM ${tier.name} Package Enquiry`}
+                  className="liquid-glass"
+                  style={{
+                    display: "block", textAlign: "center", borderRadius: "9999px",
+                    padding: "12px 20px", textDecoration: "none",
+                  }}
+                >
+                  <span style={{ color: tier.featured ? "rgba(134,239,172,0.9)" : "rgba(255,255,255,0.6)", fontSize: "0.85rem" }}>Enquire →</span>
+                </a>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PilotSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <section style={{ background: "#000", padding: "0 24px 140px" }}>
+      <div ref={ref} style={{ maxWidth: "960px", margin: "0 auto" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 60 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.9 }}
+          style={{ borderRadius: "24px", overflow: "hidden", position: "relative", minHeight: 400 }}
+        >
+          <video src={VIDEO_URL} muted autoPlay loop playsInline preload="auto"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)" }} />
+
+          <div style={{ position: "relative", zIndex: 10, padding: "80px 64px", textAlign: "center" }}>
+            <div className="liquid-glass" style={{
+              borderRadius: "9999px", padding: "6px 20px", marginBottom: "28px", display: "inline-block",
+            }}>
+              <span style={{ color: "rgba(134,239,172,0.9)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                Free Pilot Offer
+              </span>
+            </div>
+
+            <h2 style={{
+              fontFamily: "'Instrument Serif', serif",
+              fontSize: "clamp(2rem, 5vw, 4rem)", letterSpacing: "-0.03em", marginBottom: "20px", lineHeight: 1.1,
+            }}>
+              See the report<br /><SI dim>before you commit.</SI>
+            </h2>
+
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.95rem", maxWidth: "520px", margin: "0 auto 36px", lineHeight: 1.8 }}>
+              One qualifying manufacturer receives a full Scope 1 + Scope 2 carbon footprint and CBAM financial exposure calculation — free. Delivered in 5 working days. No obligation.
+            </p>
+
+            <a
+              href="mailto:info@greenstackai.co.uk?subject=CBAM Free Pilot Assessment Request"
+              className="liquid-glass"
+              style={{ borderRadius: "9999px", padding: "16px 40px", textDecoration: "none", display: "inline-block" }}
+            >
+              <span style={{ color: "rgba(134,239,172,0.9)", fontSize: "0.9rem", fontWeight: 500 }}>Apply for Free Pilot →</span>
+            </a>
+
+            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.8rem", marginTop: "20px", fontFamily: "monospace" }}>
+              Limited to one pilot per month · Manufacturing exporters to EU only
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <section style={{ background: "#000", padding: "0 24px 80px" }}>
+      <div ref={ref} style={{ maxWidth: "960px", margin: "0 auto" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7 }}
+        >
+          <div style={{
+            padding: "64px 0",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: "40px",
+          }}>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "24px" }}>
+              Get in touch
+            </p>
+            <h2 style={{ fontSize: "clamp(1.8rem, 4vw, 3.5rem)", letterSpacing: "-0.03em", marginBottom: "40px", lineHeight: 1.1 }}>
+              Ready to win <SI dim>smarter?</SI>
+            </h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "40px" }}>
+              <div>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Email</p>
+                <a href="mailto:info@greenstackai.co.uk" style={{ color: "#fff", fontSize: "1rem", textDecoration: "none" }}>info@greenstackai.co.uk</a>
+              </div>
+              <div>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Website</p>
+                <a href="/" style={{ color: "#fff", fontSize: "1rem", textDecoration: "none" }}>greenstackai.co.uk</a>
+              </div>
+              <div>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Registered</p>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>SATSSTRATEGY EDUCATION LTD<br />No. 16348591 · Liverpool, England</p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Leaf size={16} color="rgba(134,239,172,0.6)" />
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.8rem" }}>GreenStack © 2026</span>
+            </div>
+            <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.75rem" }}>SATSSTRATEGY EDUCATION LTD</span>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
 }
 
 export default function CBAMPage() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "radial-gradient(ellipse at 30% 40%, #0a1a0f 0%, #030808 60%, #050510 100%)",
-      fontFamily: "'Syne', sans-serif",
-      color: "#fff",
-      position: "relative",
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        .mono { font-family: 'DM Mono', monospace; }
-        .glow-btn {
-          background: linear-gradient(135deg, rgba(0,255,135,0.15), rgba(0,200,255,0.1));
-          border: 1px solid rgba(0,255,135,0.5);
-          color: #00ff87;
-          padding: 16px 40px;
-          font-family: 'DM Mono', monospace;
-          font-size: 13px;
-          letter-spacing: 2px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-decoration: none;
-          display: inline-block;
-        }
-        .glow-btn:hover {
-          background: linear-gradient(135deg, rgba(0,255,135,0.25), rgba(0,200,255,0.2));
-          border-color: rgba(0,255,135,0.9);
-          box-shadow: 0 0 40px rgba(0,255,135,0.25);
-        }
-        .card {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
-          padding: 32px;
-        }
-        .card-green {
-          background: rgba(0,255,135,0.04);
-          border: 1px solid rgba(0,255,135,0.2);
-          padding: 32px;
-        }
-        .tag {
-          display: inline-block;
-          border: 1px solid rgba(0,255,135,0.4);
-          color: rgba(0,255,135,0.8);
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 3px;
-          padding: 5px 14px;
-        }
-        .divider {
-          border: none;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          margin: 64px 0;
-        }
-        .timeline-row {
-          display: flex;
-          gap: 16px;
-          padding: 16px 0;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-          align-items: center;
-        }
-        .price-col {
-          flex: 1;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.07);
-          padding: 28px;
-          transition: border-color 0.3s;
-        }
-        .price-col:hover { border-color: rgba(0,255,135,0.3); }
-        .price-col.featured {
-          background: rgba(0,255,135,0.04);
-          border-color: rgba(0,255,135,0.3);
-        }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-      `}</style>
-
-      <StarField />
-
-      {/* Nav */}
-      <nav style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "24px 48px", position: "relative", zIndex: 10,
-        borderBottom: "1px solid rgba(255,255,255,0.04)"
-      }}>
-        <a href="https://www.greenstackai.co.uk" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 32, height: 32,
-            background: "linear-gradient(135deg, rgba(0,255,135,0.2), rgba(0,200,255,0.1))",
-            border: "1px solid rgba(0,255,135,0.4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#00ff87", fontSize: 16, fontWeight: 700
-          }}>G</div>
-          <div>
-            <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, letterSpacing: 1 }}>GREENSTACK</div>
-            <div style={{ color: "rgba(0,255,135,0.5)", fontSize: 8, letterSpacing: 3, fontFamily: "'DM Mono', monospace" }}>AI PLATFORM</div>
-          </div>
-        </a>
-        <a href="mailto:info@greenstackai.co.uk" className="glow-btn" style={{ padding: "10px 24px", fontSize: 11 }}>
-          GET IN TOUCH
-        </a>
-      </nav>
-
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 48px", position: "relative", zIndex: 10 }}>
-
-        {/* Hero */}
-        <div style={{ marginBottom: 80 }}>
-          <div style={{ marginBottom: 20 }}>
-            <span className="tag">◆ CBAM COMPLIANCE ADVISORY</span>
-          </div>
-          <h1 style={{ fontSize: "clamp(40px, 5vw, 72px)", fontWeight: 800, lineHeight: 1.05, letterSpacing: -2, marginBottom: 28 }}>
-            Your EU buyers need your<br />
-            <span style={{
-              background: "linear-gradient(135deg, #00ff87, #00d4ff)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text"
-            }}>carbon data. Now.</span>
-          </h1>
-          <p className="mono" style={{ color: "rgba(255,255,255,0.45)", fontSize: 16, lineHeight: 1.8, maxWidth: 620, fontWeight: 300, marginBottom: 40 }}>
-            From 2026, the EU Carbon Border Adjustment Mechanism (CBAM) requires verified carbon footprints for all goods exported to Europe. Manufacturers without compliant data face tariff penalties and loss of EU contracts.
-          </p>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <a href="mailto:info@greenstackai.co.uk?subject=CBAM Free Pilot Assessment" className="glow-btn">
-              CLAIM FREE PILOT ASSESSMENT →
-            </a>
-            <a href="mailto:info@greenstackai.co.uk?subject=CBAM Enquiry" className="glow-btn" style={{
-              background: "transparent", borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.6)"
-            }}>
-              SPEAK TO A SPECIALIST
-            </a>
-          </div>
-        </div>
-
-        {/* Timeline */}
-        <div className="card" style={{ marginBottom: 80 }}>
-          <div className="mono" style={{ color: "rgba(0,255,135,0.6)", fontSize: 10, letterSpacing: 3, marginBottom: 24 }}>CBAM TIMELINE — ACT NOW</div>
-          {[
-            { date: "2023–2025", label: "Transitional period", detail: "Reporting only — no financial penalties yet", status: "past" },
-            { date: "Jan 2026", label: "Full obligations begin", detail: "Importers must purchase CBAM certificates for embedded carbon", status: "now" },
-            { date: "2027+", label: "Free allowances phase out", detail: "Costs escalate dramatically — unverified exporters lose EU access", status: "future" },
-          ].map((row) => (
-            <div key={row.date} className="timeline-row">
-              <div className="mono" style={{
-                minWidth: 100, fontSize: 12,
-                color: row.status === "now" ? "#00ff87" : row.status === "past" ? "rgba(255,255,255,0.3)" : "rgba(255,80,80,0.8)"
-              }}>{row.date}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  fontWeight: 600, fontSize: 14,
-                  color: row.status === "now" ? "#fff" : "rgba(255,255,255,0.5)"
-                }}>{row.label}
-                  {row.status === "now" && <span style={{ marginLeft: 10, display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#00ff87", boxShadow: "0 0 8px #00ff87", animation: "pulse 2s infinite", verticalAlign: "middle" }} />}
-                </div>
-                <div className="mono" style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 4 }}>{row.detail}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Comparison */}
-        <div style={{ marginBottom: 80 }}>
-          <div style={{ marginBottom: 32 }}>
-            <div className="mono" style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>WHY GREENSTACK AI</div>
-            <h2 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>14 days. Not 6 months.</h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-            <div className="card" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-              <div className="mono" style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 3, marginBottom: 20 }}>TRADITIONAL CONSULTANCY</div>
-              {[
-                ["Delivery time", "16–24 weeks"],
-                ["Cost", "€200,000–€500,000"],
-                ["On-site visits", "4–6 weeks of travel"],
-                ["Carbon from consultancy itself", "High — flights, hotels"],
-                ["SME accessible", "No"],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  <span className="mono" style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>{k}</span>
-                  <span className="mono" style={{ color: "rgba(255,80,80,0.7)", fontSize: 12 }}>{v}</span>
-                </div>
-              ))}
-            </div>
-            <div className="card-green">
-              <div className="mono" style={{ color: "rgba(0,255,135,0.6)", fontSize: 10, letterSpacing: 3, marginBottom: 20 }}>GREENSTACK AI</div>
-              {[
-                ["Delivery time", "14 working days"],
-                ["Cost", "€35,000–€80,000"],
-                ["On-site visits", "None — fully remote"],
-                ["Carbon from consultancy itself", "Zero"],
-                ["SME accessible", "Yes"],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(0,255,135,0.06)" }}>
-                  <span className="mono" style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>{k}</span>
-                  <span className="mono" style={{ color: "#00ff87", fontSize: 12 }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* What you get */}
-        <div style={{ marginBottom: 80 }}>
-          <div style={{ marginBottom: 32 }}>
-            <div className="mono" style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>DELIVERABLES</div>
-            <h2 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>Everything your EU buyers need.</h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 2 }}>
-            {[
-              { num: "01", title: "Full Carbon Footprint", desc: "Scope 1, 2 and 3 emissions — facility by facility, product by product. CBAM-compatible format." },
-              { num: "02", title: "CBAM Financial Exposure", desc: "Exact tariff liability at current EU ETS carbon price. Know your number before your buyers do." },
-              { num: "03", title: "Decarbonisation Roadmap", desc: "Quick wins, medium-term strategy and long-term net zero pathway with ROI modelling." },
-              { num: "04", title: "Buyer-Ready Report", desc: "Publication-quality ESG report formatted for EU procurement teams and investor due diligence." },
-            ].map((item) => (
-              <div key={item.num} className="card">
-                <div className="mono" style={{ color: "rgba(0,255,135,0.4)", fontSize: 11, marginBottom: 12 }}>{item.num}</div>
-                <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 10 }}>{item.title}</div>
-                <div className="mono" style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, lineHeight: 1.7 }}>{item.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <div style={{ marginBottom: 80 }}>
-          <div style={{ marginBottom: 32 }}>
-            <div className="mono" style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>PRICING</div>
-            <h2 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>Transparent. Fixed. No surprises.</h2>
-          </div>
-          <div style={{ display: "flex", gap: 2 }}>
-            {[
-              { name: "Essential", price: "€35,000", scope: "Single facility · Scope 1+2 · CBAM calculation", featured: false },
-              { name: "Standard", price: "€55,000", scope: "Full organisation · Scope 1+2+3 · CBAM + Roadmap", featured: true },
-              { name: "Premium", price: "€80,000", scope: "Multi-site · Full inventory · CBAM + ESG report + Investor narrative", featured: false },
-            ].map((p) => (
-              <div key={p.name} className={p.featured ? "price-col featured" : "price-col"} style={{ position: "relative" }}>
-                {p.featured && <div className="mono" style={{ position: "absolute", top: -1, left: 0, right: 0, background: "rgba(0,255,135,0.15)", borderBottom: "1px solid rgba(0,255,135,0.3)", textAlign: "center", padding: "4px 0", fontSize: 9, letterSpacing: 3, color: "#00ff87" }}>MOST POPULAR</div>}
-                <div style={{ marginTop: p.featured ? 24 : 0 }}>
-                  <div className="mono" style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, letterSpacing: 2, marginBottom: 12 }}>{p.name.toUpperCase()}</div>
-                  <div style={{ fontSize: 36, fontWeight: 700, color: p.featured ? "#00ff87" : "#fff", marginBottom: 16 }}>{p.price}</div>
-                  <div className="mono" style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, lineHeight: 1.7, marginBottom: 24 }}>{p.scope}</div>
-                  <a href={`mailto:info@greenstackai.co.uk?subject=CBAM ${p.name} Package Enquiry`} className="glow-btn" style={{
-                    display: "block", textAlign: "center", padding: "12px 16px", fontSize: 11,
-                    borderColor: p.featured ? "rgba(0,255,135,0.5)" : "rgba(255,255,255,0.15)",
-                    color: p.featured ? "#00ff87" : "rgba(255,255,255,0.5)",
-                  }}>
-                    ENQUIRE →
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Free pilot CTA */}
-        <div className="card-green" style={{ textAlign: "center", padding: "64px 48px", marginBottom: 80 }}>
-          <div className="mono" style={{ color: "rgba(0,255,135,0.6)", fontSize: 10, letterSpacing: 4, marginBottom: 16 }}>FREE PILOT OFFER</div>
-          <h2 style={{ fontSize: 40, fontWeight: 800, letterSpacing: -1, marginBottom: 20 }}>See the report before you commit.</h2>
-          <p className="mono" style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 36px" }}>
-            One qualifying manufacturer receives a full Scope 1 + Scope 2 carbon footprint and CBAM financial exposure calculation — free of charge. Delivered in 5 working days. No obligation.
-          </p>
-          <a href="mailto:info@greenstackai.co.uk?subject=CBAM Free Pilot Assessment Request" className="glow-btn" style={{ fontSize: 13 }}>
-            APPLY FOR FREE PILOT →
-          </a>
-          <div className="mono" style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 20 }}>
-            Limited to one pilot per month · Manufacturing exporters to EU only
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 40, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>GREENSTACK AI</div>
-            <div className="mono" style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>SATSSTRATEGY EDUCATION LTD · Company No. 16348591 · England & Wales</div>
-          </div>
-          <div style={{ display: "flex", gap: 32 }}>
-            <a href="mailto:info@greenstackai.co.uk" className="mono" style={{ color: "rgba(0,255,135,0.6)", fontSize: 12, textDecoration: "none" }}>info@greenstackai.co.uk</a>
-            <a href="https://www.greenstackai.co.uk" className="mono" style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, textDecoration: "none" }}>greenstackai.co.uk</a>
-          </div>
-        </div>
-
-      </div>
-    </div>
+    <>
+      <style>{globalStyles}</style>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+        <Hero />
+        <TimelineSection />
+        <ComparisonSection />
+        <DeliverablesSection />
+        <PricingSection />
+        <PilotSection />
+        <Footer />
+      </motion.div>
+    </>
   );
 }
