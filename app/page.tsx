@@ -15,6 +15,7 @@ import {
 
 const VIDEO_URL = "/hero.mp4";
 const VIDEO_URL_2 = "/video2.mp4";
+const VIDEO_URL_3 = "/video3.mp4";
 
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
@@ -566,7 +567,7 @@ function ServiceCard({ tag, title, desc, delay, inView }: {
       style={{ borderRadius: "24px", overflow: "hidden", cursor: "pointer" }}
     >
       <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
-        <video src={VIDEO_URL} muted autoPlay loop playsInline preload="auto"
+        <video src={VIDEO_URL_3} muted autoPlay loop playsInline preload="auto"
           style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 700ms ease" }} />
         <div style={{
           position: "absolute", inset: 0,
