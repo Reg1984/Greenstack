@@ -17,8 +17,7 @@ import {
 
 const PASSWORD = "greenstack2026";
 
-const VIDEO_URL =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKVSdrz9iAoZ8kZqGM/generated_video_1748954259.mp4";
+const VIDEO_URL = "/hero.mp4";
 
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
