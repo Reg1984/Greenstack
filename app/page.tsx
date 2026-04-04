@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 const VIDEO_URL = "/hero.mp4";
+const VIDEO_URL_2 = "/video2.mp4";
 
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
@@ -321,7 +322,7 @@ function Hero({ onDashboard }: { onDashboard: () => void }) {
       <div style={{
         position: "relative", zIndex: 10, flex: 1,
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        transform: "translateY(-10%)", padding: "0 24px", textAlign: "center",
+        padding: "100px 24px 24px", textAlign: "center",
       }}>
         <h1 style={{
           fontFamily: "'Instrument Serif', serif",
@@ -448,7 +449,7 @@ function FeaturedVideoSection() {
           style={{ borderRadius: "24px", overflow: "hidden", aspectRatio: "16/9", position: "relative" }}
         >
           <video
-            src={VIDEO_URL}
+            src={VIDEO_URL_2}
             muted autoPlay loop playsInline preload="auto"
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
@@ -508,7 +509,7 @@ function PhilosophySection() {
             transition={{ duration: 0.8, delay: 0.2 }}
             style={{ borderRadius: "24px", overflow: "hidden", aspectRatio: "4/3" }}
           >
-            <video src={VIDEO_URL} muted autoPlay loop playsInline preload="auto"
+            <video src={VIDEO_URL_2} muted autoPlay loop playsInline preload="auto"
               style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </motion.div>
 
@@ -616,9 +617,50 @@ function ServicesSection() {
           ))}
         </div>
 
+        {/* Contact */}
         <div style={{
-          marginTop: "80px", paddingTop: "40px",
+          marginTop: "80px", padding: "64px 0",
           borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "24px" }}>
+            Get in touch
+          </p>
+          <h2 style={{ fontSize: "clamp(1.8rem, 4vw, 3.5rem)", letterSpacing: "-0.03em", marginBottom: "40px", lineHeight: 1.1 }}>
+            Ready to win <SI dim>smarter?</SI>
+          </h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "flex-start" }}>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Email</p>
+              <a href="mailto:info@greenstackai.co.uk" style={{ color: "#fff", fontSize: "1rem", textDecoration: "none" }}>
+                info@greenstackai.co.uk
+              </a>
+            </div>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Website</p>
+              <a href="https://www.greenstackai.co.uk" style={{ color: "#fff", fontSize: "1rem", textDecoration: "none" }}>
+                greenstackai.co.uk
+              </a>
+            </div>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>CBAM Advisory</p>
+              <a href="/cbam" style={{ color: "rgba(134,239,172,0.9)", fontSize: "1rem", textDecoration: "none" }}>
+                greenstackai.co.uk/cbam →
+              </a>
+            </div>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Registered</p>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>
+                SATSSTRATEGY EDUCATION LTD<br />
+                No. 16348591 · Liverpool, England
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          marginTop: "40px",
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
