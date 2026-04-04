@@ -7,6 +7,7 @@ import { Leaf, ArrowRight, Globe, Instagram, Twitter } from "lucide-react";
 const VIDEO_URL = "/hero.mp4";
 const VIDEO_URL_2 = "/video2.mp4";
 const VIDEO_URL_3 = "/video3.mp4";
+const VIDEO_URL_4 = "/video4.mp4";
 
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
@@ -324,7 +325,7 @@ function DeliverablesSection() {
               style={{ borderRadius: "24px", overflow: "hidden" }}
             >
               <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
-                <video src={i < 2 ? VIDEO_URL_2 : VIDEO_URL_3} muted autoPlay loop playsInline preload="auto"
+                <video src={[VIDEO_URL_2, VIDEO_URL_3, VIDEO_URL_4, VIDEO_URL][i % 4]} muted autoPlay loop playsInline preload="auto"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
               </div>
@@ -427,7 +428,7 @@ function PilotSection() {
           transition={{ duration: 0.9 }}
           style={{ borderRadius: "24px", overflow: "hidden", position: "relative", minHeight: 400 }}
         >
-          <video src={VIDEO_URL} muted autoPlay loop playsInline preload="auto"
+          <video src={VIDEO_URL_3} muted autoPlay loop playsInline preload="auto"
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)" }} />
 
