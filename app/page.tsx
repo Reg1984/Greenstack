@@ -656,15 +656,11 @@ export default function App() {
 
   const handleUnlock = () => {
     sessionStorage.setItem("gs_auth", "true");
-    router.push("/dashboard");
+    setUnlocked(true);
   };
 
   const handleDashboard = () => {
-    if (sessionStorage.getItem("gs_auth") === "true") {
-      router.push("/dashboard");
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    router.push("/dashboard");
   };
 
   if (checking) return null;
