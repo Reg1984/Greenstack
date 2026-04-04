@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import {
   Globe,
   ArrowRight,
@@ -10,12 +11,7 @@ import {
   Twitter,
   ArrowUpRight,
   Leaf,
-  Lock,
-  Eye,
-  EyeOff,
 } from "lucide-react";
-
-const PASSWORD = "greenstack2026";
 
 const VIDEO_URL = "/hero.mp4";
 
@@ -642,51 +638,25 @@ function ServicesSection() {
 
 export default function App() {
   const router = useRouter();
-  const [unlocked, setUnlocked] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("gs_auth");
-    if (stored === "true") {
-      router.push("/dashboard");
-    } else {
-      setChecking(false);
-    }
-  }, [router]);
-
-  const handleUnlock = () => {
-    sessionStorage.setItem("gs_auth", "true");
-    setUnlocked(true);
-  };
 
   const handleDashboard = () => {
     router.push("/dashboard");
   };
 
-  if (checking) return null;
-
   return (
     <>
       <style>{globalStyles}</style>
-
-      <AnimatePresence mode="wait">
-        {!unlocked ? (
-          <PasswordGate key="gate" onUnlock={handleUnlock} />
-        ) : (
-          <motion.div
-            key="site"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Hero onDashboard={handleDashboard} />
-            <AboutSection />
-            <FeaturedVideoSection />
-            <PhilosophySection />
-            <ServicesSection />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <Hero onDashboard={handleDashboard} />
+        <AboutSection />
+        <FeaturedVideoSection />
+        <PhilosophySection />
+        <ServicesSection />
+      </motion.div>
     </>
   );
 }

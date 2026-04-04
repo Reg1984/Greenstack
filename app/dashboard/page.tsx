@@ -1,6 +1,7 @@
 "use client"
 // GreenStack AI Auto-Bidding Platform v2.0
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { runAutoBidding, extractTenderFromURL } from "@/app/actions/ai"
@@ -71,6 +72,10 @@ const AGENTS = [
 ]
 
 export default function GreenStackApp() {
+  const router = useRouter()
+  const [authed, setAuthed] = useState(false)
+  const [pw, setPw] = useState("")
+  const [pwError, setPwError] = useState(false)
   const [page, setPage] = useState<PageId>("dashboard")
   const [menuOpen, setMenuOpen] = useState(false)
   const [tenders, setTenders] = useState<Tender[]>([])
@@ -106,6 +111,22 @@ export default function GreenStackApp() {
   const [scoutResult, setScoutResult] = useState<any>(null)
   
   const supabase = createClient()
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("gs_auth")
+    if (stored === "true") setAuthed(true)
+  }, [])
+
+  const handlePwSubmit = () => {
+    if (pw === "greenstack2026") {
+      sessionStorage.setItem("gs_auth", "true")
+      setAuthed(true)
+    } else {
+      setPwError(true)
+      setPw("")
+      setTimeout(() => setPwError(false), 2000)
+    }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -1297,6 +1318,36 @@ export default function GreenStackApp() {
         return null
     }
   }
+
+  if (!authed) return (
+    <div style={{
+      minHeight: "100vh", background: "#030808", display: "flex",
+      alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16,
+      fontFamily: "monospace",
+    }}>
+      <div style={{ color: "#00ff87", fontSize: 28, marginBottom: 8 }}>⬡</div>
+      <div style={{ color: "#fff", fontSize: 18, fontWeight: 600, marginBottom: 4 }}>GreenStack AI</div>
+      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>Enter access key</div>
+      <input
+        type="password"
+        value={pw}
+        onChange={e => setPw(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && handlePwSubmit()}
+        placeholder="Password"
+        autoFocus
+        style={{
+          background: "rgba(255,255,255,0.05)", border: `1px solid ${pwError ? "rgba(255,80,80,0.5)" : "rgba(0,255,135,0.2)"}`,
+          color: "#fff", padding: "12px 20px", fontSize: 14, outline: "none",
+          width: 280, textAlign: "center", letterSpacing: 4,
+        }}
+      />
+      {pwError && <div style={{ color: "rgba(255,80,80,0.8)", fontSize: 12 }}>Incorrect password</div>}
+      <button onClick={handlePwSubmit} style={{
+        background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)",
+        color: "#00ff87", padding: "10px 32px", cursor: "pointer", fontSize: 13, letterSpacing: 2,
+      }}>ENTER →</button>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-[#030808] text-white flex">
