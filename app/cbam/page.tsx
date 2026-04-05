@@ -8,6 +8,10 @@ const VIDEO_URL = "/hero.mp4";
 const VIDEO_URL_2 = "/video2.mp4";
 const VIDEO_URL_3 = "/video3.mp4";
 const VIDEO_URL_4 = "/video4.mp4";
+const VIDEO_URL_6 = "/video6.mp4";
+const VIDEO_URL_7 = "/video7.mp4";
+
+const ALL_VIDEOS = [VIDEO_URL_2, VIDEO_URL_3, VIDEO_URL_4, VIDEO_URL, VIDEO_URL_6, VIDEO_URL_7];
 
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
@@ -325,7 +329,7 @@ function DeliverablesSection() {
               style={{ borderRadius: "24px", overflow: "hidden" }}
             >
               <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
-                <video src={[VIDEO_URL_2, VIDEO_URL_3, VIDEO_URL_4, VIDEO_URL][i % 4]} muted autoPlay loop playsInline preload="auto"
+                <video src={ALL_VIDEOS[i % ALL_VIDEOS.length]} muted autoPlay loop playsInline preload="auto"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
               </div>

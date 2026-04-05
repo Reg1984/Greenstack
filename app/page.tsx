@@ -17,6 +17,8 @@ const VIDEO_URL = "/hero.mp4";
 const VIDEO_URL_2 = "/video2.mp4";
 const VIDEO_URL_3 = "/video3.mp4";
 const VIDEO_URL_4 = "/video4.mp4";
+const VIDEO_URL_6 = "/video6.mp4";
+const VIDEO_URL_7 = "/video7.mp4";
 
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
@@ -557,8 +559,10 @@ const SERVICES = [
   },
 ];
 
-function ServiceCard({ tag, title, desc, delay, inView }: {
-  tag: string; title: string; desc: string; delay: number; inView: boolean;
+const SERVICE_VIDEOS = [VIDEO_URL_6, VIDEO_URL_7];
+
+function ServiceCard({ tag, title, desc, delay, inView, idx }: {
+  tag: string; title: string; desc: string; delay: number; inView: boolean; idx: number;
 }) {
   return (
     <motion.div
@@ -568,7 +572,7 @@ function ServiceCard({ tag, title, desc, delay, inView }: {
       style={{ borderRadius: "24px", overflow: "hidden", cursor: "pointer" }}
     >
       <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
-        <video src={VIDEO_URL_2} muted autoPlay loop playsInline preload="auto"
+        <video src={SERVICE_VIDEOS[idx % SERVICE_VIDEOS.length]} muted autoPlay loop playsInline preload="auto"
           style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 700ms ease" }} />
         <div style={{
           position: "absolute", inset: 0,
@@ -615,7 +619,7 @@ function ServicesSection() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
           {SERVICES.map((s, i) => (
-            <ServiceCard key={i} {...s} delay={i * 0.15} inView={inView} />
+            <ServiceCard key={i} {...s} delay={i * 0.15} inView={inView} idx={i} />
           ))}
         </div>
 
