@@ -3,6 +3,10 @@
     {
       "path": "/api/verdant",
       "schedule": "0 7,19 * * *"
+    },
+    {
+      "path": "/api/verdant/followup",
+      "schedule": "0 8 * * *"
     }
   ],
   "functions": {
@@ -11,6 +15,7 @@
     "app/api/verdant/browser/route.ts": { "maxDuration": 300 },
     "app/api/verdant/build/route.ts": { "maxDuration": 300 },
     "app/api/verdant/outreach/route.ts": { "maxDuration": 300 },
-    "app/api/verdant/invoice/route.ts": { "maxDuration": 300 }
+    "app/api/verdant/invoice/route.ts": { "maxDuration": 300 },
+    "app/api/verdant/followup/route.ts": { "maxDuration": 300 }
   }
 }

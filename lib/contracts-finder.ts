@@ -12,97 +12,194 @@ export interface ContractsFinderTender {
   cpvCodes: string[]
 }
 
-const CPV_CODES = [
-  '09330000', // Solar energy
-  '09331200', // Solar photovoltaic modules
-  '45261215', // Solar panel roof-covering work
-  '09332000', // Solar installation
-  '09300000', // Electricity, heating, solar and nuclear energy
-  '71314000', // Energy and related services
-  '90711000', // Environmental impact assessment
-  '71313000', // Environmental engineering consultancy services
+// CPV codes for sustainability/consultancy — used both for filtering and for direct CPV queries
+const SUSTAINABILITY_CPV_CODES = [
+  '71314000', // Energy and related services consultancy
   '90700000', // Environmental services
+  '90711000', // Environmental impact assessment
+  '71313000', // Environmental engineering consultancy
+  '79410000', // Business and management consultancy
   '79411000', // General management consultancy
   '73200000', // Research and development consultancy
+  '71241000', // Feasibility study and programme spec
+  '79419000', // Evaluation consultancy services
 ]
 
-// Consultancy-first ordering — these match GreenStack AI's primary revenue stream
-const KEYWORDS = [
+// Consultancy-focused keywords — ordered by specificity and value
+const SUSTAINABILITY_KEYWORDS = [
   'sustainability consultancy',
-  'net zero',
-  'carbon reduction',
-  'ESOS',
-  'energy audit',
-  'decarbonisation',
-  'ESG',
-  'carbon footprint',
-  'energy efficiency',
   'net zero roadmap',
+  'carbon reduction strategy',
+  'ESG reporting',
+  'ESOS compliance',
+  'energy audit',
+  'decarbonisation strategy',
+  'carbon footprint assessment',
+  'net zero strategy',
   'sustainability strategy',
-  'renewable energy',
-  'solar PV',
-  'battery storage',
-  'EV charging',
+  'energy efficiency consultancy',
+  'TCFD report',
+  'CSRD compliance',
+  'low carbon',
+  'estate decarbonisation',
+  'sustainability report',
+  'green procurement strategy',
+  'carbon management',
+  'climate change strategy',
+  'energy management consultancy',
 ]
 
-export async function fetchContractsFinder(): Promise<ContractsFinderTender[]> {
+// Education-specific sustainability keywords
+const EDUCATION_KEYWORDS = [
+  'school sustainability',
+  'academy trust net zero',
+  'university decarbonisation',
+  'college energy audit',
+  'education estate sustainability',
+  'school carbon footprint',
+]
+
+// Hard filter — titles containing these are almost never consultancy
+const REJECT_TITLE_KEYWORDS = [
+  'transport', 'delivery', 'supply of', 'installation', 'maintenance', 'repair',
+  'staffing', 'recruitment', 'software licence', 'hardware', 'construction',
+  'civil engineering', 'vehicle', 'catering', 'cleaning', 'security guard',
+  'legal service', 'audit service', 'it service desk', 'managed service',
+  'printing', 'furniture', 'equipment supply', 'medical', 'clinical',
+]
+
+function isRelevantTender(title: string, description: string): boolean {
+  const combined = `${title} ${description}`.toLowerCase()
+  return !REJECT_TITLE_KEYWORDS.some(kw => combined.includes(kw))
+}
+
+async function queryContractsFinder(params: {
+  keyword?: string
+  cpvCode?: string
+  daysBack?: number
+}): Promise<ContractsFinderTender[]> {
   const tenders: ContractsFinderTender[] = []
 
-  for (const keyword of KEYWORDS.slice(0, 8)) {
-    try {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const url = `https://www.contractsfinder.service.gov.uk/Published/Notices/OCDS/Search?publishedFrom=${sevenDaysAgo}&keyword=${encodeURIComponent(keyword)}&size=10`
-      const res = await fetch(url, {
-        headers: { 'Accept': 'application/json' },
-        next: { revalidate: 3600 },
+  try {
+    const daysBack = params.daysBack ?? 14
+    const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    let url = `https://www.contractsfinder.service.gov.uk/Published/Notices/OCDS/Search?publishedFrom=${since}&size=15`
+    if (params.keyword) url += `&keyword=${encodeURIComponent(params.keyword)}`
+    if (params.cpvCode) url += `&cpvCode=${params.cpvCode}`
+
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 3600 },
+    })
+
+    if (!res.ok) return []
+
+    const data = await res.json()
+    const releases = data?.releases ?? []
+
+    for (const release of releases) {
+      const tender = release?.tender
+      const awards = release?.awards?.[0]
+      const buyer = release?.buyer
+
+      if (!tender?.title) continue
+      if (!isRelevantTender(tender.title, tender?.description ?? '')) continue
+
+      const value = parseFloat(tender?.value?.amount ?? awards?.value?.amount ?? 0) || 0
+      const deadline = tender?.tenderPeriod?.endDate ?? tender?.contractPeriod?.endDate ?? ''
+
+      tenders.push({
+        id: release?.ocid ?? Math.random().toString(),
+        title: tender.title,
+        description: tender?.description ?? '',
+        value,
+        deadline: deadline ? new Date(deadline).toLocaleDateString('en-GB') : 'TBC',
+        sector: tender?.mainProcurementCategory ?? 'Services',
+        authority: buyer?.name ?? 'Unknown Authority',
+        location: release?.planning?.budget?.description ?? 'UK',
+        url: release?.ocid
+          ? `https://www.contractsfinder.service.gov.uk/Notice/${release.ocid.replace('ocds-b5fd17-', '')}`
+          : 'https://www.contractsfinder.service.gov.uk/Search/Results',
+        published: release?.date ?? new Date().toISOString(),
+        cpvCodes: tender?.items?.map((i: any) => i?.additionalClassifications?.[0]?.id).filter(Boolean) ?? [],
       })
+    }
+  } catch {
+    // Non-fatal
+  }
 
-      if (!res.ok) continue
+  return tenders
+}
 
-      const data = await res.json()
-      const releases = data?.releases ?? []
+export async function fetchContractsFinder(): Promise<ContractsFinderTender[]> {
+  const allTenders: ContractsFinderTender[] = []
 
-      for (const release of releases) {
-        const tender = release?.tender
-        const awards = release?.awards?.[0]
-        const buyer = release?.buyer
+  // Run keyword queries and CPV code queries in parallel batches
+  const keywordBatch = SUSTAINABILITY_KEYWORDS.slice(0, 8).map(kw =>
+    queryContractsFinder({ keyword: kw })
+  )
 
-        if (!tender?.title) continue
+  const educationBatch = EDUCATION_KEYWORDS.slice(0, 3).map(kw =>
+    queryContractsFinder({ keyword: kw })
+  )
 
-        const value = tender?.value?.amount
-          ?? awards?.value?.amount
-          ?? 0
+  const cpvBatch = SUSTAINABILITY_CPV_CODES.slice(0, 4).map(cpv =>
+    queryContractsFinder({ cpvCode: cpv })
+  )
 
-        const deadline = tender?.tenderPeriod?.endDate
-          ?? tender?.contractPeriod?.endDate
-          ?? ''
+  const results = await Promise.allSettled([
+    ...keywordBatch,
+    ...educationBatch,
+    ...cpvBatch,
+  ])
 
-        tenders.push({
-          id: release?.ocid ?? Math.random().toString(),
-          title: tender.title,
-          description: tender?.description ?? '',
-          value: parseFloat(value) || 0,
-          deadline: deadline ? new Date(deadline).toLocaleDateString('en-GB') : 'TBC',
-          sector: tender?.mainProcurementCategory ?? 'Services',
-          authority: buyer?.name ?? 'Unknown Authority',
-          location: release?.planning?.budget?.description ?? 'UK',
-          url: release?.ocid
-            ? `https://www.contractsfinder.service.gov.uk/Notice/${release.ocid.replace('ocds-b5fd17-', '')}`
-            : `https://www.contractsfinder.service.gov.uk/Search/Results`,
-          published: release?.date ?? new Date().toISOString(),
-          cpvCodes: tender?.items?.map((i: any) => i?.additionalClassifications?.[0]?.id).filter(Boolean) ?? [],
-        })
-      }
-    } catch {
-      continue
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      allTenders.push(...result.value)
     }
   }
 
   // Deduplicate by id
-  const seen = new Set()
-  return tenders.filter(t => {
+  const seen = new Set<string>()
+  return allTenders.filter(t => {
     if (seen.has(t.id)) return false
     seen.add(t.id)
     return true
   })
+}
+
+/** Fetch from devolved UK procurement portals via keyword search */
+export async function fetchDevolvedTenders(): Promise<Array<{
+  title: string; authority: string; url: string; region: string; description: string
+}>> {
+  const results: Array<{ title: string; authority: string; url: string; region: string; description: string }> = []
+
+  const portals = [
+    {
+      region: 'Scotland',
+      url: 'https://www.publiccontractsscotland.gov.uk/Search/Search_AuthProfile.aspx?ID=AA32108',
+      searchUrl: 'https://www.publiccontractsscotland.gov.uk/search/Search_Keyword.aspx?k=sustainability+net+zero',
+    },
+    {
+      region: 'Wales',
+      url: 'https://www.sell2wales.gov.wales/search/search_mainpage.aspx',
+      searchUrl: 'https://www.sell2wales.gov.wales/search/search_mainpage.aspx?k=sustainability',
+    },
+    {
+      region: 'Northern Ireland',
+      url: 'https://etendersni.gov.uk/epps/cft/listContractNotices.do',
+      searchUrl: 'https://etendersni.gov.uk/epps/cft/listContractNotices.do',
+    },
+  ]
+
+  // These are scraped via VERDANT's browse_url tool during the cycle
+  // Return portal URLs as directives rather than live-scraping here
+  return portals.map(p => ({
+    title: `Search ${p.region} procurement portal`,
+    authority: p.region,
+    url: p.searchUrl,
+    region: p.region,
+    description: `Browse ${p.region} sustainability/net zero tenders at: ${p.searchUrl}`,
+  }))
 }

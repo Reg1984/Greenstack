@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory } from '@/lib/verdant-memory'
+import { checkContactExists, upsertContact, getCRMSummary } from '@/lib/outreach-crm'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -76,7 +77,16 @@ async function sendOutreachEmail(input: {
   organisation: string
   subject: string
   body: string
+  signal?: string
 }): Promise<string> {
+  // Check CRM — warn if recently contacted
+  const existing = await checkContactExists(input.to_email, input.organisation)
+  if (existing && existing.status !== 'identified' && existing.last_contacted_at) {
+    const daysSince = Math.floor((Date.now() - new Date(existing.last_contacted_at).getTime()) / (1000 * 60 * 60 * 24))
+    if (daysSince < 3) {
+      return `⚠️ CRM: ${input.organisation} was already contacted ${daysSince} day(s) ago (status: ${existing.status}). Skipping to avoid spam. Follow-up is scheduled automatically.`
+    }
+  }
   try {
     const supabase = await createClient()
 
@@ -103,7 +113,7 @@ async function sendOutreachEmail(input: {
       if (!res.ok) return `Email send failed: ${data.message ?? res.status}`
     }
 
-    // Log to Supabase
+    // Log to Supabase outreach_emails
     await supabase.from('outreach_emails').insert({
       to_email: input.to_email,
       to_name: input.to_name ?? null,
@@ -115,8 +125,17 @@ async function sendOutreachEmail(input: {
       sent_at: sent ? new Date().toISOString() : null,
     })
 
+    // Update CRM contact record
+    await upsertContact({
+      organisation: input.organisation,
+      contact_name: input.to_name,
+      contact_email: input.to_email,
+      signal: input.signal,
+      source: 'chat',
+    })
+
     return sent
-      ? `Email sent to ${input.to_email} at ${input.organisation}. Subject: "${input.subject}"`
+      ? `Email sent to ${input.to_email} at ${input.organisation}. Subject: "${input.subject}". Contact logged in CRM with follow-up scheduled.`
       : `Email queued for ${input.to_email} (no Resend key configured)`
   } catch (err) {
     return `Outreach error: ${String(err)}`
@@ -125,6 +144,36 @@ async function sendOutreachEmail(input: {
 
 // Tools VERDANT can call autonomously
 const VERDANT_TOOLS: Anthropic.Tool[] = [
+  {
+    name: 'check_crm',
+    description: 'Check if an organisation or email address is already in the outreach CRM pipeline. Use this before sending any outreach email to avoid duplicate contact and to understand the current relationship status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        email: { type: 'string', description: 'Email address to check (optional)' },
+        organisation: { type: 'string', description: 'Organisation name to check' },
+      },
+      required: ['organisation'],
+    },
+  },
+  {
+    name: 'draft_content',
+    description: 'Draft a LinkedIn post, blog article, or capability statement and save it for review. Use this to create thought leadership content that positions GreenStack AI as a sustainability intelligence authority. Content is saved to the dashboard for the human to review and publish.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        type: {
+          type: 'string',
+          enum: ['linkedin_post', 'blog_article', 'capability_statement', 'case_study'],
+          description: 'Type of content to draft',
+        },
+        title: { type: 'string', description: 'Title or subject of the content' },
+        body: { type: 'string', description: 'Full content body' },
+        target_audience: { type: 'string', description: 'Who this content is aimed at' },
+      },
+      required: ['type', 'title', 'body'],
+    },
+  },
   {
     name: 'browse_url',
     description: 'Fetch and read the full content of any public webpage. Use this to read tender specifications, research organisations, read GIZ / World Bank / UNGM notices, check company websites, or read any document available online.',
@@ -172,10 +221,11 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const verdantMemory = await loadVerdantMemory()
 
-    const [{ data: tenders }, { data: bids }, { data: recentCycles }] = await Promise.all([
+    const [{ data: tenders }, { data: bids }, { data: recentCycles }, crmSummary] = await Promise.all([
       supabase.from('tenders').select('*').order('created_at', { ascending: false }).limit(20),
       supabase.from('bids').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('activity_log').select('metadata').eq('type', 'verdant_cycle').order('created_at', { ascending: false }).limit(3),
+      getCRMSummary(),
     ])
 
     const pipelineValue = tenders?.reduce((sum, t) => sum + (t.value || 0), 0) ?? 0
@@ -221,6 +271,10 @@ ${verdantMemory}
 - Active tenders: ${tenders?.length ?? 0}
 - Total pipeline value: £${(pipelineValue / 1000000).toFixed(2)}M
 - Active bids: ${bids?.length ?? 0}
+- ${crmSummary}
+
+## CRM TOOLS AVAILABLE
+Use check_crm before sending ANY outreach email — it prevents duplicate contact and shows relationship history. Use draft_content to create LinkedIn posts or capability statements ready for human review.
 
 ## MOST RECENT CYCLE OUTPUT (summary)
 ${lastCycleOutput.slice(0, 1500)}
@@ -283,6 +337,28 @@ You are VERDANT. Be brilliant.`
           } else if (block.name === 'send_outreach_email') {
             result = await sendOutreachEmail(input)
             toolsUsed.push({ tool: 'outreach', input: input.to_email, result: result.slice(0, 200) })
+          } else if (block.name === 'check_crm') {
+            const contact = await checkContactExists(input.email ?? null, input.organisation)
+            result = contact
+              ? `CRM record found for ${input.organisation}: status=${contact.status}, last_contacted=${contact.last_contacted_at ? new Date(contact.last_contacted_at).toLocaleDateString('en-GB') : 'never'}, followup_count=${contact.followup_count}, signal=${contact.signal ?? 'none'}`
+              : `No CRM record for ${input.organisation} — safe to send initial outreach.`
+            toolsUsed.push({ tool: 'crm', input: input.organisation, result: result.slice(0, 200) })
+          } else if (block.name === 'draft_content') {
+            try {
+              const supabase = await createClient()
+              await supabase.from('content_drafts').insert({
+                type: input.type,
+                title: input.title,
+                body: input.body,
+                target_audience: input.target_audience ?? null,
+                status: 'draft',
+                created_at: new Date().toISOString(),
+              })
+              result = `Content draft saved: "${input.title}" (${input.type}) — available for review in dashboard.`
+            } catch (err) {
+              result = `Content draft created but could not save to database: ${String(err)}`
+            }
+            toolsUsed.push({ tool: 'content', input: input.title, result: result.slice(0, 200) })
           }
 
           toolResults.push({

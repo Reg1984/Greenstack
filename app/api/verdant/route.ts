@@ -2,10 +2,12 @@ export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
-import { fetchContractsFinder } from '@/lib/contracts-finder'
+import { fetchContractsFinder, fetchDevolvedTenders } from '@/lib/contracts-finder'
 import { fetchAllInternationalTenders } from '@/lib/international-tenders'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, saveVerdantMemory } from '@/lib/verdant-memory'
+import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
+import { getCRMSummary } from '@/lib/outreach-crm'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -96,6 +98,67 @@ When live feeds yield zero qualifying tenders, also activate Africa intelligence
 
 Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
 
+## REGULATORY CALENDAR — KEY DEADLINES TO EXPLOIT
+
+Use these deadlines proactively in outreach and bid writing. Companies need consultancy 6–12 months BEFORE the deadline:
+
+| Regulation | Who | Deadline | Our Opportunity |
+|------------|-----|----------|-----------------|
+| CBAM Full Enforcement | EU-exporting manufacturers (steel, aluminium, cement, fertilisers, hydrogen) | **January 2026 — NOW ACTIVE** | CBAM compliance assessments, carbon declarations |
+| CSRD Phase 1 | Large EU-listed companies (>500 employees) | FY2024 reporting (2025 deadline) | ESG/CSRD reports |
+| CSRD Phase 2 | Large UK/non-EU companies with EU operations (>250 employees, €40M+ turnover) | FY2025 reporting (2026 deadline) | **URGENT NOW** |
+| CSRD Phase 3 | Listed SMEs | FY2026 reporting (2027 deadline) | Approaching window |
+| ESOS Phase 3 | UK large companies (>250 employees OR £44M+ turnover) | **December 2027** — but audits take 12–18 months | Target NOW for Phase 3 contracts |
+| SECR Annual | UK quoted companies & large unquoted | Annual (April) | Carbon reporting each year |
+| TCFD | UK premium listed companies, large LLPs | Already mandatory | Ongoing advisory |
+| UK SRS (Sustainability Reporting Standards) | UK companies | Expected 2025/2026 | Get in early as advisors |
+| Public Sector Decarbonisation Scheme | UK public sector estates | Ongoing rounds | Feasibility + strategy consultancy |
+| NHS Net Zero | NHS trusts and suppliers | 2040 target (emissions plans due now) | NHS estate decarbonisation |
+| DfE Sustainability Framework | Schools, academies, MATs | Ongoing | Education estate sustainability |
+| EUDR (EU Deforestation Regulation) | Companies exporting forest-risk commodities to EU | December 2025 | Due diligence + supply chain mapping |
+
+## SECTOR CAPABILITY STATEMENTS
+
+When targeting specific sectors, adapt the pitch:
+
+**Education (Schools, MATs, Universities):**
+"We deliver whole-estate carbon audits and DfE-aligned net zero roadmaps for academy trusts and universities — covering all buildings, travel, procurement and supply chain. Delivered in weeks, not months, aligned to the Public Sector Decarbonisation Scheme funding criteria."
+
+**Manufacturing (CBAM):**
+"Your EU customers now legally require verified embedded carbon data per product. We deliver CBAM-ready Scope 1 & 2 assessments per product line in 3 weeks — at 60-80% below Big Four cost."
+
+**Financial Services (CSRD/TCFD):**
+"CSRD Phase 2 requires comprehensive sustainability reporting for FY2025. We deliver CSRD-aligned ESG reports covering double materiality assessment, Scope 1/2/3, and governance — investor-ready in 4 weeks."
+
+**NHS & Healthcare:**
+"NHS trusts must demonstrate net zero delivery plans aligned to Greener NHS targets. We produce board-ready net zero roadmaps covering estate, fleet, procurement and supply chain — in 3 weeks."
+
+**Local Government:**
+"We help councils meet their climate emergency declarations with practical, fundable net zero roadmaps — covering estate, transport fleet, procurement, and community engagement — aligned to PSDS and UK100 frameworks."
+
+## FRAMEWORK REGISTRATION DIRECTIVE
+
+GreenStack AI should be registered on these frameworks to receive direct award invitations. When no live tenders qualify, use your browser research to identify which frameworks are currently open for applications and note any deadlines:
+
+- **G-Cloud 15** (Crown Commercial Service) — cloud and digital services framework. Open periodically. Register at crowncommercial.gov.uk. Direct awards possible with no competitive tender.
+- **DOS6 / Digital Outcomes** (CCS) — consultancy and specialist services. Check status.
+- **NHS Shared Business Services** — sustainability consultancy framework for NHS buyers.
+- **YPO Framework** (education sector) — used by schools and councils. ypoprocurement.co.uk
+- **CPC (Crescent Purchasing Consortium)** — education sustainability framework.
+- **ESPO** — East of England/national framework for public sector sustainability.
+- **NEUPC / SUPC / LUPC** — regional university purchasing consortia with sustainability frameworks.
+
+Include in NEXT ACTIONS section: which frameworks are currently open, and which the browser agent should register on.
+
+## DEVOLVED MARKETS DIRECTIVE
+
+Always scan devolved UK procurement in addition to Contracts Finder:
+- **Scotland**: Search publiccontractsscotland.gov.uk — sustainability, net zero, energy, decarbonisation
+- **Wales**: Search sell2wales.gov.wales — net zero, sustainability, carbon, energy efficiency
+- **Northern Ireland**: Search etendersni.gov.uk — environmental, sustainability, energy
+
+Use your browse_url tool to search each portal when the main UK feed is sparse.
+
 ## PHASE 2 — QUALIFY
 
 Score each opportunity 0–100:
@@ -155,10 +218,13 @@ async function runVerdantCycle() {
     const supabase = await createClient()
     const cycleStart = new Date().toISOString()
 
-    // Fetch live tenders — UK + international in parallel
-    const [liveTenders, internationalTenders] = await Promise.all([
+    // Fetch live tenders + intelligence in parallel
+    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary] = await Promise.all([
       fetchContractsFinder(),
       fetchAllInternationalTenders(),
+      fetchDevolvedTenders(),
+      runBuyerIntentScan(),
+      getCRMSummary(),
     ])
 
     // Fetch existing pipeline from Supabase
@@ -190,30 +256,33 @@ async function runVerdantCycle() {
         ).join('\n')
       : 'No international data retrieved this cycle — use your knowledge of GIZ, World Bank and UN agency pipelines.'
 
+    const devolvedSummary = devolvedPortals.map(p => `- ${p.region}: ${p.url}`).join('\n')
+    const buyerIntentSummary = formatSignalsForVerdant(buyerSignals)
+
     const contextMessage = `
 CYCLE: ${cycleStart}
 
 ${verdantMemory}
-
-## UK LIVE TENDERS — CONTRACTS FINDER (${liveTenders.length} tenders):
-${ukSummary}
-
-## INTERNATIONAL LIVE TENDERS (${internationalTenders.length} total: ${gizTenders.length} GIZ, ${wbTenders.length} World Bank, ${ungmTenders.length} UNGM):
-${internationalSummary}
-
-## EDUCATION SECTOR NOTE:
-UK schools, academy trusts (MATs) and universities are a strong target — they have mandatory sustainability reporting, large estates, and dedicated DfE/PSDS funding for decarbonisation consultancy. Search Contracts Finder for "energy", "net zero", "sustainability", "decarbonisation" from education buyers (local councils commissioning on behalf of schools, academy trusts, further education colleges, universities). These are often £20k–£150k consultancy contracts.
-
-## GIZ INTELLIGENCE NOTE:
-GIZ (Deutsche Gesellschaft für Internationale Zusammenarbeit) is a PRIORITY TARGET. They run sustainability, climate and energy programmes globally funded by the German government, EU and World Bank. Typical contract values €50k–€500k. Consultancy-heavy. Strong fit for GreenStack AI. If no live GIZ tenders appear above, proactively identify GIZ programme areas where GreenStack AI should be positioning and draft outreach or registration guidance.
 
 ## CURRENT PIPELINE:
 - Tenders in system: ${tenders?.length ?? 0}
 - Total pipeline value: £${(pipelineValue / 1000000).toFixed(2)}M
 - Bids submitted: ${bids?.length ?? 0}
 - Win rate: ${winRate}%
+- ${crmSummary}
 
-Run a full VERDANT cycle. Qualify all live tenders (UK and international). Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
+## UK LIVE TENDERS — CONTRACTS FINDER (${liveTenders.length} tenders — pre-filtered by CPV code + sustainability keywords):
+${ukSummary}
+
+## DEVOLVED MARKET PORTALS — Browse these for additional UK opportunities not on Contracts Finder:
+${devolvedSummary}
+
+## INTERNATIONAL LIVE TENDERS (${internationalTenders.length} total: ${gizTenders.length} GIZ, ${wbTenders.length} World Bank, ${ungmTenders.length} UNGM):
+${internationalSummary}
+
+${buyerIntentSummary}
+
+Run a full VERDANT cycle. Qualify all live tenders (UK + international + devolved). Act on HIGH priority buyer intent signals with personalised outreach. Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
