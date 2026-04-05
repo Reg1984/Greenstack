@@ -62,6 +62,42 @@ const NAV_ITEMS = [
 
 const CHART_COLORS = ["#00ff87", "#60efff", "#ffd166", "#c084fc", "#ff6b6b", "#4ecdc4"]
 
+const dashboardStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+  .gs-glass {
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: none;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.07);
+    position: relative;
+    overflow: hidden;
+  }
+  .gs-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(180deg,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.06) 30%,rgba(255,255,255,0) 60%,rgba(255,255,255,0.08) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gs-nav-item {
+    transition: all 0.2s ease;
+  }
+  .gs-nav-item:hover {
+    background: rgba(0,255,135,0.06);
+  }
+`
+
+const SI = ({ children }: { children: React.ReactNode }) => (
+  <span style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}>{children}</span>
+)
+
 const AGENTS = [
   { id: "scout", name: "Tender Scout", status: "active", queue: 12, icon: "🔍" },
   { id: "writer", name: "Bid Writer", status: "active", queue: 4, icon: "✍️" },
@@ -627,10 +663,13 @@ export default function GreenStackApp() {
       case "verdant":
         return (
           <div className="space-y-4 pb-24 md:pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Header */}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
               <div>
-                <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">🌿 VERDANT Agent</h2>
-                <p className="text-emerald-500/60 text-xs md:text-sm mt-1">Sovereign Tender Intelligence — running every hour, 24/7</p>
+                <h2 style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: 26, color: "#fff", display: "flex", alignItems: "center", gap: 10 }}>
+                  <span>🌿</span> VERDANT
+                </h2>
+                <p style={{ color: "rgba(0,255,135,0.45)", fontSize: 12, marginTop: 4, letterSpacing: "0.05em" }}>Sovereign Tender Intelligence — running every hour, 24/7</p>
               </div>
               <button
                 onClick={async () => {
@@ -651,52 +690,47 @@ export default function GreenStackApp() {
                   }
                 }}
                 disabled={verdantRunning}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2"
+                className="gs-glass"
+                style={{ borderRadius: 10, padding: "10px 20px", display: "flex", alignItems: "center", gap: 8, color: verdantRunning ? "rgba(0,255,135,0.5)" : "rgba(0,255,135,0.9)", background: "rgba(0,255,135,0.07)", border: "1px solid rgba(0,255,135,0.2)", cursor: verdantRunning ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 500, letterSpacing: "0.04em" }}
               >
                 <span className={verdantRunning ? "animate-spin" : ""}>🌿</span>
                 {verdantRunning ? "Running cycle..." : "Run Now"}
               </button>
             </div>
 
-            {/* Status bar */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-emerald-400">{verdantLogs.length}</div>
-                <div className="text-emerald-500/60 text-xs mt-1">Cycles Run</div>
-              </div>
-              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-emerald-400">24/7</div>
-                <div className="text-emerald-500/60 text-xs mt-1">Operating Mode</div>
-              </div>
-              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-emerald-400">1hr</div>
-                <div className="text-emerald-500/60 text-xs mt-1">Cron Interval</div>
-              </div>
-              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4 text-center">
-                <div className={cn("text-2xl font-bold", verdantLogs.length > 0 ? "text-green-400" : "text-yellow-400")}>
-                  {verdantLogs.length > 0 ? "ACTIVE" : "PENDING"}
+            {/* Status cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { value: verdantLogs.length, label: "Cycles Run" },
+                { value: "24/7", label: "Operating Mode" },
+                { value: "1hr", label: "Cron Interval" },
+                { value: verdantLogs.length > 0 ? "ACTIVE" : "PENDING", label: "Status", green: verdantLogs.length > 0 },
+              ].map((stat, i) => (
+                <div key={i} className="gs-glass" style={{ borderRadius: 14, padding: "20px 16px", textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: 24, color: stat.green === false ? "rgba(255,200,50,0.9)" : "rgba(0,255,135,0.9)", lineHeight: 1 }}>{stat.value}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>{stat.label}</div>
                 </div>
-                <div className="text-emerald-500/60 text-xs mt-1">Status</div>
-              </div>
+              ))}
             </div>
 
             {/* Chat with VERDANT */}
-            <div className="bg-[#0a1a0f] border border-emerald-500/30 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-emerald-400 font-semibold flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="gs-glass" style={{ borderRadius: 16, padding: 20, border: "1px solid rgba(0,255,135,0.15)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 500, color: "rgba(0,255,135,0.85)" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(0,255,135,0.8)", display: "inline-block", boxShadow: "0 0 6px rgba(0,255,135,0.5)", animation: "pulse 2s infinite" }} />
                   Chat with VERDANT
                 </h3>
                 <button
                   onClick={() => { setVerdantBuildMode(!verdantBuildMode); setPendingBuildPlan(null) }}
-                  className={cn(
-                    "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-medium transition",
-                    verdantBuildMode
-                      ? "bg-violet-500/20 border-violet-500/50 text-violet-300"
-                      : "bg-emerald-500/10 border-emerald-900/50 text-emerald-500/60 hover:text-emerald-400"
-                  )}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6, fontSize: 11, padding: "6px 12px", borderRadius: 20,
+                    background: verdantBuildMode ? "rgba(167,139,250,0.15)" : "rgba(0,255,135,0.06)",
+                    border: `1px solid ${verdantBuildMode ? "rgba(167,139,250,0.35)" : "rgba(0,255,135,0.15)"}`,
+                    color: verdantBuildMode ? "rgba(196,181,253,0.9)" : "rgba(0,255,135,0.55)",
+                    cursor: "pointer", fontWeight: 500,
+                  }}
                 >
-                  <span>{verdantBuildMode ? '🔧' : '🔧'}</span>
+                  <span>🔧</span>
                   {verdantBuildMode ? 'Build Mode ON' : 'Build Mode'}
                 </button>
               </div>
@@ -779,7 +813,7 @@ export default function GreenStackApp() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 fixed bottom-0 left-0 right-0 md:static bg-[#0a1a0f] md:bg-transparent p-3 md:p-0 border-t border-emerald-900/30 md:border-0 z-40">
+              <div className="flex gap-2 fixed bottom-0 left-0 right-0 md:static p-3 md:p-0 z-40" style={{ background: "rgba(3,10,8,0.97)", borderTop: "1px solid rgba(0,255,135,0.07)" }}>
                 <input
                   type="text"
                   value={verdantInput}
@@ -815,7 +849,7 @@ export default function GreenStackApp() {
                     }
                   }}
                   placeholder="Ask VERDANT... (press Enter to send)"
-                  className="flex-1 bg-[#061208] border border-emerald-900/50 rounded-lg px-4 py-2 text-white text-sm placeholder-emerald-500/40 focus:outline-none focus:border-emerald-500/50"
+                  style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(0,255,135,0.12)", borderRadius: 10, padding: "11px 16px", color: "#fff", fontSize: 13, outline: "none" }}
                 />
                 <button
                   onClick={async () => {
@@ -841,20 +875,20 @@ export default function GreenStackApp() {
                     }
                   }}
                   disabled={verdantChatLoading || !verdantInput.trim()}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+                  style={{ background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.22)", borderRadius: 10, padding: "11px 18px", color: "rgba(0,255,135,0.9)", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", cursor: "pointer", opacity: (verdantChatLoading || !verdantInput.trim()) ? 0.4 : 1, whiteSpace: "nowrap" }}
                 >
-                  Send
+                  Send →
                 </button>
               </div>
             </div>
 
             {/* Browser Agent — form filling */}
-            <div className="bg-[#0a1a0f] border border-cyan-500/20 rounded-xl p-4">
-              <h3 className="text-cyan-400 font-semibold mb-1 flex items-center gap-2">
-                <span>🤖 Browser Agent</span>
-                <span className="text-xs font-normal text-cyan-500/50">— VERDANT fills forms, you approve before submit</span>
+            <div className="gs-glass" style={{ borderRadius: 16, padding: 20, border: "1px solid rgba(96,239,255,0.12)" }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 500, color: "rgba(96,239,255,0.85)", marginBottom: 6 }}>
+                <span>🤖</span> Browser Agent
+                <span style={{ fontSize: 11, color: "rgba(96,239,255,0.4)", fontWeight: 400 }}>— VERDANT fills forms, you approve before submit</span>
               </h3>
-              <p className="text-emerald-500/50 text-xs mb-3">Paste a registration or application form URL. VERDANT fills it using GreenStack AI's profile, shows you a screenshot, and waits for your approval.</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Paste a registration or application form URL. VERDANT fills it using GreenStack AI's profile, shows you a screenshot, and waits for your approval.</p>
 
               {!pendingBrowserSession ? (
                 <div className="space-y-2">
@@ -1320,62 +1354,107 @@ export default function GreenStackApp() {
   }
 
   if (!authed) return (
-    <div style={{
-      minHeight: "100vh", background: "#030808", display: "flex",
-      alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16,
-      fontFamily: "monospace",
-    }}>
-      <div style={{ color: "#00ff87", fontSize: 28, marginBottom: 8 }}>⬡</div>
-      <div style={{ color: "#fff", fontSize: 18, fontWeight: 600, marginBottom: 4 }}>GreenStack AI</div>
-      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>Enter access key</div>
-      <input
-        type="password"
-        value={pw}
-        onChange={e => setPw(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && handlePwSubmit()}
-        placeholder="Password"
-        autoFocus
-        style={{
-          background: "rgba(255,255,255,0.05)", border: `1px solid ${pwError ? "rgba(255,80,80,0.5)" : "rgba(0,255,135,0.2)"}`,
-          color: "#fff", padding: "12px 20px", fontSize: 14, outline: "none",
-          width: 280, textAlign: "center", letterSpacing: 4,
+    <div style={{ minHeight: "100vh", background: "#030808", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+      <style>{dashboardStyles}</style>
+      {/* ambient glow blobs */}
+      <div style={{ position: "absolute", top: "20%", left: "30%", width: 400, height: 400, background: "radial-gradient(circle, rgba(0,255,135,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "20%", right: "25%", width: 300, height: 300, background: "radial-gradient(circle, rgba(96,239,255,0.04) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div className="gs-glass" style={{ borderRadius: 20, padding: "48px 40px", width: 360, display: "flex", flexDirection: "column", alignItems: "center", gap: 0, textAlign: "center" }}>
+        {/* logo mark */}
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 20 }}>⬡</div>
+        <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: 28, color: "#fff", lineHeight: 1.1, marginBottom: 6 }}>GreenStack AI</div>
+        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 32 }}>Secure Dashboard</div>
+        <input
+          type="password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handlePwSubmit()}
+          placeholder="Access key"
+          autoFocus
+          style={{
+            width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${pwError ? "rgba(255,80,80,0.4)" : "rgba(0,255,135,0.15)"}`,
+            borderRadius: 10, color: "#fff", padding: "13px 18px", fontSize: 14, outline: "none",
+            textAlign: "center", letterSpacing: "0.3em", marginBottom: pwError ? 10 : 16,
+            fontFamily: "monospace",
+          }}
+        />
+        {pwError && <div style={{ color: "rgba(255,80,80,0.75)", fontSize: 12, marginBottom: 16, letterSpacing: "0.05em" }}>Incorrect access key</div>}
+        <button onClick={handlePwSubmit} style={{
+          width: "100%", background: "rgba(0,255,135,0.08)", border: "1px solid rgba(0,255,135,0.25)",
+          borderRadius: 10, color: "#00ff87", padding: "13px 0", cursor: "pointer",
+          fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600,
+          transition: "all 0.2s ease",
         }}
-      />
-      {pwError && <div style={{ color: "rgba(255,80,80,0.8)", fontSize: 12 }}>Incorrect password</div>}
-      <button onClick={handlePwSubmit} style={{
-        background: "rgba(0,255,135,0.1)", border: "1px solid rgba(0,255,135,0.3)",
-        color: "#00ff87", padding: "10px 32px", cursor: "pointer", fontSize: 13, letterSpacing: 2,
-      }}>ENTER →</button>
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,255,135,0.14)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,255,135,0.08)")}
+        >Enter →</button>
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#030808] text-white flex">
-      {menuOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMenuOpen(false)} />}
-      <aside className={cn("fixed md:static inset-y-0 left-0 z-50 w-64 bg-[#051210] border-r border-emerald-900/50 flex flex-col transition-transform duration-300", menuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0")}>
-        <div className="p-4 border-b border-emerald-900/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl font-bold">G</div>
-            <div><div className="font-bold text-white">GreenStack</div><div className="text-xs text-emerald-500/60">AI Tender Platform</div></div>
+    <div className="min-h-screen text-white flex" style={{ background: "#030808" }}>
+      <style>{dashboardStyles}</style>
+      {menuOpen && <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setMenuOpen(false)} />}
+
+      {/* Sidebar */}
+      <aside className={cn("fixed md:static inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300", menuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0")} style={{ background: "rgba(3,10,8,0.97)", borderRight: "1px solid rgba(0,255,135,0.08)" }}>
+        {/* Logo */}
+        <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(0,255,135,0.07)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="gs-glass" style={{ width: 40, height: 40, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "rgba(0,255,135,0.9)", flexShrink: 0 }}>⬡</div>
+            <div>
+              <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: 16, color: "#fff", lineHeight: 1.2 }}>GreenStack</div>
+              <div style={{ fontSize: 10, color: "rgba(0,255,135,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 1 }}>AI Platform</div>
+            </div>
           </div>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {NAV_ITEMS.map(item => (
-            <button key={item.id} onClick={() => { setPage(item.id); setMenuOpen(false); }} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-lg transition text-left", page === item.id ? "bg-emerald-500/20 text-emerald-400" : "text-emerald-500/70 hover:bg-emerald-500/10 hover:text-emerald-400", item.accent && "text-emerald-400")}>
-              <span className="text-lg">{item.icon}</span><span>{item.label}</span>
-            </button>
-          ))}
+
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+          {NAV_ITEMS.map(item => {
+            const active = page === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => { setPage(item.id); setMenuOpen(false); }}
+                className="gs-nav-item"
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 14px", borderRadius: 10, textAlign: "left",
+                  background: active ? "rgba(0,255,135,0.09)" : "transparent",
+                  border: active ? "1px solid rgba(0,255,135,0.18)" : "1px solid transparent",
+                  color: active ? "rgba(0,255,135,0.95)" : "rgba(255,255,255,0.45)",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontSize: 15, opacity: active ? 1 : 0.7 }}>{item.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: active ? 500 : 400, letterSpacing: "0.01em" }}>{item.label}</span>
+                {active && <span style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "rgba(0,255,135,0.8)" }} />}
+              </button>
+            )
+          })}
         </nav>
-        <div className="p-4 border-t border-emerald-900/50"><div className="text-xs text-emerald-500/50">GreenStack AI v1.0</div></div>
+
+        {/* Footer */}
+        <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(0,255,135,0.07)" }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em", textTransform: "uppercase" }}>GreenStack AI v1.0</div>
+        </div>
       </aside>
-      <main className="flex-1 flex flex-col min-h-screen">
-        <header className="sticky top-0 z-30 bg-[#030808]/95 backdrop-blur border-b border-emerald-900/50 px-4 py-3 flex items-center justify-between">
-          <button className="md:hidden p-2 text-emerald-400" onClick={() => setMenuOpen(true)}>
+
+      <main className="flex-1 flex flex-col min-h-screen" style={{ minWidth: 0 }}>
+        {/* Header */}
+        <header style={{ position: "sticky", top: 0, zIndex: 30, background: "rgba(3,8,8,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid rgba(0,255,135,0.07)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <button className="md:hidden" style={{ padding: 8, color: "rgba(0,255,135,0.7)", background: "none", border: "none", cursor: "pointer" }} onClick={() => setMenuOpen(true)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          <div className="text-emerald-400 font-semibold capitalize">{page}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /><span className="text-emerald-500/70 text-sm">AI Active</span></div>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: 16, color: "rgba(255,255,255,0.85)", textTransform: "capitalize" }}>{page}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#00ff87", boxShadow: "0 0 8px rgba(0,255,135,0.6)", display: "inline-block", animation: "pulse 2s infinite" }} />
+            <span style={{ fontSize: 12, color: "rgba(0,255,135,0.6)", letterSpacing: "0.05em" }}>AI Active</span>
+          </div>
         </header>
+
         <div className="flex-1 p-4 md:p-6 overflow-y-auto">
           {loading ? <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full" /></div> : renderPage()}
         </div>
