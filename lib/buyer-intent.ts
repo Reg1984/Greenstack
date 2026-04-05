@@ -11,7 +11,6 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { classifyBuyerSignal } from '@/lib/gemma'
 
 export interface BuyerSignal {
   organisation: string
@@ -57,22 +56,22 @@ async function detectSustainabilityJobSignals(): Promise<BuyerSignal[]> {
     'UK academy trust OR university hiring sustainability energy manager 2026',
   ]
 
-  for (const query of queries) {
-    const results = await searchExa(query, 5)
+  // Run all 3 searches in parallel, not sequential
+  const allResults = await Promise.all(queries.map(q => searchExa(q, 4)))
+  for (const results of allResults) {
     for (const r of results) {
       if (!r.title || !r.url) continue
-      // Use Gemma to classify if this is a genuine signal
-      const classification = await classifyBuyerSignal(r.title, r.text ?? '', r.url)
-      if (!classification.isSignal) continue
-      const org = classification.organisation ?? r.title.split(' - ')[0]?.trim() ?? 'Unknown'
+      const org = r.title.split(' - ')[0]?.split(' at ')?.[1]?.trim()
+        ?? r.title.split(' | ')[0]?.trim()
+        ?? 'Unknown'
       if (org.length < 3) continue
       signals.push({
         organisation: org,
         signalType: 'sustainability_job',
-        signalText: classification.insight ?? `Job posting detected: ${r.title.slice(0, 120)}`,
+        signalText: `Job posting: ${r.title.slice(0, 120)}`,
         sourceUrl: r.url,
         country: 'UK',
-        priority: classification.priority,
+        priority: 'high',
       })
     }
   }
@@ -132,36 +131,41 @@ async function detectCSRDSignals(): Promise<BuyerSignal[]> {
   return signals.slice(0, 5)
 }
 
-/** Run all buyer intent scans and save to Supabase */
+/** Run all buyer intent scans and save to Supabase — 20s timeout so it never blocks the cycle */
 export async function runBuyerIntentScan(): Promise<BuyerSignal[]> {
-  const [jobSignals, cbamSignals, csrdSignals] = await Promise.all([
-    detectSustainabilityJobSignals(),
-    detectCBAMSignals(),
-    detectCSRDSignals(),
-  ])
+  const timeout = new Promise<BuyerSignal[]>(resolve => setTimeout(() => resolve([]), 20000))
 
-  const all = [...jobSignals, ...cbamSignals, ...csrdSignals]
+  const scan = async (): Promise<BuyerSignal[]> => {
+    const [jobSignals, cbamSignals, csrdSignals] = await Promise.all([
+      detectSustainabilityJobSignals(),
+      detectCBAMSignals(),
+      detectCSRDSignals(),
+    ])
 
-  // Save to Supabase
-  try {
-    const supabase = await createClient()
-    if (all.length > 0) {
-      await supabase.from('buyer_signals').insert(
-        all.map(s => ({
-          organisation: s.organisation,
-          signal_type: s.signalType,
-          signal_text: s.signalText,
-          source_url: s.sourceUrl,
-          country: s.country,
-          priority: s.priority,
-          acted_on: false,
-          detected_at: new Date().toISOString(),
-        }))
-      )
-    }
-  } catch { /* non-fatal */ }
+    const all = [...jobSignals, ...cbamSignals, ...csrdSignals]
 
-  return all
+    try {
+      const supabase = await createClient()
+      if (all.length > 0) {
+        await supabase.from('buyer_signals').insert(
+          all.map(s => ({
+            organisation: s.organisation,
+            signal_type: s.signalType,
+            signal_text: s.signalText,
+            source_url: s.sourceUrl,
+            country: s.country,
+            priority: s.priority,
+            acted_on: false,
+            detected_at: new Date().toISOString(),
+          }))
+        )
+      }
+    } catch { /* non-fatal — table may not exist yet */ }
+
+    return all
+  }
+
+  return Promise.race([scan(), timeout])
 }
 
 /** Format signals as context string for VERDANT */
