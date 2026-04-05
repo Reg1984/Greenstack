@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { classifyBuyerSignal } from '@/lib/gemma'
 
 export interface BuyerSignal {
   organisation: string
@@ -60,16 +61,18 @@ async function detectSustainabilityJobSignals(): Promise<BuyerSignal[]> {
     const results = await searchExa(query, 5)
     for (const r of results) {
       if (!r.title || !r.url) continue
-      const orgMatch = r.title.match(/at\s+([A-Z][^|–-]+?)(?:\s*[|–-]|$)/) ?? r.text.match(/([A-Z][a-z]+(?: [A-Z][a-z]+){1,3})\s+(?:is hiring|seeks|looking for)/i)
-      const org = orgMatch?.[1]?.trim() ?? r.title.split(' - ')[0]?.trim() ?? 'Unknown'
+      // Use Gemma to classify if this is a genuine signal
+      const classification = await classifyBuyerSignal(r.title, r.text ?? '', r.url)
+      if (!classification.isSignal) continue
+      const org = classification.organisation ?? r.title.split(' - ')[0]?.trim() ?? 'Unknown'
       if (org.length < 3) continue
       signals.push({
         organisation: org,
         signalType: 'sustainability_job',
-        signalText: `Job posting detected: ${r.title.slice(0, 120)}`,
+        signalText: classification.insight ?? `Job posting detected: ${r.title.slice(0, 120)}`,
         sourceUrl: r.url,
         country: 'UK',
-        priority: 'high',
+        priority: classification.priority,
       })
     }
   }

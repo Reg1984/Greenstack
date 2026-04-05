@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory } from '@/lib/verdant-memory'
 import { checkContactExists, upsertContact, getCRMSummary } from '@/lib/outreach-crm'
+import { extractTenderFields, isGemmaAvailable } from '@/lib/gemma'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -198,6 +199,17 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'parse_tender_doc',
+    description: 'Use Gemma 4 AI to rapidly extract structured fields from a raw tender document or specification. Use this when the human pastes a long tender spec or you have fetched a large document — Gemma extracts title, value, deadline, requirements, evaluation criteria and submission rules in seconds, giving you a clean brief to write the bid from.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        tender_text: { type: 'string', description: 'The full or partial text of the tender document to parse' },
+      },
+      required: ['tender_text'],
+    },
+  },
+  {
     name: 'send_outreach_email',
     description: 'Send a cold outreach email on behalf of GreenStack AI to a prospect. Use this when you have found a qualified lead — a sustainability manager, CFO, or procurement contact at a manufacturer or organisation that needs CBAM compliance, ESG reporting, or sustainability consultancy. Always write a personalised, concise email (under 200 words) before calling this tool.',
     input_schema: {
@@ -337,6 +349,10 @@ You are VERDANT. Be brilliant.`
           } else if (block.name === 'send_outreach_email') {
             result = await sendOutreachEmail(input)
             toolsUsed.push({ tool: 'outreach', input: input.to_email, result: result.slice(0, 200) })
+          } else if (block.name === 'parse_tender_doc') {
+            const fields = await extractTenderFields(input.tender_text)
+            result = JSON.stringify(fields, null, 2)
+            toolsUsed.push({ tool: 'gemma_parse', input: input.tender_text.slice(0, 50) + '...', result: result.slice(0, 200) })
           } else if (block.name === 'check_crm') {
             const contact = await checkContactExists(input.email ?? null, input.organisation)
             result = contact

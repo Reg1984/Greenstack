@@ -8,6 +8,7 @@ import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, saveVerdantMemory } from '@/lib/verdant-memory'
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
 import { getCRMSummary } from '@/lib/outreach-crm'
+import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -240,11 +241,27 @@ async function runVerdantCycle() {
     // Load accumulated memory
     const verdantMemory = await loadVerdantMemory()
 
-    const ukSummary = liveTenders.length > 0
-      ? liveTenders.map(t =>
+    // Gemma pre-filters tender feed — Claude only sees relevant ones
+    let filteredTenders = liveTenders
+    let gemmaStats = ''
+    if (isGemmaAvailable() && liveTenders.length > 0) {
+      const scores = await classifyTenders(liveTenders)
+      const relevant = scores.filter(s => s.relevant)
+      const filtered = liveTenders.filter(t => {
+        const s = scores.find(sc => sc.id === t.id)
+        return !s || s.relevant
+      })
+      gemmaStats = `Gemma 4 pre-filter: ${liveTenders.length} fetched → ${filtered.length} relevant (${liveTenders.length - filtered.length} rejected as non-consultancy)`
+      filteredTenders = filtered
+    } else {
+      gemmaStats = isGemmaAvailable() ? 'No tenders to classify' : 'Gemma unavailable — showing all tenders (add GOOGLE_AI_API_KEY to enable)'
+    }
+
+    const ukSummary = filteredTenders.length > 0
+      ? filteredTenders.map(t =>
           `- [${t.authority}] ${t.title} | £${t.value.toLocaleString()} | Deadline: ${t.deadline} | ${t.url}`
         ).join('\n')
-      : 'No UK live data retrieved this cycle.'
+      : 'No qualifying UK tenders after Gemma classification.'
 
     const gizTenders = internationalTenders.filter(t => t.source === 'giz')
     const wbTenders = internationalTenders.filter(t => t.source === 'worldbank')
@@ -271,7 +288,9 @@ ${verdantMemory}
 - Win rate: ${winRate}%
 - ${crmSummary}
 
-## UK LIVE TENDERS — CONTRACTS FINDER (${liveTenders.length} tenders — pre-filtered by CPV code + sustainability keywords):
+## 🤖 GEMMA 4 INTELLIGENCE LAYER: ${gemmaStats}
+
+## UK LIVE TENDERS — CONTRACTS FINDER (${filteredTenders.length} qualifying of ${liveTenders.length} fetched):
 ${ukSummary}
 
 ## DEVOLVED MARKET PORTALS — Browse these for additional UK opportunities not on Contracts Finder:
