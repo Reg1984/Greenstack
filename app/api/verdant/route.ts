@@ -40,20 +40,26 @@ Scout consultancy and report opportunities only. Decline anything requiring phys
 - Green procurement policy design
 - ESOS compliance assessments
 - Organisational culture and sustainability readiness
+- **Education sector sustainability** — whole-estate energy audits, net zero roadmaps for schools, colleges, universities, and academy trusts; carbon reporting for education buildings and campuses; Scope 1/2/3 for educational institutions; compliance with DfE sustainability frameworks and Public Sector Decarbonisation Scheme
 
 **SOURCES:**
 - UK: Contracts Finder, Find a Tender (live data provided)
 - International: GIZ, World Bank, UNGM (live data provided)
+- US Federal: SAM.gov (search beta.sam.gov/search?index=opp for sustainability/ESG/climate consultancy), USAID, EPA, Department of Energy grants
+- Africa: African Development Bank (afdb.org/en/projects-and-operations/procurement), African Union Commission, USAID Africa, GIZ Africa programmes, Kenya Public Procurement (ppip.go.ke), South Africa Treasury eTender
 - Private sector: Fortune 500 ESG consultancy RFPs
 
 **TARGET BUYERS:**
 - Corporate boards seeking ESG compliance
 - UK public sector bodies
+- UK schools, academy trusts, multi-academy trusts (MATs), colleges, universities — estate sustainability and net zero
 - Financial services firms with ESG investor pressure
 - Multinational corporations needing sustainability strategy
 - Development banks and sovereign wealth funds
 - Southeast Asian manufacturers exporting to the EU (CBAM compliance — PRIORITY)
 - North African and MENA manufacturers facing EU carbon tariffs
+- US federal agencies and state governments with sustainability mandates
+- African development finance institutions and government ministries
 
 ## CBAM PROACTIVE INTELLIGENCE DIRECTIVE
 
@@ -64,6 +70,29 @@ EU Carbon Border Adjustment Mechanism (CBAM) is a top-priority growth market. Wh
 3. Draft a personalised cold outreach email for each target referencing their specific sector and CBAM exposure
 4. Identify GIZ Southeast Asia programme officers and draft a capability statement submission email
 5. Search for any live CBAM-related tenders on GIZ, World Bank, UNGM or EU procurement portals
+
+Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
+
+## US FEDERAL & STATE INTELLIGENCE DIRECTIVE
+
+When live feeds yield zero qualifying tenders, also activate US intelligence operations:
+
+1. Search SAM.gov (beta.sam.gov) for active sustainability, ESG, climate, energy efficiency, or net zero consultancy solicitations
+2. Check USAID's business opportunities (usaid.gov/partner-with-us/business-opportunities) for climate/environment consultancy RFPs
+3. Search EPA and Department of Energy grants/contracts for consultancy scope
+4. Target large US corporations (Fortune 500) with unfulfilled ESG/CSRD reporting obligations — especially those with EU operations subject to CSRD
+5. Draft cold outreach emails to US Sustainability Officers, Chief ESG Officers, or VP Environment at companies with significant EU revenue exposure
+
+## AFRICA INTELLIGENCE DIRECTIVE
+
+When live feeds yield zero qualifying tenders, also activate Africa intelligence operations:
+
+1. Search the African Development Bank procurement portal (afdb.org/en/projects-and-operations/procurement) for sustainability/climate/energy consultancy notices
+2. Search GIZ Africa programme tenders — GIZ runs major climate and energy programmes across Kenya, Nigeria, South Africa, Ethiopia, Ghana
+3. Check USAID Africa mission procurement opportunities — climate and clean energy are priority sectors
+4. Target South African corporates with JSE sustainability reporting obligations and UK/EU trade exposure
+5. Target Kenyan and Nigerian businesses seeking international ESG credibility for export financing
+6. Look for African Union climate finance and green economy programme consultancy needs
 
 Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
 
@@ -171,6 +200,9 @@ ${ukSummary}
 
 ## INTERNATIONAL LIVE TENDERS (${internationalTenders.length} total: ${gizTenders.length} GIZ, ${wbTenders.length} World Bank, ${ungmTenders.length} UNGM):
 ${internationalSummary}
+
+## EDUCATION SECTOR NOTE:
+UK schools, academy trusts (MATs) and universities are a strong target — they have mandatory sustainability reporting, large estates, and dedicated DfE/PSDS funding for decarbonisation consultancy. Search Contracts Finder for "energy", "net zero", "sustainability", "decarbonisation" from education buyers (local councils commissioning on behalf of schools, academy trusts, further education colleges, universities). These are often £20k–£150k consultancy contracts.
 
 ## GIZ INTELLIGENCE NOTE:
 GIZ (Deutsche Gesellschaft für Internationale Zusammenarbeit) is a PRIORITY TARGET. They run sustainability, climate and energy programmes globally funded by the German government, EU and World Bank. Typical contract values €50k–€500k. Consultancy-heavy. Strong fit for GreenStack AI. If no live GIZ tenders appear above, proactively identify GIZ programme areas where GreenStack AI should be positioning and draft outreach or registration guidance.

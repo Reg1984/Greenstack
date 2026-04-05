@@ -30,6 +30,7 @@ GreenStack AI's primary superpower is producing world-class sustainability intel
 - Organisational culture assessments for sustainability readiness
 - Supply chain sustainability mapping and risk assessment
 - Investor-ready sustainability reports
+- Education sector sustainability — whole-estate energy audits for schools, colleges, universities and academy trusts; net zero roadmaps aligned to DfE sustainability frameworks and Public Sector Decarbonisation Scheme; Scope 1/2/3 carbon reporting for educational campuses and multi-academy trusts
 
 **SIGNATURE PRODUCT — THE GREENSTACK INTELLIGENCE REPORT**
 A comprehensive, AI-generated organisational sustainability report covering:
