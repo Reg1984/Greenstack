@@ -12,6 +12,16 @@ export interface ContractsFinderTender {
   cpvCodes: string[]
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 8000): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 // CPV codes for sustainability/consultancy — used both for filtering and for direct CPV queries
 const SUSTAINABILITY_CPV_CODES = [
   '71314000', // Energy and related services consultancy
@@ -88,7 +98,7 @@ async function queryContractsFinder(params: {
     if (params.keyword) url += `&keyword=${encodeURIComponent(params.keyword)}`
     if (params.cpvCode) url += `&cpvCode=${params.cpvCode}`
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     })

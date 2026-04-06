@@ -18,6 +18,17 @@ export interface InternationalTender {
   published: string
 }
 
+/** Fetch with a hard timeout — prevents any single external API from blocking the cycle */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 8000): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 const SUSTAINABILITY_KEYWORDS = [
   'sustainability',
   'net zero',
@@ -39,7 +50,7 @@ export async function fetchWorldBankTenders(): Promise<InternationalTender[]> {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     const url = `https://search.worldbank.org/api/v2/procurement?format=json&rows=20&fl=id,project_name,contract_description,procurement_method,contact_country_name,submission_date,totalamt,contact_email&fq=procurement_category:consulting&fq=submission_date:[${thirtyDaysAgo}T00:00:00Z TO NOW]`
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     })
@@ -85,32 +96,29 @@ export async function fetchUNGMTenders(): Promise<InternationalTender[]> {
   const tenders: InternationalTender[] = []
 
   try {
-    // UNGM public notice search — sustainability keywords
-    for (const keyword of ['sustainability', 'climate change', 'energy efficiency', 'net zero'].slice(0, 2)) {
+    // UNGM public notice search — run keywords in parallel, not sequential
+    const keywords = ['sustainability', 'climate change']
+    const results = await Promise.allSettled(keywords.map(async keyword => {
       const url = `https://www.ungm.org/Public/Notice/Search?keyword=${encodeURIComponent(keyword)}&pageSize=10&page=1`
-
-      const res = await fetch(url, {
-        headers: {
-          Accept: 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+      const res = await fetchWithTimeout(url, {
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         cache: 'no-store',
       })
-
-      if (!res.ok) continue
-
+      if (!res.ok) return []
       const data = await res.json()
-      const notices = data?.Notices ?? data?.notices ?? data?.data ?? []
+      return data?.Notices ?? data?.notices ?? data?.data ?? []
+    }))
 
-      for (const notice of notices) {
+    for (const result of results) {
+      if (result.status !== 'fulfilled') continue
+      for (const notice of result.value) {
         const title = notice.Title ?? notice.title ?? ''
         if (!title) continue
-
         tenders.push({
           id: `ungm-${notice.NoticeId ?? notice.id ?? Math.random()}`,
           title,
           description: notice.Description ?? notice.description ?? '',
-          value: 0, // UNGM often doesn't publish value upfront
+          value: 0,
           deadline: notice.DeadlineDate
             ? new Date(notice.DeadlineDate).toLocaleDateString('en-GB')
             : notice.deadline ?? 'TBC',

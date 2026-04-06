@@ -319,7 +319,7 @@ Run a full VERDANT cycle. Qualify all live tenders (UK + international + devolve
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8192,
+      max_tokens: 4096,
       system: VERDANT_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: contextMessage }],
     })
