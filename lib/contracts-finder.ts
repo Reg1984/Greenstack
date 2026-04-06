@@ -90,7 +90,7 @@ async function queryContractsFinder(params: {
 
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     })
 
     if (!res.ok) return []

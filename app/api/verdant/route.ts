@@ -218,6 +218,17 @@ export async function POST() {
 }
 
 async function runVerdantCycle() {
+  // Hard 240s timeout — ensures we always return before Vercel's 300s limit
+  const cycleTimeout = new Promise<NextResponse>(resolve =>
+    setTimeout(() => resolve(NextResponse.json({
+      success: false,
+      error: 'Cycle timed out after 240s — partial data may have been collected',
+    })), 240000)
+  )
+  return Promise.race([runCycleInternal(), cycleTimeout])
+}
+
+async function runCycleInternal() {
   try {
     const supabase = await createClient()
     const cycleStart = new Date().toISOString()

@@ -41,7 +41,7 @@ export async function fetchWorldBankTenders(): Promise<InternationalTender[]> {
 
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     })
 
     if (!res.ok) return []
@@ -94,7 +94,7 @@ export async function fetchUNGMTenders(): Promise<InternationalTender[]> {
           Accept: 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
-        next: { revalidate: 3600 },
+        cache: 'no-store',
       })
 
       if (!res.ok) continue
@@ -141,7 +141,7 @@ export async function fetchGIZTenders(): Promise<InternationalTender[]> {
     const url = 'https://www.giz.de/en/workwithgiz/tenders.html'
     const res = await fetch(url, {
       headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0' },
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     })
 
     if (!res.ok) return []
