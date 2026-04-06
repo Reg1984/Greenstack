@@ -228,19 +228,28 @@ async function runVerdantCycle() {
   return Promise.race([runCycleInternal(), cycleTimeout])
 }
 
+/** Race a promise against a timeout — returns fallback value if timeout wins */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([promise, new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms))])
+}
+
 async function runCycleInternal() {
   try {
     const supabase = await createClient()
     const cycleStart = new Date().toISOString()
 
-    // Fetch live tenders + intelligence in parallel
-    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary] = await Promise.all([
-      fetchContractsFinder(),
-      fetchAllInternationalTenders(),
-      fetchDevolvedTenders(),
-      runBuyerIntentScan(),
-      getCRMSummary(),
-    ])
+    // Phase 1: Fetch all data — hard 45s cap on the entire phase
+    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary] = await withTimeout(
+      Promise.all([
+        fetchContractsFinder(),
+        fetchAllInternationalTenders(),
+        fetchDevolvedTenders(),
+        runBuyerIntentScan(),
+        getCRMSummary(),
+      ]),
+      45000,
+      [[], [], [], [], 'CRM: timeout']
+    )
 
     // Fetch existing pipeline from Supabase
     const [{ data: tenders }, { data: bids }] = await Promise.all([
@@ -255,21 +264,23 @@ async function runCycleInternal() {
     // Load accumulated memory
     const verdantMemory = await loadVerdantMemory()
 
-    // Gemma pre-filters tender feed — Claude only sees relevant ones
+    // Phase 2: Gemma pre-filter — hard 25s cap, falls back to all tenders
     let filteredTenders = liveTenders
     let gemmaStats = ''
     if (isGemmaAvailable() && liveTenders.length > 0) {
-      const scores = await classifyTenders(liveTenders)
-      const relevant = scores.filter(s => s.relevant)
+      const scores = await withTimeout(classifyTenders(liveTenders), 25000, liveTenders.map(t => ({ id: t.id, relevant: true, score: 50 })))
       const filtered = liveTenders.filter(t => {
         const s = scores.find(sc => sc.id === t.id)
         return !s || s.relevant
       })
-      gemmaStats = `Gemma 4 pre-filter: ${liveTenders.length} fetched → ${filtered.length} relevant (${liveTenders.length - filtered.length} rejected as non-consultancy)`
+      gemmaStats = `Gemma 4 pre-filter: ${liveTenders.length} fetched → ${filtered.length} relevant (${liveTenders.length - filtered.length} rejected)`
       filteredTenders = filtered
     } else {
-      gemmaStats = isGemmaAvailable() ? 'No tenders to classify' : 'Gemma unavailable — showing all tenders (add GOOGLE_AI_API_KEY to enable)'
+      gemmaStats = isGemmaAvailable() ? 'No tenders to classify' : 'Gemma unavailable — showing all tenders'
     }
+
+    // Cap tenders sent to Claude at 40 to control token usage and response time
+    filteredTenders = filteredTenders.slice(0, 40)
 
     const ukSummary = filteredTenders.length > 0
       ? filteredTenders.map(t =>
