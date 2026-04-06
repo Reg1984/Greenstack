@@ -684,7 +684,21 @@ export default function GreenStackApp() {
                         metadata: { output: data.output, cycle_start: data.cycle },
                         created_at: new Date().toISOString(),
                       }, ...prev])
+                    } else {
+                      setVerdantLogs(prev => [{
+                        id: Date.now().toString(),
+                        description: `⚠️ Cycle error — ${data.error ?? 'unknown error'}`,
+                        metadata: { output: data.error ?? 'Cycle failed — check Vercel logs', cycle_start: new Date().toISOString() },
+                        created_at: new Date().toISOString(),
+                      }, ...prev])
                     }
+                  } catch (err) {
+                    setVerdantLogs(prev => [{
+                      id: Date.now().toString(),
+                      description: `⚠️ Cycle failed — ${String(err)}`,
+                      metadata: { output: String(err), cycle_start: new Date().toISOString() },
+                      created_at: new Date().toISOString(),
+                    }, ...prev])
                   } finally {
                     setVerdantRunning(false)
                   }
