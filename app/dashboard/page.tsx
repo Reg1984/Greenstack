@@ -669,7 +669,7 @@ export default function GreenStackApp() {
                 <h2 style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: 26, color: "#fff", display: "flex", alignItems: "center", gap: 10 }}>
                   <span>🌿</span> VERDANT
                 </h2>
-                <p style={{ color: "rgba(0,255,135,0.45)", fontSize: 12, marginTop: 4, letterSpacing: "0.05em" }}>Sovereign Tender Intelligence — running every hour, 24/7</p>
+                <p style={{ color: "rgba(0,255,135,0.45)", fontSize: 12, marginTop: 4, letterSpacing: "0.05em" }}>Sovereign Tender Intelligence — running 7am & 7pm daily, chat available 24/7</p>
               </div>
               <button
                 onClick={async () => {
@@ -703,7 +703,7 @@ export default function GreenStackApp() {
               {[
                 { value: verdantLogs.length, label: "Cycles Run" },
                 { value: "24/7", label: "Operating Mode" },
-                { value: "1hr", label: "Cron Interval" },
+                { value: "2x daily", label: "Cron Interval" },
                 { value: verdantLogs.length > 0 ? "ACTIVE" : "PENDING", label: "Status", green: verdantLogs.length > 0 },
               ].map((stat, i) => (
                 <div key={i} className="gs-glass" style={{ borderRadius: 14, padding: "20px 16px", textAlign: "center" }}>
