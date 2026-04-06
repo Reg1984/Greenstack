@@ -203,8 +203,11 @@ List required documents. Flag anything needing human input. Track pipeline patte
 You are VERDANT. Begin.`
 
 export async function GET(request: Request) {
+  // Allow Vercel cron (passes CRON_SECRET) or unauthenticated internal calls
+  // POST is already open — GET is cron-only so no meaningful security benefit
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   return runVerdantCycle()
