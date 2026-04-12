@@ -332,7 +332,7 @@ function Hero({ onDashboard }: { onDashboard: () => void }) {
           fontFamily: "'Instrument Serif', serif",
           fontSize: "clamp(2.5rem, 7vw, 5rem)",
           color: "#fff", letterSpacing: "-0.02em",
-          whiteSpace: "nowrap", marginBottom: "32px", lineHeight: 1.05,
+          marginBottom: "32px", lineHeight: 1.05,
         }}>
           Intelligence for a<br />
           <SI>greener</SI> tomorrow
@@ -507,7 +507,7 @@ function PhilosophySection() {
           Automation <SI dim>×</SI> Sustainability
         </motion.h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
+        <div className="gs-grid-2" style={{ gap: "40px" }}>
           <motion.div
             initial={{ opacity: 0, x: -40 }} animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -617,7 +617,7 @@ function ServicesSection() {
           <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Our services</span>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+        <div className="gs-grid-2">
           {SERVICES.map((s, i) => (
             <ServiceCard key={i} {...s} delay={i * 0.15} inView={inView} idx={i} />
           ))}

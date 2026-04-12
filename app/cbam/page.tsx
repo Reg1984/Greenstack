@@ -253,13 +253,13 @@ function ComparisonSection() {
           <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Why us</span>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px" }}>
+        <div className="gs-grid-2" style={{ gap: "2px" }}>
           {/* Traditional */}
           <motion.div
             initial={{ opacity: 0, x: -40 }} animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="liquid-glass"
-            style={{ borderRadius: "24px 0 0 24px", padding: "36px" }}
+            style={{ borderRadius: "24px", padding: "36px" }}
           >
             <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "28px" }}>Traditional consultancy</p>
             {rows.map(([label, bad]) => (
@@ -275,7 +275,7 @@ function ComparisonSection() {
             initial={{ opacity: 0, x: 40 }} animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="liquid-glass"
-            style={{ borderRadius: "0 24px 24px 0", padding: "36px", borderLeft: "1px solid rgba(134,239,172,0.2)" }}
+            style={{ borderRadius: "24px", padding: "36px", borderLeft: "1px solid rgba(134,239,172,0.2)" }}
           >
             <p style={{ color: "rgba(134,239,172,0.6)", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "28px" }}>GreenStack AI</p>
             {rows.map(([label, , good]) => (
@@ -319,7 +319,7 @@ function DeliverablesSection() {
           <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Deliverables</span>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+        <div className="gs-grid-2">
           {items.map((item, i) => (
             <motion.div
               key={item.num}
@@ -370,7 +370,7 @@ function PricingSection() {
           <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Pricing</span>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px" }}>
+        <div className="gs-grid-3" style={{ gap: "2px" }}>
           {tiers.map((tier, i) => (
             <motion.div
               key={tier.name}
@@ -378,7 +378,7 @@ function PricingSection() {
               transition={{ duration: 0.8, delay: i * 0.1 }}
               className="liquid-glass"
               style={{
-                borderRadius: i === 0 ? "24px 0 0 24px" : i === 2 ? "0 24px 24px 0" : "0",
+                borderRadius: "24px",
                 padding: "36px 28px",
                 borderTop: tier.featured ? "1px solid rgba(134,239,172,0.3)" : "none",
                 position: "relative",

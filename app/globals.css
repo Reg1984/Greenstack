@@ -95,6 +95,40 @@
   50% { transform: scale(1.4); opacity: 0.6; }
 }
 
+/* ── Responsive grid utilities (used by landing + CBAM pages) ── */
+.gs-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.gs-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+.gs-grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+@media (max-width: 768px) {
+  .gs-grid-2,
+  .gs-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+  .gs-hero-title {
+    white-space: normal !important;
+    font-size: clamp(2rem, 9vw, 3.5rem) !important;
+  }
+  .gs-section-pad {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  .gs-philosophy-grid {
+    flex-direction: column !important;
+  }
+}
+
 /* Scrollbar styling for dark theme */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
