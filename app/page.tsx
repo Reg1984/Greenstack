@@ -410,12 +410,44 @@ function AboutSection() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
+  const stats = [
+    { value: "60–80%", label: "cheaper than Big Four" },
+    { value: "2–3 wks", label: "average delivery time" },
+    { value: "UNGM", label: "Vendor No. 1203916" },
+    { value: "PI £50k", label: "professionally insured" },
+  ];
+
+  const pillars = [
+    {
+      icon: "⚡",
+      title: "AI-native speed",
+      desc: "Where traditional consultancies take 12 weeks, we deliver in days. No human bottlenecks. Full reports generated, refined and delivered at machine speed.",
+    },
+    {
+      icon: "🔬",
+      title: "Full-organisation depth",
+      desc: "Not just energy bills. We cover every Scope, every department — people, culture, leadership, supply chain, regulatory exposure — in one intelligence report.",
+    },
+    {
+      icon: "💷",
+      title: "Transparent pricing",
+      desc: "AI eliminates 60–80% of traditional consultancy overhead. We pass every penny of that saving directly to our clients. Fixed fees, no surprises.",
+    },
+    {
+      icon: "🌍",
+      title: "Global reach",
+      desc: "Registered on UNGM, active across UK public sector, international development banks, GCC markets, and EU-export manufacturers navigating CBAM.",
+    },
+  ];
+
   return (
     <section ref={ref} style={{
-      background: "#000", padding: "160px 24px 56px",
-      backgroundImage: "radial-gradient(ellipse at top, rgba(255,255,255,0.03) 0%, transparent 70%)",
+      background: "#000", padding: "140px 24px 100px",
+      backgroundImage: "radial-gradient(ellipse at top, rgba(0,255,135,0.03) 0%, transparent 60%)",
     }}>
-      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "960px", margin: "0 auto" }}>
+
+        {/* Label */}
         <motion.p
           initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
@@ -424,17 +456,67 @@ function AboutSection() {
           About Us
         </motion.p>
 
+        {/* Headline */}
         <motion.h2
           initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.1 }}
-          style={{
-            fontSize: "clamp(2rem, 6vw, 4.5rem)", color: "#fff",
-            lineHeight: 1.1, letterSpacing: "-0.03em",
-          }}
+          style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)", color: "#fff", lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: "40px" }}
         >
-          Pioneering <SI dim>intelligence</SI> for
-          <br />minds that <SI dim>build,</SI> <SI dim>bid,</SI> and <SI dim>win.</SI>
+          Sustainability intelligence,<br /><SI dim>built for the AI age.</SI>
         </motion.h2>
+
+        {/* Mission paragraph */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          style={{ color: "rgba(255,255,255,0.6)", fontSize: "1.1rem", lineHeight: 1.8, maxWidth: "640px", marginBottom: "80px" }}
+        >
+          GreenStack AI is an AI-native sustainability consultancy. We deliver net zero roadmaps, carbon assessments, ESG reports and CBAM compliance intelligence — faster, deeper and cheaper than any traditional firm. Our clients range from UK public sector bodies and NHS trusts to international manufacturers navigating EU carbon tariffs.
+        </motion.p>
+
+        {/* Stats row */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="gs-grid-2"
+          style={{ gap: "2px", marginBottom: "80px" }}
+        >
+          {stats.map((s, i) => (
+            <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "28px 24px" }}>
+              <div style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", color: "rgba(0,255,135,0.9)", lineHeight: 1, marginBottom: "8px" }}>{s.value}</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</div>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Pillars */}
+        <div className="gs-grid-2" style={{ gap: "24px" }}>
+          {pillars.map((p, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.7, delay: 0.4 + i * 0.1 }}
+              style={{ padding: "32px", borderRadius: "20px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <div style={{ fontSize: "1.5rem", marginBottom: "16px" }}>{p.icon}</div>
+              <h3 style={{ color: "#fff", fontSize: "1rem", fontWeight: 600, marginBottom: "10px", letterSpacing: "-0.01em" }}>{p.title}</h3>
+              <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.875rem", lineHeight: 1.7 }}>{p.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Registration strip */}
+        <motion.div
+          initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.8, delay: 0.8 }}
+          style={{ marginTop: "64px", paddingTop: "40px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", flexWrap: "wrap", gap: "32px", color: "rgba(255,255,255,0.3)", fontSize: "0.8rem" }}
+        >
+          <span>SATSSTRATEGY EDUCATION LTD · Co. No. 16348591</span>
+          <span>Registered in England & Wales</span>
+          <span>UNGM Vendor No. 1203916</span>
+          <span>PI Insured · Policy CHBS5487956XB</span>
+        </motion.div>
+
       </div>
     </section>
   );
