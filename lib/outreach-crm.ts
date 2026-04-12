@@ -176,6 +176,59 @@ export async function getCRMSummary(): Promise<string> {
   }
 }
 
+/** Send an outreach email via Resend and log to CRM */
+export async function sendOutreachEmail(params: {
+  to: string
+  subject: string
+  body: string
+  organisation: string
+  contact_name?: string
+  sector?: string
+  country?: string
+  notes?: string
+}): Promise<{ success: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return { success: false, error: 'RESEND_API_KEY not set' }
+
+  try {
+    const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.6">${params.body.replace(/\n/g, '<br>')}</div>`
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Reginald Orme — GreenStack AI <verdant@greenstackai.co.uk>',
+        to: params.to,
+        subject: params.subject,
+        html,
+      }),
+    })
+
+    if (!res.ok) {
+      const err = await res.text()
+      return { success: false, error: err }
+    }
+
+    // Log to CRM
+    await upsertContact({
+      organisation: params.organisation,
+      contact_name: params.contact_name,
+      contact_email: params.to,
+      sector: params.sector,
+      country: params.country ?? 'UK',
+      source: 'verdant-chat',
+      notes: params.notes ?? params.subject,
+    })
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
 /** Mark contact as replied */
 export async function markContactReplied(contactId: string): Promise<void> {
   try {
