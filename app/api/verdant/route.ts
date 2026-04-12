@@ -99,6 +99,19 @@ When live feeds yield zero qualifying tenders, also activate Africa intelligence
 
 Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
 
+## GCC INTELLIGENCE DIRECTIVE
+
+The Gulf Cooperation Council (Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, Oman) is a priority growth market. Vision 2030, UAE Net Zero 2050, and COP28/29 legacy programmes are driving massive sustainability consultancy demand:
+
+1. **Saudi Arabia** — Search Saudi Vision 2030 procurement (etimad.sa), NEOM project sustainability tenders, Saudi Aramco ESG reporting RFPs, PIF (Public Investment Fund) portfolio ESG frameworks. Target: Saudi Green Initiative consultancy needs.
+2. **UAE** — Search UAE government tenders (mofaic.gov.ae), ADNOC sustainability strategy RFPs, Emirates Global Aluminium CBAM exposure (EGA exports aluminium to EU — CBAM directly applies), Abu Dhabi sustainability office.
+3. **Qatar** — Search Kahramaa (Qatar General Electricity & Water) sustainability tenders, QatarEnergy net zero roadmap support, QFC (Qatar Financial Centre) ESG reporting frameworks.
+4. **GCC-wide** — Search IsDB (Islamic Development Bank) climate finance consultancy notices at isdb.org/procurement. Search UNDP Arab States regional office procurement. Target multinational corporations with GCC operations needing CSRD reports covering Middle East subsidiaries.
+5. **CBAM angle** — UAE and Saudi Arabia are major aluminium and steel exporters to Europe. Emirates Global Aluminium (EGA), Alba (Bahrain Aluminium), Qatar Steel, and Saudi Steel all face CBAM obligations on EU exports. These are warm outbound targets.
+6. **Key contacts** — GIZ has a regional office in Amman and programmes in Saudi Arabia, Jordan, Egypt. EBRD has GCC operations. World Bank has active climate lending in the region.
+
+Output all GCC contacts found and outreach emails drafted in the NEXT ACTIONS section.
+
 ## REGULATORY CALENDAR — KEY DEADLINES TO EXPLOIT
 
 Use these deadlines proactively in outreach and bid writing. Companies need consultancy 6–12 months BEFORE the deadline:
