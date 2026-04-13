@@ -186,12 +186,141 @@ export async function fetchGIZTenders(): Promise<InternationalTender[]> {
   return tenders
 }
 
+// TED (Tenders Electronic Daily) — EU Official Journal procurement
+// Covers German federal, Berlin state, and all EU sustainability tenders
+export async function fetchTEDTenders(): Promise<InternationalTender[]> {
+  const tenders: InternationalTender[] = []
+
+  try {
+    const keywords = ['sustainability', 'carbon']
+    const results = await Promise.allSettled(keywords.map(async keyword => {
+      const url = `https://ted.europa.eu/api/v3.0/notices/search?q=${encodeURIComponent(keyword)}&scope=ACTIVE&fields=title,deadline-date,country-code,organisation-name,total-value&filters=country-code%3ADE&page=1&pageSize=10`
+      const res = await fetchWithTimeout(url, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      }, 10000)
+      if (!res.ok) return []
+      const data = await res.json()
+      return data?.notices ?? data?.results ?? []
+    }))
+
+    const seen = new Set<string>()
+    for (const result of results) {
+      if (result.status !== 'fulfilled') continue
+      for (const notice of result.value) {
+        const title = notice.title ?? notice['notice-title'] ?? ''
+        if (!title || seen.has(title)) continue
+        seen.add(title)
+        tenders.push({
+          id: `ted-${notice.id ?? notice['notice-number'] ?? Math.random()}`,
+          title,
+          description: notice.description ?? notice['short-description'] ?? 'TED EU procurement notice — Germany',
+          value: parseFloat(notice['total-value'] ?? '0') || 0,
+          deadline: notice['deadline-date']
+            ? new Date(notice['deadline-date']).toLocaleDateString('en-GB')
+            : 'See tender',
+          organisation: notice['organisation-name'] ?? 'German/EU Authority',
+          country: 'Germany',
+          url: notice.id
+            ? `https://ted.europa.eu/en/notice/-/detail/${notice.id}`
+            : 'https://ted.europa.eu',
+          source: 'giz',
+          published: notice['publication-date'] ?? new Date().toISOString(),
+        })
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  return tenders
+}
+
+// India — World Bank India projects + ADB
+export async function fetchIndiaTenders(): Promise<InternationalTender[]> {
+  const tenders: InternationalTender[] = []
+
+  // World Bank India-specific sustainability consulting
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const url = `https://search.worldbank.org/api/v2/procurement?format=json&rows=15&fq=procurement_category:consulting&fq=contact_country_name:India&fq=submission_date:[${thirtyDaysAgo}T00:00:00Z TO NOW]`
+    const res = await fetchWithTimeout(url, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const docs = data?.procurement?.docs ?? []
+      for (const doc of docs) {
+        const title = doc.project_name ?? doc.contract_description ?? ''
+        if (!title) continue
+        const isRelevant = SUSTAINABILITY_KEYWORDS.some(kw =>
+          title.toLowerCase().includes(kw) ||
+          (doc.contract_description ?? '').toLowerCase().includes(kw)
+        )
+        if (!isRelevant) continue
+        tenders.push({
+          id: `wb-india-${doc.id}`,
+          title,
+          description: doc.contract_description ?? '',
+          value: parseFloat(doc.totalamt) || 0,
+          deadline: doc.submission_date ? new Date(doc.submission_date).toLocaleDateString('en-GB') : 'TBC',
+          organisation: 'World Bank — India',
+          country: 'India',
+          url: `https://projects.worldbank.org/en/projects-operations/procurement-detail/${doc.id}`,
+          source: 'worldbank',
+          published: doc.submission_date ?? new Date().toISOString(),
+        })
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  // ADB (Asian Development Bank) — India sustainability consulting notices
+  try {
+    const url = `https://www.adb.org/api/procurement/notices?country=IND&type=consulting&status=active&limit=15`
+    const res = await fetchWithTimeout(url, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    }, 10000)
+    if (res.ok) {
+      const data = await res.json()
+      const notices = data?.data ?? data?.notices ?? []
+      for (const n of Array.isArray(notices) ? notices : []) {
+        const title = n.title ?? n.name ?? ''
+        if (!title) continue
+        const isRelevant = SUSTAINABILITY_KEYWORDS.some(kw => title.toLowerCase().includes(kw))
+        if (!isRelevant) continue
+        tenders.push({
+          id: `adb-${n.id ?? Math.random()}`,
+          title,
+          description: n.description ?? n.summary ?? 'ADB India procurement notice',
+          value: parseFloat(n.amount ?? '0') || 0,
+          deadline: n.deadline ? new Date(n.deadline).toLocaleDateString('en-GB') : 'See tender',
+          organisation: 'Asian Development Bank',
+          country: 'India',
+          url: n.url ?? 'https://www.adb.org/projects/tenders',
+          source: 'worldbank',
+          published: n.publishedDate ?? new Date().toISOString(),
+        })
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  return tenders
+}
+
 export async function fetchAllInternationalTenders(): Promise<InternationalTender[]> {
-  const [worldBank, ungm, giz] = await Promise.all([
+  const [worldBank, ungm, giz, ted, india] = await Promise.all([
     fetchWorldBankTenders(),
     fetchUNGMTenders(),
     fetchGIZTenders(),
+    fetchTEDTenders(),
+    fetchIndiaTenders(),
   ])
 
-  return [...worldBank, ...ungm, ...giz]
+  return [...worldBank, ...ungm, ...giz, ...ted, ...india]
 }

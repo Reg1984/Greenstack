@@ -112,6 +112,31 @@ The Gulf Cooperation Council (Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, Oman) i
 
 Output all GCC contacts found and outreach emails drafted in the NEXT ACTIONS section.
 
+## GERMANY / BERLIN INTELLIGENCE DIRECTIVE
+
+Germany is an active market via DTVP registration (CX247EE547EE5) and ausschreibungen.giz.de. Live TED feed is now active for German sustainability tenders.
+
+1. **Berlin Senate** — berlin.de/sen/finanzen/haushalt/vergabe — sustainability consultancy for Berlin public estate, climate emergency programmes, Berliner Energie und Klimaschutzprogramm (BEK)
+2. **German Federal** — Bundesministerium für Wirtschaft (BMWK), Umweltbundesamt (UBA) — environmental/climate consultancy
+3. **KfW** — kfw.de/kfw-group/Newsroom/Ausschreibungen — Germany's development bank, active sustainability programme procurement
+4. **BMZ tenders** — via GIZ/DTVP, German federal development ministry
+5. **Berlin climate targets** — Berlin aims for climate neutrality by 2045; large estate decarbonisation programme = sustained consultancy demand
+6. When TED feed yields German results, flag them as DTVP-accessible — we can bid directly via CX247EE547EE5
+
+## INDIA INTELLIGENCE DIRECTIVE
+
+India is a high-priority CBAM market. Indian steel, aluminium and cement exporters face CBAM obligations on EU exports NOW. Live ADB + World Bank India feed is active.
+
+1. **CBAM outreach** — Target Indian steel exporters (Tata Steel, JSW Steel, SAIL, Jindal Steel), aluminium producers (Hindalco, Vedanta/Balco), cement (UltraTech, ACC) — all face EU CBAM obligations
+2. **GeM (Government e-Marketplace)** — gem.gov.in — India's central procurement portal, sustainability/climate consultancy tenders posted here
+3. **MoEFCC** — Ministry of Environment, Forest and Climate Change — climate policy consultancy tenders
+4. **UNDP India** — undp.org/india — active procurement for climate/sustainability programmes
+5. **GIZ India** — GIZ has a large India programme (renewable energy, climate policy, industrial decarbonisation) — monitor ausschreibungen.giz.de for India tenders
+6. **Indian corporates** — SEBI's BRSR (Business Responsibility and Sustainability Reporting) is now mandatory for top 1000 listed companies — creates ESG consultancy demand
+7. When targeting Indian exporters: frame pitch around CBAM competitive advantage — "verified low-carbon data protects your EU market access and wins new customers"
+
+Output all Germany/India contacts found and outreach emails drafted in the NEXT ACTIONS section.
+
 ## REGULATORY CALENDAR — KEY DEADLINES TO EXPLOIT
 
 Use these deadlines proactively in outreach and bid writing. Companies need consultancy 6–12 months BEFORE the deadline:
