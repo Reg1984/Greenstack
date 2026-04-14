@@ -229,6 +229,74 @@ export async function sendOutreachEmail(params: {
   }
 }
 
+/** Query CRM for VERDANT tool use */
+export async function queryCRM(filter: string = 'all'): Promise<string> {
+  try {
+    const supabase = await createClient()
+
+    if (filter === 'due_followup') {
+      const { data } = await supabase
+        .from('outreach_contacts')
+        .select('organisation, contact_name, contact_email, status, followup_count, last_contacted_at, followup_due_at, notes')
+        .in('status', ['emailed', 'followed_up'])
+        .lte('followup_due_at', new Date().toISOString())
+        .lt('followup_count', 2)
+        .order('followup_due_at', { ascending: true })
+        .limit(20)
+      if (!data?.length) return 'No follow-ups due.'
+      return `FOLLOW-UPS DUE (${data.length}):\n` + data.map(c =>
+        `• ${c.organisation} | ${c.contact_name ?? 'unknown'} | ${c.contact_email} | sent ${c.followup_count + 1}x | last: ${c.last_contacted_at?.split('T')[0]}`
+      ).join('\n')
+    }
+
+    if (filter === 'replied') {
+      const { data } = await supabase
+        .from('outreach_contacts')
+        .select('organisation, contact_name, contact_email, replied_at, notes')
+        .eq('status', 'replied')
+        .order('replied_at', { ascending: false })
+        .limit(20)
+      if (!data?.length) return 'No replies yet.'
+      return `REPLIED (${data.length}):\n` + data.map(c =>
+        `• ${c.organisation} | ${c.contact_name ?? 'unknown'} | ${c.contact_email} | replied: ${c.replied_at?.split('T')[0]}`
+      ).join('\n')
+    }
+
+    // Search by org name
+    if (filter !== 'all') {
+      const { data } = await supabase
+        .from('outreach_contacts')
+        .select('organisation, contact_name, contact_email, status, followup_count, last_contacted_at, notes')
+        .ilike('organisation', `%${filter}%`)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (!data?.length) return `No CRM records matching: ${filter}`
+      return `CRM RESULTS FOR "${filter}":\n` + data.map(c =>
+        `• ${c.organisation} | ${c.contact_name ?? 'unknown'} | ${c.contact_email} | status: ${c.status} | contacted: ${c.last_contacted_at?.split('T')[0]}`
+      ).join('\n')
+    }
+
+    // All — summary + recent
+    const { data } = await supabase
+      .from('outreach_contacts')
+      .select('organisation, contact_name, contact_email, status, last_contacted_at, country, sector')
+      .order('last_contacted_at', { ascending: false })
+      .limit(30)
+
+    if (!data?.length) return 'CRM is empty — no contacts yet.'
+
+    const counts: Record<string, number> = {}
+    data.forEach(c => { counts[c.status] = (counts[c.status] || 0) + 1 })
+
+    return `CRM PIPELINE: ${data.length} contacts shown (${Object.entries(counts).map(([s, n]) => `${n} ${s}`).join(', ')})\n\nRECENT CONTACTS:\n` +
+      data.slice(0, 15).map(c =>
+        `• ${c.organisation} | ${c.contact_name ?? '—'} | ${c.contact_email ?? '—'} | ${c.status} | ${c.last_contacted_at?.split('T')[0] ?? '—'}`
+      ).join('\n')
+  } catch (err) {
+    return `CRM query error: ${String(err)}`
+  }
+}
+
 /** Mark contact as replied */
 export async function markContactReplied(contactId: string): Promise<void> {
   try {

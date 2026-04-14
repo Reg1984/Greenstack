@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
-import { sendOutreachEmail } from '@/lib/outreach-crm'
+import { sendOutreachEmail, queryCRM } from '@/lib/outreach-crm'
 import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
 import { scrapeUrl, searchAndScrape } from '@/lib/firecrawl'
+import { lookupCompaniesHouse } from '@/lib/companies-house'
 
 const client = new Anthropic()
 
@@ -88,6 +89,40 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['query'],
     },
   },
+  {
+    name: 'search_news',
+    description: 'Search for recent news about a company, topic, or industry. Use this to find trigger events — companies announcing net zero targets, hiring sustainability directors, winning contracts, publishing ESG reports. Perfect for timing outreach.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'News search query e.g. "Tesco net zero 2026" or "UK manufacturers CBAM compliance"' },
+        limit: { type: 'number', description: 'Number of results (default 5)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'lookup_company',
+    description: 'Look up a UK company on Companies House — get directors, registered address, SIC codes, filing history, and company number. Use this to find decision-makers and verify companies before outreach.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        name: { type: 'string', description: 'Company name to search for' },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'query_crm',
+    description: 'Query the GreenStack CRM to see who has already been contacted, their current status, and outreach history. Always check this before sending emails to avoid duplicate outreach. Also use to find who needs a follow-up.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        filter: { type: 'string', description: 'Optional filter: "all", "due_followup", "replied", or an organisation name to search for' },
+      },
+      required: [],
+    },
+  },
 ]
 
 async function executeTool(name: string, input: Record<string, any>): Promise<string> {
@@ -134,6 +169,22 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
         return results.map(r => `## ${r.title ?? r.url}\n${r.url}\n\n${r.markdown.slice(0, 800)}`).join('\n\n---\n\n')
       }
 
+      case 'search_news': {
+        const results = await searchAndScrape(`${input.query} news 2025 2026`, { limit: input.limit ?? 5 })
+        if (!results.length) return `No news found for: ${input.query}`
+        return results.map(r => `## ${r.title ?? r.url}\n${r.url}\n\n${r.markdown.slice(0, 600)}`).join('\n\n---\n\n')
+      }
+
+      case 'lookup_company': {
+        const result = await lookupCompaniesHouse(input.name)
+        return result
+      }
+
+      case 'query_crm': {
+        const result = await queryCRM(input.filter ?? 'all')
+        return result
+      }
+
       default:
         return `Unknown tool: ${name}`
     }
@@ -170,10 +221,10 @@ When researching companies or finding contacts — use web_search_and_read.`
     }))
 
     // Agentic loop — keep running until no more tool calls
-    for (let iteration = 0; iteration < 10; iteration++) {
+    for (let iteration = 0; iteration < 20; iteration++) {
       const response = await client.messages.create({
-        model: 'claude-opus-4-5',
-        max_tokens: 4096,
+        model: 'claude-opus-4-6',
+        max_tokens: 8192,
         tools: TOOLS,
         system: systemBase,
         messages: currentMessages,
