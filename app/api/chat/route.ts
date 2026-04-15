@@ -5,6 +5,7 @@ import { sendOutreachEmail, queryCRM } from '@/lib/outreach-crm'
 import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
 import { scrapeUrl, searchAndScrape } from '@/lib/firecrawl'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
+import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
 
 const client = new Anthropic()
 
@@ -123,6 +124,31 @@ const TOOLS: Anthropic.Tool[] = [
       required: [],
     },
   },
+  {
+    name: 'save_memory',
+    description: 'Save an important fact, decision, or learning to persistent memory. Use this to remember client preferences, pricing decisions, what worked, what did not, key contacts, and any other information that should persist across sessions. Category examples: client, strategy, pricing, learning, contact, bid.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        category: { type: 'string', description: 'Memory category e.g. client, strategy, pricing, learning, contact, bid' },
+        key: { type: 'string', description: 'Short descriptive key e.g. "Carbon Trust contact" or "CSRD pricing decision"' },
+        value: { type: 'string', description: 'The fact or information to remember' },
+        importance: { type: 'number', description: 'Importance 1-10 (10 = always load, 1 = low priority). Default 5.' },
+      },
+      required: ['category', 'key', 'value'],
+    },
+  },
+  {
+    name: 'recall_memory',
+    description: 'Search persistent memory for facts, decisions, or learnings from previous sessions. Use this when you need to recall what was decided about a client, a bid, pricing, or strategy.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'What to search for in memory e.g. "Carbon Trust" or "CSRD pricing"' },
+      },
+      required: ['query'],
+    },
+  },
 ]
 
 async function executeTool(name: string, input: Record<string, any>): Promise<string> {
@@ -185,6 +211,15 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
         return result
       }
 
+      case 'save_memory': {
+        const ok = await saveMemory(input.category, input.key, input.value, input.importance ?? 5)
+        return ok ? `✅ Remembered: [${input.category}] ${input.key}` : `❌ Memory save failed`
+      }
+
+      case 'recall_memory': {
+        return await recallMemory(input.query)
+      }
+
       default:
         return `Unknown tool: ${name}`
     }
@@ -204,7 +239,9 @@ export async function POST(request: NextRequest) {
 
     const { messages, systemPrompt } = await request.json()
 
-    const systemBase = systemPrompt || `You are VERDANT — the world's most advanced green energy and sustainability AI agent, built for GreenStack AI.
+    const persistentMemory = await loadTopMemories()
+
+    const systemBase = (systemPrompt || `You are VERDANT — the world's most advanced green energy and sustainability AI agent, built for GreenStack AI.
 
 You have direct tools to:
 - Send outreach emails (send_email)
@@ -213,7 +250,8 @@ You have direct tools to:
 
 When asked to send emails — use send_email tool directly, do not just draft.
 When asked to build or update the website — use publish_to_website. Read the existing file first if updating.
-When researching companies or finding contacts — use web_search_and_read.`
+When researching companies or finding contacts — use web_search_and_read.
+When you learn something important — use save_memory so you remember it next session.`) + persistentMemory
 
     let currentMessages = messages.map((msg: ChatMessage) => ({
       role: msg.role,

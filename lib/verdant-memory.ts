@@ -24,6 +24,72 @@ export interface VerdantMemory {
   last_updated: string
 }
 
+/**
+ * General-purpose key-value memory for VERDANT chat
+ * Stores client facts, decisions, learnings across all sessions
+ */
+
+export async function saveMemory(
+  category: string,
+  key: string,
+  value: string,
+  importance = 5
+): Promise<boolean> {
+  try {
+    const supabase = await createClient()
+    const now = new Date().toISOString()
+    const { error } = await supabase
+      .from('verdant_memory')
+      .upsert(
+        { category, key, value, importance, updated_at: now },
+        { onConflict: 'category,key' }
+      )
+    return !error
+  } catch {
+    return false
+  }
+}
+
+export async function recallMemory(query: string): Promise<string> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('verdant_memory')
+      .select('category, key, value, updated_at')
+      .or(`key.ilike.%${query}%,value.ilike.%${query}%`)
+      .order('importance', { ascending: false })
+      .limit(15)
+    if (!data?.length) return `No memories found for: "${query}"`
+    return data.map(m => `[${m.category.toUpperCase()}] ${m.key}: ${m.value}`).join('\n')
+  } catch {
+    return 'Memory recall error'
+  }
+}
+
+export async function loadTopMemories(): Promise<string> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('verdant_memory')
+      .select('category, key, value')
+      .order('importance', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .limit(40)
+    if (!data?.length) return ''
+    const grouped: Record<string, string[]> = {}
+    for (const m of data) {
+      if (!grouped[m.category]) grouped[m.category] = []
+      grouped[m.category].push(`${m.key}: ${m.value}`)
+    }
+    return '\n\n## VERDANT PERSISTENT MEMORY\n' +
+      Object.entries(grouped)
+        .map(([cat, items]) => `### ${cat.toUpperCase()}\n${items.join('\n')}`)
+        .join('\n\n')
+  } catch {
+    return ''
+  }
+}
+
 export async function loadVerdantMemory(): Promise<string> {
   try {
     const supabase = await createClient()
