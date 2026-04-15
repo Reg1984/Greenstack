@@ -191,7 +191,7 @@ async function sendMorningBriefing(report: string) {
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: 'VERDANT <verdant@greenstackai.co.uk>',
-      to: 'reginald@greenstackai.co.uk',
+      to: 'info@greenstackai.co.uk',
       subject: `VERDANT Morning Briefing — ${today}`,
       html: `<div style="font-family:sans-serif;max-width:700px;line-height:1.7">
         <h2 style="color:#16a34a">VERDANT Morning Briefing</h2>

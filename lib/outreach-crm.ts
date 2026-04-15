@@ -202,6 +202,7 @@ export async function sendOutreachEmail(params: {
       body: JSON.stringify({
         from: 'Reginald Orme — GreenStack AI <verdant@greenstackai.co.uk>',
         to: params.to,
+        bcc: 'info@greenstackai.co.uk',
         subject: params.subject,
         html,
       }),
