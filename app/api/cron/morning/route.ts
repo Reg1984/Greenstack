@@ -206,16 +206,19 @@ async function sendMorningBriefing(report: string) {
 }
 
 export async function GET(request: NextRequest) {
-  // Verify this is called by Vercel Cron
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Verify this is called by Vercel Cron (skip check if CRON_SECRET not set)
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret) {
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
   }
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   try {
-    const persistentMemory = await loadTopMemories()
+    const persistentMemory = await loadTopMemories().catch(() => '')
 
     const systemPrompt = `You are VERDANT — the world's most advanced green energy and sustainability AI agent, running your autonomous morning session for GreenStack AI.
 
