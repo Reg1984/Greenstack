@@ -193,7 +193,14 @@ async function emailInvoice(invoice: any) {
           <div style="font-size:20px;font-weight:bold;margin-top:8px">Total Due: £${invoice.total?.toLocaleString()}</div>
         </div>
         ${invoice.notes ? `<div style="margin-top:24px;padding:12px;background:#f8f8f8;border-radius:4px"><strong>Notes:</strong> ${invoice.notes}</div>` : ''}
-        <div style="margin-top:24px;padding:16px;background:#051210;border-radius:4px;color:#4ade80;font-size:12px">
+        <div style="margin-top:24px;padding:16px;background:#f0faf4;border:1px solid #bbf7d0;border-radius:4px">
+          <strong style="color:#166534">Payment Details</strong><br>
+          <span style="color:#374151">Account Name:</span> <strong>SATSSTRATEGY EDUCATION LTD</strong><br>
+          <span style="color:#374151">Sort Code:</span> <strong>04-00-05</strong><br>
+          <span style="color:#374151">Account Number:</span> <strong>60913409</strong><br>
+          <span style="font-size:11px;color:#6b7280">Please use your invoice number as the payment reference.</span>
+        </div>
+        <div style="margin-top:16px;padding:16px;background:#051210;border-radius:4px;color:#4ade80;font-size:12px">
           GreenStack AI | verdant@greenstackai.co.uk | greenstackai.co.uk
         </div>
       </div>

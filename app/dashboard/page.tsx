@@ -41,7 +41,23 @@ type Activity = {
   created_at: string
 }
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook" | "financials"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook" | "financials" | "browser"
+
+type BrowserSession = {
+  id: string
+  status: "pending_review" | "approved" | "submitted" | "failed" | "rejected"
+  url: string
+  purpose: string
+  form_data: Record<string, string> | null
+  screenshot_base64: string | null
+  result_screenshot_base64: string | null
+  notes: string | null
+  needs_human: string[] | null
+  error_message: string | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  created_at: string
+}
 
 type VerdantLog = {
   id: string
@@ -56,6 +72,7 @@ const NAV_ITEMS = [
   { id: "bids" as PageId, icon: "◎", label: "Bid Builder" },
   { id: "settings" as PageId, icon: "⚙", label: "Settings" },
   { id: "verdant" as PageId, icon: "🌿", label: "VERDANT", accent: true },
+  { id: "browser" as PageId, icon: "🖥️", label: "Browser Sessions", accent: true },
   { id: "playbook" as PageId, icon: "📋", label: "Playbook", accent: true },
   { id: "financials" as PageId, icon: "£", label: "Financials", accent: true },
 ]
@@ -145,6 +162,8 @@ export default function GreenStackApp() {
   const [user, setUser] = useState<any>(null)
   const [scoutRunning, setScoutRunning] = useState(false)
   const [scoutResult, setScoutResult] = useState<any>(null)
+  const [browserSessions, setBrowserSessions] = useState<BrowserSession[]>([])
+  const [browserApproving, setBrowserApproving] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -172,13 +191,14 @@ export default function GreenStackApp() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
       
-      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes] = await Promise.all([
+      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes, browserRes] = await Promise.all([
         supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("bids").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(10),
         supabase.from("activity_log").select("*").eq("type", "verdant_cycle").order("created_at", { ascending: false }).limit(20),
         supabase.from("invoices").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("outreach_emails").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("browser_sessions").select("id,status,url,purpose,form_data,screenshot_base64,result_screenshot_base64,notes,needs_human,error_message,submitted_at,reviewed_at,created_at").order("created_at", { ascending: false }).limit(30),
       ])
       if (tendersRes.data) setTenders(tendersRes.data)
       if (bidsRes.data) setBids(bidsRes.data)
@@ -191,6 +211,7 @@ export default function GreenStackApp() {
         setFinancialSummary({ totalRevenue: paid, outstanding, invoiceCount: invoicesRes.data.length })
       }
       if (outreachRes.data) setOutreachEmails(outreachRes.data)
+      if (browserRes.data) setBrowserSessions(browserRes.data as BrowserSession[])
       setLoading(false)
     }
     loadData()
@@ -1212,6 +1233,25 @@ export default function GreenStackApp() {
               </div>
             </div>
 
+            {/* Bank Details */}
+            <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+              <h3 className="text-emerald-400 font-semibold mb-3">🏦 Bank Details — Monzo Business</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <div className="bg-[#061208] rounded-lg p-3">
+                  <div className="text-emerald-500/60 text-xs mb-1">Account Name</div>
+                  <div className="text-white font-medium">SATSSTRATEGY EDUCATION LTD</div>
+                </div>
+                <div className="bg-[#061208] rounded-lg p-3">
+                  <div className="text-emerald-500/60 text-xs mb-1">Sort Code</div>
+                  <div className="text-white font-mono font-medium">04-00-05</div>
+                </div>
+                <div className="bg-[#061208] rounded-lg p-3">
+                  <div className="text-emerald-500/60 text-xs mb-1">Account Number</div>
+                  <div className="text-white font-mono font-medium">60913409</div>
+                </div>
+              </div>
+            </div>
+
             {/* Create Invoice */}
             <div className="bg-[#0a1a0f] border border-emerald-500/20 rounded-xl p-4">
               <h3 className="text-emerald-400 font-semibold mb-3">📄 Create Invoice</h3>
@@ -1362,6 +1402,172 @@ export default function GreenStackApp() {
           </div>
         )
 
+      case "browser": {
+        const pending = browserSessions.filter(s => s.status === "pending_review")
+        const history = browserSessions.filter(s => s.status !== "pending_review")
+
+        const approveSession = async (sessionId: string) => {
+          setBrowserApproving(sessionId)
+          try {
+            const res = await fetch('/api/verdant/browser', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sessionId }),
+            })
+            const data = await res.json()
+            setBrowserSessions(prev => prev.map(s =>
+              s.id === sessionId
+                ? { ...s, status: data.success ? "submitted" : "failed", error_message: data.success ? null : data.message, submitted_at: data.success ? new Date().toISOString() : null }
+                : s
+            ))
+          } finally { setBrowserApproving(null) }
+        }
+
+        const rejectSession = async (sessionId: string) => {
+          setBrowserApproving(sessionId)
+          try {
+            await fetch('/api/verdant/browser', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sessionId }),
+            })
+            setBrowserSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: "rejected" } : s))
+          } finally { setBrowserApproving(null) }
+        }
+
+        const statusBadge = (s: BrowserSession["status"]) => ({
+          pending_review: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
+          approved: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+          submitted: "bg-green-500/20 text-green-400 border border-green-500/30",
+          failed: "bg-red-500/20 text-red-400 border border-red-500/30",
+          rejected: "bg-gray-500/20 text-gray-400 border border-gray-500/30",
+        }[s] ?? "bg-gray-500/20 text-gray-400")
+
+        return (
+          <div className="space-y-6 pb-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">🖥️ Browser Sessions</h2>
+              <p className="text-emerald-500/60 text-sm mt-1">
+                VERDANT-filled portal forms waiting for your approval before submission.
+                {pending.length > 0 && <span className="ml-2 bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded text-xs font-semibold">{pending.length} pending</span>}
+              </p>
+            </div>
+
+            {/* Pending — needs review */}
+            {pending.length === 0 && (
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-10 text-center">
+                <div className="text-3xl mb-3">🖥️</div>
+                <div className="text-emerald-500/50 text-sm">No sessions pending review.</div>
+                <div className="text-emerald-500/30 text-xs mt-2">When VERDANT fills a portal registration form, it will appear here for your approval.</div>
+              </div>
+            )}
+
+            {pending.map(session => (
+              <div key={session.id} className="bg-[#0a1a0f] border border-yellow-500/30 rounded-xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-start justify-between p-4 border-b border-yellow-500/20">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn("text-xs px-2 py-0.5 rounded font-medium", statusBadge(session.status))}>PENDING REVIEW</span>
+                    </div>
+                    <h3 className="text-white font-semibold">{session.purpose}</h3>
+                    <a href={session.url} target="_blank" rel="noopener noreferrer" className="text-emerald-500/60 text-xs hover:text-emerald-400 transition truncate block mt-0.5">{session.url}</a>
+                  </div>
+                  <div className="text-emerald-500/40 text-xs ml-4 shrink-0">{new Date(session.created_at).toLocaleString("en-GB")}</div>
+                </div>
+
+                {/* Warnings */}
+                {session.needs_human && session.needs_human.length > 0 && (
+                  <div className="mx-4 mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <div className="text-yellow-400 text-xs font-semibold mb-1">⚠️ Needs your input before submitting</div>
+                    <div className="text-yellow-300/70 text-xs">{session.needs_human.join(" · ")}</div>
+                  </div>
+                )}
+                {session.notes && (
+                  <div className="mx-4 mt-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <div className="text-emerald-400/70 text-xs">{session.notes}</div>
+                  </div>
+                )}
+
+                {/* Form data filled */}
+                {session.form_data && Object.keys(session.form_data).length > 0 && (
+                  <div className="p-4">
+                    <div className="text-emerald-500/60 text-xs uppercase tracking-wider mb-2">Fields filled by VERDANT</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {Object.entries(session.form_data).map(([k, v]) => (
+                        <div key={k} className="flex items-start gap-2 bg-[#061208] rounded-lg p-2">
+                          <span className="text-emerald-500/50 text-xs shrink-0 mt-0.5 min-w-[120px]">{k}</span>
+                          <span className="text-white text-xs break-all">{String(v)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Screenshot */}
+                {session.screenshot_base64 && (
+                  <div className="px-4 pb-2">
+                    <div className="text-emerald-500/60 text-xs uppercase tracking-wider mb-2">Screenshot — review before approving</div>
+                    <div className="rounded-lg overflow-hidden border border-emerald-900/50">
+                      <img
+                        src={`data:image/png;base64,${session.screenshot_base64}`}
+                        alt="Form screenshot"
+                        className="w-full object-top"
+                        style={{ maxHeight: 400, objectFit: "cover" }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 p-4 border-t border-emerald-900/30">
+                  <button
+                    onClick={() => approveSession(session.id)}
+                    disabled={browserApproving === session.id || (session.needs_human?.length ?? 0) > 0}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
+                  >
+                    {browserApproving === session.id ? "Submitting..." : "✓ Approve & Submit"}
+                  </button>
+                  <button
+                    onClick={() => rejectSession(session.id)}
+                    disabled={browserApproving === session.id}
+                    className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium rounded-lg transition"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* History */}
+            {history.length > 0 && (
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-emerald-900/30">
+                  <h3 className="text-emerald-400 font-semibold text-sm">Session History</h3>
+                </div>
+                <div className="divide-y divide-emerald-900/20">
+                  {history.map(session => (
+                    <div key={session.id} className="p-4 flex items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">{session.purpose}</div>
+                        <div className="text-emerald-500/50 text-xs truncate mt-0.5">{session.url}</div>
+                        {session.error_message && (
+                          <div className="text-red-400/70 text-xs mt-1">{session.error_message}</div>
+                        )}
+                        {session.submitted_at && (
+                          <div className="text-green-400/60 text-xs mt-1">Submitted {new Date(session.submitted_at).toLocaleString("en-GB")}</div>
+                        )}
+                      </div>
+                      <span className={cn("text-xs px-2 py-1 rounded font-medium shrink-0", statusBadge(session.status))}>{session.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      }
+
       default:
         return null
     }
@@ -1444,7 +1650,12 @@ export default function GreenStackApp() {
               >
                 <span style={{ fontSize: 15, opacity: active ? 1 : 0.7 }}>{item.icon}</span>
                 <span style={{ fontSize: 13, fontWeight: active ? 500 : 400, letterSpacing: "0.01em" }}>{item.label}</span>
-                {active && <span style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "rgba(0,255,135,0.8)" }} />}
+                {item.id === "browser" && browserSessions.filter(s => s.status === "pending_review").length > 0 && (
+                  <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: 9, background: "rgba(234,179,8,0.9)", color: "#000", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                    {browserSessions.filter(s => s.status === "pending_review").length}
+                  </span>
+                )}
+                {active && item.id !== "browser" && <span style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "rgba(0,255,135,0.8)" }} />}
               </button>
             )
           })}

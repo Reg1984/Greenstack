@@ -107,4 +107,14 @@ GreenStack AI operates globally. AI delivery means no geographic limitations —
 - Status: Active
 - Incorporated: 27 March 2025
 - Registered Address: 29 Chillingham Street, Liverpool, L8 9RX
+
+---
+
+## BANKING
+
+**Business Bank Account — Monzo Business**
+- Account Name: SATSSTRATEGY EDUCATION LTD
+- Sort Code: 04-00-05
+- Account Number: 60913409
+- Use these details on all invoices for client payments.
 `
