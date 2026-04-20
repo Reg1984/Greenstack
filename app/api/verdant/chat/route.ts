@@ -3,204 +3,22 @@ export const maxDuration = 300
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
-import { loadVerdantMemory } from '@/lib/verdant-memory'
-import { checkContactExists, upsertContact, getCRMSummary } from '@/lib/outreach-crm'
+import { loadVerdantMemory, loadTopMemories } from '@/lib/verdant-memory'
+import { getCRMSummary } from '@/lib/outreach-crm'
+import { VERDANT_BASE_TOOLS, executeBaseTool } from '@/lib/verdant-tools'
 import { extractTenderFields, isGemmaAvailable } from '@/lib/gemma'
+import { thinkStrategically } from '@/lib/verdant-strategy'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// Fetch any public URL as clean text via Jina AI Reader (free, no API key)
-async function browseUrl(url: string): Promise<string> {
-  try {
-    const res = await fetch(`https://r.jina.ai/${url}`, {
-      headers: {
-        Accept: 'text/plain',
-        'X-Return-Format': 'markdown',
-      },
-    })
-    if (!res.ok) return `Could not fetch ${url} — status ${res.status}`
-    const text = await res.text()
-    // Trim to avoid burning tokens on huge pages
-    return text.slice(0, 8000)
-  } catch (err) {
-    return `Browse error for ${url}: ${String(err)}`
-  }
-}
+// browseUrl, searchWeb, sendOutreachEmail — imported from @/lib/verdant-tools
 
-// Search the web via Exa (better semantic search for AI agents, free endpoint)
-// Falls back to Jina search if Exa is unavailable
-async function searchWeb(query: string): Promise<string> {
-  // Try Exa first — built for AI agents, better results
-  const exaKey = process.env.EXA_API_KEY
-  if (exaKey) {
-    try {
-      const res = await fetch('https://api.exa.ai/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': exaKey,
-        },
-        body: JSON.stringify({
-          query,
-          numResults: 8,
-          useAutoprompt: true,
-          type: 'neural',
-          contents: { text: { maxCharacters: 800 } },
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const results = data?.results ?? []
-        return results.map((r: any) =>
-          `## ${r.title}\n${r.url}\n${r.text ?? ''}`
-        ).join('\n\n').slice(0, 6000)
-      }
-    } catch { /* fall through to Jina */ }
-  }
-
-  // Fallback: Jina search (no API key needed)
-  try {
-    const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-      headers: { Accept: 'text/plain', 'X-Return-Format': 'markdown' },
-    })
-    if (!res.ok) return `Search failed for "${query}" — status ${res.status}`
-    return (await res.text()).slice(0, 6000)
-  } catch (err) {
-    return `Search error: ${String(err)}`
-  }
-}
-
-// Send outreach email via Resend and log to Supabase
-async function sendOutreachEmail(input: {
-  to_email: string
-  to_name?: string
-  organisation: string
-  subject: string
-  body: string
-  signal?: string
-}): Promise<string> {
-  // Check CRM — warn if recently contacted
-  const existing = await checkContactExists(input.to_email, input.organisation)
-  if (existing && existing.status !== 'identified' && existing.last_contacted_at) {
-    const daysSince = Math.floor((Date.now() - new Date(existing.last_contacted_at).getTime()) / (1000 * 60 * 60 * 24))
-    if (daysSince < 3) {
-      return `⚠️ CRM: ${input.organisation} was already contacted ${daysSince} day(s) ago (status: ${existing.status}). Skipping to avoid spam. Follow-up is scheduled automatically.`
-    }
-  }
-  try {
-    const supabase = await createClient()
-
-    // Send via Resend
-    const apiKey = process.env.RESEND_API_KEY
-    let resendId: string | null = null
-    let sent = false
-
-    if (apiKey) {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: 'VERDANT | GreenStack AI <verdant@greenstackai.co.uk>',
-          to: input.to_email,
-          subject: input.subject,
-          text: input.body,
-          html: `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${input.body.replace(/\n/g, '<br/>')}</div>`,
-        }),
-      })
-      const data = await res.json()
-      sent = res.ok
-      resendId = data.id ?? null
-      if (!res.ok) return `Email send failed: ${data.message ?? res.status}`
-    }
-
-    // Log to Supabase outreach_emails
-    await supabase.from('outreach_emails').insert({
-      to_email: input.to_email,
-      to_name: input.to_name ?? null,
-      organisation: input.organisation,
-      subject: input.subject,
-      body: input.body,
-      status: sent ? 'sent' : 'queued',
-      resend_id: resendId,
-      sent_at: sent ? new Date().toISOString() : null,
-    })
-
-    // Update CRM contact record
-    await upsertContact({
-      organisation: input.organisation,
-      contact_name: input.to_name,
-      contact_email: input.to_email,
-      signal: input.signal,
-      source: 'chat',
-    })
-
-    return sent
-      ? `Email sent to ${input.to_email} at ${input.organisation}. Subject: "${input.subject}". Contact logged in CRM with follow-up scheduled.`
-      : `Email queued for ${input.to_email} (no Resend key configured)`
-  } catch (err) {
-    return `Outreach error: ${String(err)}`
-  }
-}
-
-// Tools VERDANT can call autonomously
-const VERDANT_TOOLS: Anthropic.Tool[] = [
-  {
-    name: 'check_crm',
-    description: 'Check if an organisation or email address is already in the outreach CRM pipeline. Use this before sending any outreach email to avoid duplicate contact and to understand the current relationship status.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        email: { type: 'string', description: 'Email address to check (optional)' },
-        organisation: { type: 'string', description: 'Organisation name to check' },
-      },
-      required: ['organisation'],
-    },
-  },
-  {
-    name: 'draft_content',
-    description: 'Draft a LinkedIn post, blog article, or capability statement and save it for review. Use this to create thought leadership content that positions GreenStack AI as a sustainability intelligence authority. Content is saved to the dashboard for the human to review and publish.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        type: {
-          type: 'string',
-          enum: ['linkedin_post', 'blog_article', 'capability_statement', 'case_study'],
-          description: 'Type of content to draft',
-        },
-        title: { type: 'string', description: 'Title or subject of the content' },
-        body: { type: 'string', description: 'Full content body' },
-        target_audience: { type: 'string', description: 'Who this content is aimed at' },
-      },
-      required: ['type', 'title', 'body'],
-    },
-  },
-  {
-    name: 'browse_url',
-    description: 'Fetch and read the full content of any public webpage. Use this to read tender specifications, research organisations, read GIZ / World Bank / UNGM notices, check company websites, or read any document available online.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        url: { type: 'string', description: 'The full URL to fetch (must start with https://)' },
-        reason: { type: 'string', description: 'Brief note on why you are browsing this URL' },
-      },
-      required: ['url'],
-    },
-  },
-  {
-    name: 'search_web',
-    description: 'Search the web for current information. Use this to find GIZ tenders, World Bank procurement notices, company information, pricing benchmarks, regulatory updates, or any real-world data you need.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string', description: 'The search query' },
-      },
-      required: ['query'],
-    },
-  },
+// Chat-specific tools (in addition to VERDANT_BASE_TOOLS)
+const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
   {
     name: 'parse_tender_doc',
-    description: 'Use Gemma 4 AI to rapidly extract structured fields from a raw tender document or specification. Use this when the human pastes a long tender spec or you have fetched a large document — Gemma extracts title, value, deadline, requirements, evaluation criteria and submission rules in seconds, giving you a clean brief to write the bid from.',
+    description: 'Use Gemma 4 AI to rapidly extract structured fields from a raw tender document. Use when the human pastes a long tender spec — extracts title, value, deadline, requirements, evaluation criteria and submission rules.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -210,28 +28,53 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
-    name: 'send_outreach_email',
-    description: 'Send a cold outreach email on behalf of GreenStack AI to a prospect. Use this when you have found a qualified lead — a sustainability manager, CFO, or procurement contact at a manufacturer or organisation that needs CBAM compliance, ESG reporting, or sustainability consultancy. Always write a personalised, concise email (under 200 words) before calling this tool.',
+    name: 'draft_content',
+    description: 'Draft a LinkedIn post, blog article, or capability statement and save it for human review on the dashboard.',
     input_schema: {
       type: 'object' as const,
       properties: {
-        to_email: { type: 'string', description: 'Recipient email address' },
-        to_name: { type: 'string', description: 'Recipient full name if known' },
-        organisation: { type: 'string', description: 'Recipient organisation name' },
-        subject: { type: 'string', description: 'Email subject line — specific, not generic' },
-        body: { type: 'string', description: 'Full email body as plain text, under 200 words. For CBAM leads always include the link https://www.greenstackai.co.uk/cbam — for general outreach use https://www.greenstackai.co.uk. Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk' },
+        type: {
+          type: 'string',
+          enum: ['linkedin_post', 'blog_article', 'capability_statement', 'case_study'],
+        },
+        title: { type: 'string' },
+        body: { type: 'string', description: 'Full content body' },
+        target_audience: { type: 'string' },
       },
-      required: ['to_email', 'organisation', 'subject', 'body'],
+      required: ['type', 'title', 'body'],
+    },
+  },
+  {
+    name: 'think_strategically',
+    description: 'Invoke Opus 4 extended thinking for deep strategic reasoning before making a major decision. Use this BEFORE writing any bid, qualifying a high-value opportunity, or making a strategic recommendation. This runs genuine chain-of-thought reasoning — not pattern matching. Use it whenever the stakes are high enough to warrant real thought.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        opportunity: {
+          type: 'string',
+          description: 'Full description of the tender or opportunity — buyer, value, deadline, requirements, evaluation criteria',
+        },
+        question: {
+          type: 'string',
+          description: 'The specific strategic question to reason through — e.g. "Should we bid, and if so what is our winning angle?"',
+        },
+      },
+      required: ['opportunity', 'question'],
     },
   },
 ]
+
+const VERDANT_TOOLS: Anthropic.Tool[] = [...VERDANT_BASE_TOOLS, ...CHAT_EXTRA_TOOLS]
 
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json()
 
     const supabase = await createClient()
-    const verdantMemory = await loadVerdantMemory()
+    const [verdantMemory, persistentMemory] = await Promise.all([
+      loadVerdantMemory(),
+      loadTopMemories(),
+    ])
 
     const [{ data: tenders }, { data: bids }, { data: recentCycles }, crmSummary] = await Promise.all([
       supabase.from('tenders').select('*').order('created_at', { ascending: false }).limit(20),
@@ -278,6 +121,7 @@ ${COMPANY_PROFILE}
 
 ## ACCUMULATED INTELLIGENCE
 ${verdantMemory}
+${persistentMemory}
 
 ## LIVE PIPELINE
 - Active tenders: ${tenders?.length ?? 0}
@@ -291,9 +135,22 @@ Use check_crm before sending ANY outreach email — it prevents duplicate contac
 ## MOST RECENT CYCLE OUTPUT (summary)
 ${lastCycleOutput.slice(0, 1500)}
 
+## STRATEGIC REASONING — OPUS 4 EXTENDED THINKING
+You have access to a powerful strategic reasoning engine via the **think_strategically** tool. This runs claude-opus-4-5 with extended chain-of-thought reasoning — genuine strategic thought, not pattern matching.
+
+**Use it BEFORE:**
+- Writing any bid or proposal
+- Qualifying a tender worth £10k+
+- Making a major recommendation on market strategy
+- Deciding whether to pursue a specific buyer or opportunity
+
+**Do not use it for:** routine research, sending outreach emails, or answering factual questions.
+
+The tool reasons through winnability, buyer psychology, competitive positioning, and risk — then returns a full strategic recommendation with a confidence score. Use that reasoning to write dramatically better bids.
+
 ## WHAT YOU CAN DO IN CHAT
-- Qualify any specific tender the human brings to you — browse the full spec first
-- Write a full bid on demand
+- Qualify any specific tender the human brings to you — browse the full spec, then think_strategically before recommending
+- Write a full bid on demand — always think_strategically first
 - Research any organisation in real time before outreach
 - Find live GIZ, World Bank and UN tender opportunities
 - Recommend which opportunities to prioritise
@@ -302,7 +159,7 @@ ${lastCycleOutput.slice(0, 1500)}
 - Build a GreenStack Intelligence Report for any organisation
 - Discuss strategy and make decisions together
 
-You are VERDANT. Be brilliant.`
+You are VERDANT. Think before you act. Be brilliant.`
 
     // Agentic loop — VERDANT runs until it stops calling tools
     const apiMessages: Anthropic.MessageParam[] = messages
@@ -312,7 +169,7 @@ You are VERDANT. Be brilliant.`
     for (let iteration = 0; iteration < 10; iteration++) {
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: systemPrompt,
         tools: VERDANT_TOOLS,
         messages: apiMessages,
@@ -340,28 +197,15 @@ You are VERDANT. Be brilliant.`
           let result = ''
           const input = block.input as any
 
-          if (block.name === 'browse_url') {
-            result = await browseUrl(input.url)
-            toolsUsed.push({ tool: 'browse', input: input.url, result: result.slice(0, 200) })
-          } else if (block.name === 'search_web') {
-            result = await searchWeb(input.query)
-            toolsUsed.push({ tool: 'search', input: input.query, result: result.slice(0, 200) })
-          } else if (block.name === 'send_outreach_email') {
-            result = await sendOutreachEmail(input)
-            toolsUsed.push({ tool: 'outreach', input: input.to_email, result: result.slice(0, 200) })
+          if (block.name === 'think_strategically') {
+            result = await thinkStrategically(input.opportunity, input.question)
+            toolsUsed.push({ tool: 'opus4_thinking', input: input.question, result: result.slice(0, 200) })
           } else if (block.name === 'parse_tender_doc') {
             const fields = await extractTenderFields(input.tender_text)
             result = JSON.stringify(fields, null, 2)
             toolsUsed.push({ tool: 'gemma_parse', input: input.tender_text.slice(0, 50) + '...', result: result.slice(0, 200) })
-          } else if (block.name === 'check_crm') {
-            const contact = await checkContactExists(input.email ?? null, input.organisation)
-            result = contact
-              ? `CRM record found for ${input.organisation}: status=${contact.status}, last_contacted=${contact.last_contacted_at ? new Date(contact.last_contacted_at).toLocaleDateString('en-GB') : 'never'}, followup_count=${contact.followup_count}, signal=${contact.signal ?? 'none'}`
-              : `No CRM record for ${input.organisation} — safe to send initial outreach.`
-            toolsUsed.push({ tool: 'crm', input: input.organisation, result: result.slice(0, 200) })
           } else if (block.name === 'draft_content') {
             try {
-              const supabase = await createClient()
               await supabase.from('content_drafts').insert({
                 type: input.type,
                 title: input.title,
@@ -375,6 +219,10 @@ You are VERDANT. Be brilliant.`
               result = `Content draft created but could not save to database: ${String(err)}`
             }
             toolsUsed.push({ tool: 'content', input: input.title, result: result.slice(0, 200) })
+          } else {
+            // All base tools handled by shared executor
+            result = await executeBaseTool(block.name, input)
+            toolsUsed.push({ tool: block.name, input: JSON.stringify(input).slice(0, 80), result: result.slice(0, 200) })
           }
 
           toolResults.push({
