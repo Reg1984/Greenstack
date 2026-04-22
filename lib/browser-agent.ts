@@ -120,6 +120,42 @@ export async function fillFormForReview(
 }
 
 /**
+ * Navigate to any URL with a real browser and extract clean text content.
+ * Handles JavaScript rendering, dynamic content, portal pages that block Jina.
+ */
+export async function navigateAndExtract(
+  url: string,
+  goal?: string
+): Promise<{ content: string; error?: string }> {
+  if (!process.env.BROWSERBASE_API_KEY || !process.env.BROWSERBASE_PROJECT_ID) {
+    return { content: '', error: 'Browserbase not configured — add BROWSERBASE_API_KEY and BROWSERBASE_PROJECT_ID' }
+  }
+
+  let browser: Awaited<ReturnType<typeof chromium.connectOverCDP>> | null = null
+  try {
+    const { connectUrl } = await createBrowserbaseSession()
+    browser = await chromium.connectOverCDP(connectUrl)
+
+    const context = browser.contexts()[0] ?? await browser.newContext()
+    const page = context.pages()[0] ?? await context.newPage()
+
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+    await page.waitForTimeout(2500) // Allow JS to render
+
+    const content: string = await page.evaluate(() => {
+      const el = document.querySelector('main, article, [role="main"], .content, #content, body')
+      return (el as HTMLElement)?.innerText ?? document.body.innerText
+    })
+
+    return { content: content.slice(0, 8000) }
+  } catch (err) {
+    return { content: '', error: String(err) }
+  } finally {
+    if (browser) await browser.close().catch(() => {})
+  }
+}
+
+/**
  * Re-fill and submit a form — called after human approves
  * Returns a confirmation screenshot
  */

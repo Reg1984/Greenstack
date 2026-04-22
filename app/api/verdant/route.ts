@@ -5,10 +5,12 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchContractsFinder, fetchDevolvedTenders } from '@/lib/contracts-finder'
 import { fetchAllInternationalTenders } from '@/lib/international-tenders'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
-import { loadVerdantMemory, saveVerdantMemory } from '@/lib/verdant-memory'
+import { loadVerdantMemory, loadTopMemories, saveVerdantMemory } from '@/lib/verdant-memory'
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
 import { getCRMSummary } from '@/lib/outreach-crm'
+import { VERDANT_BASE_TOOLS, executeBaseTool } from '@/lib/verdant-tools'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
+import { formatGoalsForVerdant, updateGoalProgress } from '@/lib/verdant-goals'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -192,7 +194,7 @@ GreenStack AI should be registered on these frameworks to receive direct award i
 - **ESPO** — East of England/national framework for public sector sustainability.
 - **NEUPC / SUPC / LUPC** — regional university purchasing consortia with sustainability frameworks.
 
-Include in NEXT ACTIONS section: which frameworks are currently open, and which the browser agent should register on.
+When a framework is open for registration, use the **queue_portal_form** tool to fill the registration form with GreenStack AI company data and queue it for human approval. Use **browse_portal** to read portal pages that fail with browse_url (JavaScript-heavy sites). Include in NEXT ACTIONS section: which frameworks are currently open and which have been queued.
 
 ## DEVOLVED MARKETS DIRECTIVE
 
@@ -386,8 +388,8 @@ async function runVerdantCycle() {
   const cycleTimeout = new Promise<NextResponse>(resolve =>
     setTimeout(() => resolve(NextResponse.json({
       success: false,
-      error: 'Cycle timed out after 240s — partial data may have been collected',
-    })), 240000)
+      error: 'Cycle timed out after 270s — partial data may have been collected',
+    })), 270000)
   )
   return Promise.race([runCycleInternal(), cycleTimeout])
 }
@@ -411,7 +413,7 @@ async function runCycleInternal() {
         runBuyerIntentScan(),
         getCRMSummary(),
       ]),
-      45000,
+      60000,
       [[], [], [], [], 'CRM: timeout']
     )
 
@@ -425,8 +427,12 @@ async function runCycleInternal() {
     const wonBids = bids?.filter(b => b.status === 'won').length ?? 0
     const winRate = bids?.length ? Math.round((wonBids / bids.length) * 100) : 0
 
-    // Load accumulated memory
-    const verdantMemory = await loadVerdantMemory()
+    // Load accumulated memory + active goals
+    const [verdantMemory, persistentMemory, goalsContext] = await Promise.all([
+      loadVerdantMemory(),
+      loadTopMemories(),
+      formatGoalsForVerdant(),
+    ])
 
     // Phase 2: Gemma pre-filter — hard 25s cap, falls back to all tenders
     let filteredTenders = liveTenders
@@ -469,6 +475,7 @@ async function runCycleInternal() {
 CYCLE: ${cycleStart}
 
 ${verdantMemory}
+${persistentMemory}
 
 ## CURRENT PIPELINE:
 - Tenders in system: ${tenders?.length ?? 0}
@@ -492,14 +499,39 @@ ${buyerIntentSummary}
 
 Run a full VERDANT cycle. Qualify all live tenders (UK + international + devolved). Act on HIGH priority buyer intent signals with personalised outreach. Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: VERDANT_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: contextMessage }],
-    })
+    // Agentic loop — VERDANT runs until end_turn or 8 iterations
+    const apiMessages: Anthropic.MessageParam[] = [{ role: 'user', content: contextMessage }]
+    let verdantOutput = ''
 
-    const verdantOutput = response.content[0].type === 'text' ? response.content[0].text : ''
+    for (let iteration = 0; iteration < 8; iteration++) {
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8192,
+        system: VERDANT_SYSTEM_PROMPT,
+        tools: VERDANT_BASE_TOOLS,
+        messages: apiMessages,
+      })
+
+      const textBlocks = response.content.filter(b => b.type === 'text').map(b => (b as Anthropic.TextBlock).text)
+      if (textBlocks.length) verdantOutput += textBlocks.join('\n')
+
+      if (response.stop_reason === 'end_turn') break
+
+      if (response.stop_reason === 'tool_use') {
+        apiMessages.push({ role: 'assistant', content: response.content })
+
+        const toolResults: Anthropic.ToolResultBlockParam[] = []
+        for (const block of response.content) {
+          if (block.type !== 'tool_use') continue
+          const result = await executeBaseTool(block.name, block.input as any)
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result })
+        }
+        apiMessages.push({ role: 'user', content: toolResults })
+        continue
+      }
+
+      break // Any other stop reason
+    }
 
     // Save memory from this cycle
     await saveVerdantMemory(verdantOutput, liveTenders.length + internationalTenders.length)
@@ -562,9 +594,41 @@ async function saveScoredTenders(supabase: any, liveTenders: any[]) {
 
 async function sendEmailAlert(liveTenders: any[], verdantOutput: string) {
   const alertEmail = process.env.ALERT_EMAIL
-  if (!alertEmail || liveTenders.length === 0) return
+  if (!alertEmail || !process.env.RESEND_API_KEY) return
 
   try {
+    // Daily rate limit — only send once per 23 hours
+    const supabase = await createClient()
+    const { data: lastBriefing } = await supabase
+      .from('activity_log')
+      .select('created_at')
+      .eq('type', 'verdant_daily_briefing')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (lastBriefing?.created_at) {
+      const hoursSince = (Date.now() - new Date(lastBriefing.created_at).getTime()) / (1000 * 60 * 60)
+      if (hoursSince < 23) return // Already sent today
+    }
+
+    // Extract emails sent this cycle from the output
+    const emailsSentMatch = verdantOutput.match(/Email sent to .+?(?=\n|$)/g) ?? []
+    const emailsBlock = emailsSentMatch.length > 0
+      ? `<h3 style="color:#065f46">📧 Outreach Sent This Cycle</h3><ul>${emailsSentMatch.map(e => `<li style="margin-bottom:4px">${e}</li>`).join('')}</ul>`
+      : '<p style="color:#6b7280">No outreach emails sent this cycle.</p>'
+
+    const tendersBlock = liveTenders.length > 0
+      ? `<h3 style="color:#065f46">🔍 Live Tenders Found (${liveTenders.length})</h3><ul>${liveTenders.slice(0, 8).map(t => `
+          <li style="margin-bottom:12px">
+            <strong>${t.title}</strong><br>
+            <span style="color:#6b7280">${t.authority} | £${(t.value || 0).toLocaleString()} | Deadline: ${t.deadline}</span><br>
+            <a href="${t.url}" style="color:#059669">View tender →</a>
+          </li>`).join('')}</ul>`
+      : '<p style="color:#6b7280">No new UK tenders found this cycle. VERDANT focused on international outreach.</p>'
+
+    const analysisSnippet = verdantOutput.slice(0, 3000)
+
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -572,27 +636,35 @@ async function sendEmailAlert(liveTenders: any[], verdantOutput: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'verdant@greenstackai.co.uk',
+        from: 'VERDANT | GreenStack AI <verdant@greenstackai.co.uk>',
         to: alertEmail,
-        subject: `🌿 VERDANT: ${liveTenders.length} new tenders found`,
+        subject: `🌿 VERDANT Daily Briefing — ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`,
         html: `
-          <h2>🌿 VERDANT Cycle Complete</h2>
-          <p><strong>${liveTenders.length} live tenders</strong> discovered from Contracts Finder.</p>
-          <h3>Top Opportunities:</h3>
-          <ul>
-            ${liveTenders.slice(0, 5).map(t => `
-              <li>
-                <strong>${t.title}</strong><br>
-                ${t.authority} | £${t.value.toLocaleString()} | Deadline: ${t.deadline}<br>
-                <a href="${t.url}">View tender</a>
-              </li>
-            `).join('')}
-          </ul>
-          <h3>VERDANT Analysis:</h3>
-          <pre style="background:#f5f5f5;padding:16px;border-radius:8px;font-size:12px">${verdantOutput.slice(0, 2000)}...</pre>
-          <p><a href="https://www.greenstackai.co.uk">View full report on GreenStack dashboard →</a></p>
+          <div style="font-family:sans-serif;max-width:640px;color:#111;line-height:1.6">
+            <div style="background:#022c22;padding:24px 28px;border-radius:12px 12px 0 0">
+              <h1 style="margin:0;color:#00ff87;font-size:20px;font-weight:600">🌿 VERDANT Daily Briefing</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.5);font-size:13px">${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            </div>
+            <div style="background:#f9fafb;padding:24px 28px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
+              ${tendersBlock}
+              ${emailsBlock}
+              <h3 style="color:#065f46">📊 VERDANT Analysis</h3>
+              <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:12px;color:#374151;white-space:pre-wrap;font-family:monospace">${analysisSnippet}</div>
+              <div style="margin-top:24px;text-align:center">
+                <a href="https://www.greenstackai.co.uk/dashboard" style="background:#059669;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">View Full Dashboard →</a>
+              </div>
+              <p style="margin-top:24px;font-size:11px;color:#9ca3af;text-align:center">VERDANT | GreenStack AI | verdant@greenstackai.co.uk</p>
+            </div>
+          </div>
         `,
       }),
+    })
+
+    // Log that we sent the briefing so the rate limit works
+    await supabase.from('activity_log').insert({
+      type: 'verdant_daily_briefing',
+      description: `Daily briefing sent to ${alertEmail}`,
+      created_at: new Date().toISOString(),
     })
   } catch {
     // Email alerts are optional — don't fail the cycle

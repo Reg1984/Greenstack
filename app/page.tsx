@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   Globe,
   ArrowRight,
@@ -11,7 +11,12 @@ import {
   Twitter,
   ArrowUpRight,
   Leaf,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+
+const PASSWORD = "greenstack2026";
 
 const VIDEO_URL = "/hero.mp4";
 const VIDEO_URL_2 = "/video2.mp4";
