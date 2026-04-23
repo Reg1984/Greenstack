@@ -102,7 +102,11 @@ export async function executeOutreachEmail(input: {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return `Email queued for ${input.to_email} — no RESEND_API_KEY configured`
 
-  const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${input.body.replace(/\n/g, '<br/>')}</div>`
+  // Ensure every email is signed off as Reginald Orme
+  const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\nwww.greenstackai.co.uk`
+  const bodyWithSignoff = input.body.includes('Reginald') ? input.body : input.body.trimEnd() + signoff
+
+  const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${bodyWithSignoff.replace(/\n/g, '<br/>')}</div>`
 
   let resendId: string | null = null
   const res = await fetch('https://api.resend.com/emails', {
@@ -113,7 +117,7 @@ export async function executeOutreachEmail(input: {
       to: input.to_email,
       bcc: 'info@greenstackai.co.uk',
       subject: input.subject,
-      text: input.body,
+      text: bodyWithSignoff,
       html,
     }),
   })
@@ -184,7 +188,7 @@ export const VERDANT_BASE_TOOLS: Anthropic.Tool[] = [
         subject: { type: 'string', description: 'Specific subject line — not generic' },
         body: {
           type: 'string',
-          description: 'Full email body, under 200 words. For CBAM leads include https://www.greenstackai.co.uk/cbam. For general outreach use https://www.greenstackai.co.uk. Sign off: VERDANT | GreenStack AI | verdant@greenstackai.co.uk',
+          description: 'Full email body, under 200 words. For CBAM leads include https://www.greenstackai.co.uk/cbam. For general outreach use https://www.greenstackai.co.uk. Do NOT add a sign-off — Reginald Orme sign-off is added automatically.',
         },
         signal: { type: 'string', description: 'Why this lead is warm, e.g. cbam_exposure, sustainability_job, net_zero_target' },
       },
