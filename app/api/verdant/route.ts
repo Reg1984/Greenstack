@@ -8,7 +8,7 @@ import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, loadTopMemories, saveVerdantMemory } from '@/lib/verdant-memory'
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
 import { getCRMSummary } from '@/lib/outreach-crm'
-import { VERDANT_BASE_TOOLS, executeBaseTool } from '@/lib/verdant-tools'
+import { VERDANT_BASE_TOOLS, executeBaseTool, sendTelegramMessage } from '@/lib/verdant-tools'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
 import { formatGoalsForVerdant, updateGoalProgress } from '@/lib/verdant-goals'
 import { NextResponse } from 'next/server'
@@ -557,6 +557,9 @@ Run a full VERDANT cycle. Qualify all live tenders (UK + international + devolve
     // Send email alert if high-value tenders found
     await sendEmailAlert(liveTenders, verdantOutput)
 
+    // Post Telegram cycle summary
+    await sendTelegramCycleSummary(liveTenders, verdantOutput)
+
     return NextResponse.json({
       success: true,
       cycle: cycleStart,
@@ -589,6 +592,59 @@ async function saveScoredTenders(supabase: any, liveTenders: any[]) {
     } catch {
       continue
     }
+  }
+}
+
+async function sendTelegramCycleSummary(liveTenders: any[], verdantOutput: string) {
+  if (!process.env.TELEGRAM_CHANNEL_ID || !process.env.TELEGRAM_BOT_TOKEN) return
+  try {
+    // Only post once per 23 hours to avoid spam
+    const supabase = await createClient()
+    const { data: lastPost } = await supabase
+      .from('activity_log')
+      .select('created_at')
+      .eq('type', 'verdant_telegram_post')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (lastPost?.created_at) {
+      const hoursSince = (Date.now() - new Date(lastPost.created_at).getTime()) / (1000 * 60 * 60)
+      if (hoursSince < 23) return
+    }
+
+    // Extract key highlights from VERDANT output
+    const emailsSent = (verdantOutput.match(/Email sent to .+?(?=\n|$)/g) ?? []).length
+    const bidsWritten = (verdantOutput.match(/BID CONTENT|complete bid|AUTO-BID/gi) ?? []).length
+    const topTenders = liveTenders.slice(0, 3).map(t =>
+      `• *${t.title}* — £${(t.value || 0).toLocaleString()} | ${t.authority}`
+    ).join('\n')
+
+    const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+
+    const message = [
+      `🌿 *VERDANT Daily Update — ${date}*`,
+      ``,
+      `📊 *Today's Activity:*`,
+      `• ${liveTenders.length} UK tenders scanned`,
+      `• ${emailsSent} outreach email${emailsSent !== 1 ? 's' : ''} sent`,
+      `• ${bidsWritten} bid${bidsWritten !== 1 ? 's' : ''} drafted`,
+      ``,
+      liveTenders.length > 0 ? `🔍 *Top Opportunities:*\n${topTenders}` : `🌐 Focus this cycle: international outreach & CBAM intelligence`,
+      ``,
+      `🤖 _Powered by VERDANT — GreenStack AI's autonomous sustainability intelligence agent_`,
+      `🔗 greenstackai.co.uk`,
+    ].filter(Boolean).join('\n')
+
+    await sendTelegramMessage(message)
+
+    await supabase.from('activity_log').insert({
+      type: 'verdant_telegram_post',
+      description: 'Daily Telegram channel update posted',
+      created_at: new Date().toISOString(),
+    })
+  } catch {
+    // Non-critical — don't fail the cycle
   }
 }
 

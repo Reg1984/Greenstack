@@ -11,6 +11,26 @@ import { saveMemory } from '@/lib/verdant-memory'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
 
+// ─── Telegram ────────────────────────────────────────────────────────────────
+
+export async function sendTelegramMessage(text: string): Promise<string> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHANNEL_ID
+  if (!token || !chatId) return 'Telegram not configured — add TELEGRAM_BOT_TOKEN and TELEGRAM_CHANNEL_ID env vars'
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+    })
+    const data = await res.json()
+    if (!data.ok) return `Telegram error: ${data.description}`
+    return `✅ Telegram message posted to channel.`
+  } catch (err) {
+    return `Telegram error: ${String(err)}`
+  }
+}
+
 // ─── Tool Executors ───────────────────────────────────────────────────────────
 
 export async function browseUrl(url: string): Promise<string> {
@@ -235,6 +255,20 @@ export const VERDANT_BASE_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'send_telegram',
+    description: 'Post a message to the GreenStack AI Telegram channel. Use to share breaking tender alerts, outreach wins, bid submissions, or market intelligence with the green energy community. Keep under 300 words, use plain language, no jargon.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        message: {
+          type: 'string',
+          description: 'The message to post. Markdown supported (*bold*, _italic_, `code`). Max 4000 chars.',
+        },
+      },
+      required: ['message'],
+    },
+  },
+  {
     name: 'queue_portal_form',
     description: 'Fill a procurement portal registration or application form using a real browser, then queue it for human approval before submitting. Use for: Crown Commercial Service supplier registration, GIZ DAMOS portal, UNGM profile completion, World Bank STEP, YPO, ESPO, NHS frameworks. VERDANT fills the form with GreenStack AI company data and takes a screenshot — the human reviews and approves before anything is submitted.',
     input_schema: {
@@ -268,6 +302,9 @@ export async function executeBaseTool(name: string, input: any): Promise<string>
         ? `CRM record found for ${input.organisation}: status=${contact.status}, last contacted=${contact.last_contacted_at ? new Date(contact.last_contacted_at).toLocaleDateString('en-GB') : 'never'}, follow-ups sent=${contact.followup_count}`
         : `No CRM record for ${input.organisation} — safe to send initial outreach.`
     }
+
+    case 'send_telegram':
+      return sendTelegramMessage(input.message)
 
     case 'save_memory':
       await saveMemory(input.category, input.key, input.value, input.importance ?? 5)
