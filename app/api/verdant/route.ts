@@ -9,6 +9,7 @@ import { loadVerdantMemory, loadTopMemories, saveVerdantMemory } from '@/lib/ver
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
 import { getCRMSummary } from '@/lib/outreach-crm'
 import { VERDANT_BASE_TOOLS, executeBaseTool, sendTelegramMessage } from '@/lib/verdant-tools'
+import { bootstrapNativeMemory } from '@/lib/verdant-native-memory'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
 import { formatGoalsForVerdant, updateGoalProgress } from '@/lib/verdant-goals'
 import { NextResponse } from 'next/server'
@@ -401,6 +402,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 
 async function runCycleInternal() {
   try {
+    // Bootstrap native memory files from legacy KV store (no-op if already done)
+    await bootstrapNativeMemory()
+
     const supabase = await createClient()
     const cycleStart = new Date().toISOString()
 

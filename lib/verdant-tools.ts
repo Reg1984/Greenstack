@@ -10,6 +10,7 @@ import { checkContactExists, upsertContact } from '@/lib/outreach-crm'
 import { saveMemory } from '@/lib/verdant-memory'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
+import { executeMemoryCommand } from '@/lib/verdant-native-memory'
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
 
@@ -152,7 +153,8 @@ export async function executeOutreachEmail(input: {
 
 // ─── Tool Schema Definitions ──────────────────────────────────────────────────
 
-export const VERDANT_BASE_TOOLS: Anthropic.Tool[] = [
+export const VERDANT_BASE_TOOLS: any[] = [
+  { type: 'memory_20250818' as const, name: 'memory' },
   {
     name: 'browse_url',
     description: 'Fetch and read the full content of any public webpage. Use to read tender specs, research organisations, check GIZ/World Bank/UNGM notices, or read any document online.',
@@ -358,6 +360,9 @@ The screenshot is saved. Check the GreenStack dashboard → Browser Sessions to 
     case 'update_goal_strategy':
       await updateGoalProgress(input.goal_id, 0, input.strategy, input.action_taken)
       return `Goal strategy updated for ${input.goal_id}. Action logged: ${input.action_taken ?? 'none'}`
+
+    case 'memory':
+      return executeMemoryCommand(input.input ?? input)
 
     default:
       return `Unknown tool: ${name}`
