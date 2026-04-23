@@ -6,7 +6,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
-import { checkContactExists, upsertContact } from '@/lib/outreach-crm'
+import { checkContactExists, upsertContact, markContactReplied } from '@/lib/outreach-crm'
 import { saveMemory } from '@/lib/verdant-memory'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
@@ -275,6 +275,22 @@ export const VERDANT_BASE_TOOLS: any[] = [
     },
   },
   {
+    name: 'log_reply',
+    description: 'Log that a contact has replied to our outreach. Immediately marks them as replied in CRM (cancels follow-up sequence), saves a draft response for human approval, and sends a Telegram alert. Use this as soon as you are told a contact replied — then draft the response as part of the same tool call.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        organisation: { type: 'string', description: 'Organisation name' },
+        contact_email: { type: 'string', description: 'Their email address' },
+        contact_name: { type: 'string', description: 'Their name if known' },
+        their_reply: { type: 'string', description: 'What they said — paste the key content of their reply' },
+        draft_subject: { type: 'string', description: 'Subject line for your draft response' },
+        draft_body: { type: 'string', description: 'Full draft response body. Under 300 words. No sign-off — Reginald Orme sign-off added automatically. Be warm, move toward a discovery call.' },
+      },
+      required: ['organisation', 'contact_email', 'their_reply', 'draft_subject', 'draft_body'],
+    },
+  },
+  {
     name: 'queue_portal_form',
     description: 'Fill a procurement portal registration or application form using a real browser, then queue it for human approval before submitting. Use for: Crown Commercial Service supplier registration, GIZ DAMOS portal, UNGM profile completion, World Bank STEP, YPO, ESPO, NHS frameworks. VERDANT fills the form with GreenStack AI company data and takes a screenshot — the human reviews and approves before anything is submitted.',
     input_schema: {
@@ -360,6 +376,36 @@ The screenshot is saved. Check the GreenStack dashboard → Browser Sessions to 
     case 'update_goal_strategy':
       await updateGoalProgress(input.goal_id, 0, input.strategy, input.action_taken)
       return `Goal strategy updated for ${input.goal_id}. Action logged: ${input.action_taken ?? 'none'}`
+
+    case 'log_reply': {
+      const supabase = await createClient()
+
+      // Mark contact as replied in CRM (cancels follow-up sequence)
+      const contact = await checkContactExists(input.contact_email, input.organisation)
+      if (contact?.id) await markContactReplied(contact.id)
+
+      // Save draft response
+      await supabase.from('reply_drafts').insert({
+        organisation: input.organisation,
+        contact_email: input.contact_email,
+        contact_name: input.contact_name ?? contact?.contact_name ?? null,
+        their_reply: input.their_reply,
+        draft_subject: input.draft_subject,
+        draft_body: input.draft_body,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      })
+
+      // Telegram alert with the draft
+      const telegramMsg = `💬 *Reply received from ${input.organisation}*\n\n` +
+        `*From:* ${input.contact_name ?? input.contact_email}\n` +
+        `*They said:* ${input.their_reply.slice(0, 300)}\n\n` +
+        `*Draft response ready:*\n*Subject:* ${input.draft_subject}\n\n${input.draft_body.slice(0, 600)}\n\n` +
+        `_Review on dashboard → Reply Drafts to approve and send_`
+      await sendTelegramMessage(telegramMsg)
+
+      return `✅ Reply logged for ${input.organisation}. Follow-up sequence cancelled. Draft response saved and Telegram alert sent. Review on dashboard to approve and send.`
+    }
 
     case 'memory':
       return executeMemoryCommand(input.input ?? input)

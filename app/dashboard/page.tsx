@@ -41,7 +41,7 @@ type Activity = {
   created_at: string
 }
 
-type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook" | "financials" | "browser"
+type PageId = "dashboard" | "tenders" | "bids" | "supply" | "audits" | "settings" | "universe" | "verdant" | "playbook" | "financials" | "browser" | "replies"
 
 type BrowserSession = {
   id: string
@@ -73,6 +73,7 @@ const NAV_ITEMS = [
   { id: "settings" as PageId, icon: "⚙", label: "Settings" },
   { id: "verdant" as PageId, icon: "🌿", label: "VERDANT", accent: true },
   { id: "browser" as PageId, icon: "🖥️", label: "Browser Sessions", accent: true },
+  { id: "replies" as PageId, icon: "💬", label: "Reply Drafts", accent: true },
   { id: "playbook" as PageId, icon: "📋", label: "Playbook", accent: true },
   { id: "financials" as PageId, icon: "£", label: "Financials", accent: true },
 ]
@@ -164,6 +165,8 @@ export default function GreenStackApp() {
   const [scoutResult, setScoutResult] = useState<any>(null)
   const [browserSessions, setBrowserSessions] = useState<BrowserSession[]>([])
   const [browserApproving, setBrowserApproving] = useState<string | null>(null)
+  const [replyDrafts, setReplyDrafts] = useState<any[]>([])
+  const [replySending, setReplySending] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -191,7 +194,7 @@ export default function GreenStackApp() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
       
-      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes, browserRes] = await Promise.all([
+      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes, browserRes, replyRes] = await Promise.all([
         supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("bids").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(10),
@@ -199,6 +202,7 @@ export default function GreenStackApp() {
         supabase.from("invoices").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("outreach_emails").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("browser_sessions").select("id,status,url,purpose,form_data,screenshot_base64,result_screenshot_base64,notes,needs_human,error_message,submitted_at,reviewed_at,created_at").order("created_at", { ascending: false }).limit(30),
+        supabase.from("reply_drafts").select("*").order("created_at", { ascending: false }).limit(50),
       ])
       if (tendersRes.data) setTenders(tendersRes.data)
       if (bidsRes.data) setBids(bidsRes.data)
@@ -212,6 +216,7 @@ export default function GreenStackApp() {
       }
       if (outreachRes.data) setOutreachEmails(outreachRes.data)
       if (browserRes.data) setBrowserSessions(browserRes.data as BrowserSession[])
+      if (replyRes.data) setReplyDrafts(replyRes.data)
       setLoading(false)
     }
     loadData()
@@ -1568,6 +1573,117 @@ export default function GreenStackApp() {
         )
       }
 
+      case "replies": {
+        const pendingReplies = replyDrafts.filter(r => r.status === "pending")
+        const sentReplies = replyDrafts.filter(r => r.status !== "pending")
+
+        const sendReply = async (draft: any) => {
+          setReplySending(draft.id)
+          try {
+            const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\nwww.greenstackai.co.uk`
+            const res = await fetch('/api/verdant/outreach', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to_email: draft.contact_email,
+                to_name: draft.contact_name,
+                organisation: draft.organisation,
+                subject: draft.draft_subject,
+                body: draft.draft_body + signoff,
+              }),
+            })
+            if (res.ok) {
+              await supabase.from("reply_drafts").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", draft.id)
+              setReplyDrafts(prev => prev.map(r => r.id === draft.id ? { ...r, status: "sent", sent_at: new Date().toISOString() } : r))
+            }
+          } finally { setReplySending(null) }
+        }
+
+        const dismissReply = async (id: string) => {
+          await supabase.from("reply_drafts").update({ status: "dismissed" }).eq("id", id)
+          setReplyDrafts(prev => prev.map(r => r.id === id ? { ...r, status: "dismissed" } : r))
+        }
+
+        return (
+          <div className="space-y-6 pb-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">💬 Reply Drafts</h2>
+              <p className="text-emerald-500/60 text-sm mt-1">
+                VERDANT-drafted responses to inbound replies — review and send with one click.
+                {pendingReplies.length > 0 && <span className="ml-2 bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-semibold">{pendingReplies.length} pending</span>}
+              </p>
+            </div>
+
+            {pendingReplies.length === 0 && (
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-10 text-center">
+                <div className="text-3xl mb-3">💬</div>
+                <div className="text-emerald-500/50 text-sm">No pending reply drafts.</div>
+                <div className="text-emerald-500/30 text-xs mt-2">When a contact replies to your outreach, VERDANT drafts a response here for your review.</div>
+                <div className="text-emerald-500/30 text-xs mt-1">You can also tell VERDANT in chat: "Company X replied saying they're interested" — it will log it and draft a response instantly.</div>
+              </div>
+            )}
+
+            {pendingReplies.map(draft => (
+              <div key={draft.id} className="bg-[#0a1a0f] border border-emerald-500/30 rounded-xl p-5 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-white font-semibold">{draft.organisation}</div>
+                    <div className="text-emerald-500/60 text-xs mt-0.5">{draft.contact_name ? `${draft.contact_name} · ` : ''}{draft.contact_email}</div>
+                    <div className="text-emerald-500/40 text-xs mt-0.5">{new Date(draft.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                  <span className="shrink-0 text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">pending</span>
+                </div>
+
+                {draft.their_reply && (
+                  <div className="bg-[#061208] border border-emerald-900/30 rounded-lg p-3">
+                    <div className="text-emerald-500/50 text-xs font-medium mb-1">THEIR REPLY</div>
+                    <div className="text-white/70 text-sm whitespace-pre-wrap leading-relaxed">{draft.their_reply.slice(0, 400)}{draft.their_reply.length > 400 ? '...' : ''}</div>
+                  </div>
+                )}
+
+                <div className="bg-[#061208] border border-emerald-500/20 rounded-lg p-3">
+                  <div className="text-emerald-400 text-xs font-medium mb-1">DRAFT RESPONSE · {draft.draft_subject}</div>
+                  <div className="text-white/90 text-sm whitespace-pre-wrap leading-relaxed">{draft.draft_body}</div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => sendReply(draft)}
+                    disabled={replySending === draft.id}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+                  >
+                    {replySending === draft.id ? 'Sending...' : '✓ Approve & Send'}
+                  </button>
+                  <button
+                    onClick={() => dismissReply(draft.id)}
+                    className="px-4 py-2 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {sentReplies.length > 0 && (
+              <div className="bg-[#0a1a0f] border border-emerald-900/50 rounded-xl p-4">
+                <h3 className="text-emerald-400 font-semibold mb-3 text-sm">Sent / Dismissed</h3>
+                <div className="space-y-2">
+                  {sentReplies.map(draft => (
+                    <div key={draft.id} className="flex items-center gap-3 p-3 bg-[#061208] rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">{draft.organisation}</div>
+                        <div className="text-emerald-500/50 text-xs truncate">{draft.draft_subject}</div>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded shrink-0 font-medium ${draft.status === 'sent' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>{draft.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      }
+
       default:
         return null
     }
@@ -1655,7 +1771,12 @@ export default function GreenStackApp() {
                     {browserSessions.filter(s => s.status === "pending_review").length}
                   </span>
                 )}
-                {active && item.id !== "browser" && <span style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "rgba(0,255,135,0.8)" }} />}
+                {item.id === "replies" && replyDrafts.filter(r => r.status === "pending").length > 0 && (
+                  <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: 9, background: "rgba(52,211,153,0.9)", color: "#000", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                    {replyDrafts.filter(r => r.status === "pending").length}
+                  </span>
+                )}
+                {active && item.id !== "browser" && item.id !== "replies" && <span style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "rgba(0,255,135,0.8)" }} />}
               </button>
             )
           })}

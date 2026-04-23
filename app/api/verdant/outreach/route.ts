@@ -90,6 +90,34 @@ Return the JSON object only.`
   }
 }
 
+// PUT — send a pre-written reply draft (no AI generation, just send)
+export async function PUT(request: Request) {
+  try {
+    const { to_email, to_name, organisation, subject, body } = await request.json()
+    if (!to_email || !subject || !body) {
+      return NextResponse.json({ error: 'to_email, subject, body required' }, { status: 400 })
+    }
+    const sendResult = await sendEmail({ to: to_email, subject, body })
+    if (!sendResult.success) {
+      return NextResponse.json({ error: sendResult.error ?? 'Send failed' }, { status: 500 })
+    }
+    const supabase = await createClient()
+    await supabase.from('outreach_emails').insert({
+      to_email,
+      to_name: to_name ?? null,
+      organisation,
+      subject,
+      body,
+      status: 'sent',
+      resend_id: sendResult.id ?? null,
+      sent_at: new Date().toISOString(),
+    })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
+}
+
 // GET — list outreach emails
 export async function GET() {
   try {
