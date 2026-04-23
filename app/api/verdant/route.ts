@@ -7,7 +7,7 @@ import { fetchAllInternationalTenders } from '@/lib/international-tenders'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, loadTopMemories, saveVerdantMemory } from '@/lib/verdant-memory'
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
-import { getCRMSummary } from '@/lib/outreach-crm'
+import { getCRMSummary, getFollowupsDue } from '@/lib/outreach-crm'
 import { VERDANT_BASE_TOOLS, executeBaseTool, sendTelegramMessage } from '@/lib/verdant-tools'
 import { bootstrapNativeMemory } from '@/lib/verdant-native-memory'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
@@ -21,6 +21,7 @@ const VERDANT_SYSTEM_PROMPT = `## IDENTITY & MISSION
 You are VERDANT — the Sovereign Revenue Intelligence Agent for GreenStack AI. You are a fully autonomous agent combining procurement intelligence, private sector outreach, and bid writing.
 
 **Priority order — every cycle:**
+0. **Follow-up sequences** — ALWAYS check the FOLLOW-UP QUEUE first. These are warm contacts who already know GreenStack AI. A second or third touch converts at 3-5x the rate of cold outreach. Use a completely different angle — don't repeat yourself. Keep it under 100 words. Never apologise for following up.
 1. **Private sector outreach** — CBAM-exposed manufacturers, CSRD-obligated companies, ESG-pressured firms. These need no tender process and convert faster than public sector. Always produce outreach emails.
 2. **International development tenders** — GIZ, World Bank, UNGM, ADB. Newer entrants can compete. Lower qualification barriers than UK public sector.
 3. **UK public tenders** — Only flag if genuinely biddable (below £50k, no framework requirement, or direct award). Do not waste analysis on tenders requiring frameworks we are not on or reference projects we do not yet have.
@@ -409,16 +410,17 @@ async function runCycleInternal() {
     const cycleStart = new Date().toISOString()
 
     // Phase 1: Fetch all data — hard 45s cap on the entire phase
-    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary] = await withTimeout(
+    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary, followupsDue] = await withTimeout(
       Promise.all([
         fetchContractsFinder(),
         fetchAllInternationalTenders(),
         fetchDevolvedTenders(),
         runBuyerIntentScan(),
         getCRMSummary(),
+        getFollowupsDue(),
       ]),
       60000,
-      [[], [], [], [], 'CRM: timeout']
+      [[], [], [], [], 'CRM: timeout', []]
     )
 
     // Fetch existing pipeline from Supabase
@@ -501,7 +503,21 @@ ${internationalSummary}
 
 ${buyerIntentSummary}
 
-Run a full VERDANT cycle. Qualify all live tenders (UK + international + devolved). Act on HIGH priority buyer intent signals with personalised outreach. Write complete bids for any scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
+## ⚡ FOLLOW-UP QUEUE — ACTION REQUIRED FIRST (${followupsDue.length} contacts due):
+${followupsDue.length > 0
+  ? followupsDue.map(c =>
+      `• ${c.organisation} | ${c.contact_name ?? 'unknown contact'} | ${c.contact_email} | emailed ${c.followup_count + 1}x | last: ${c.last_contacted_at?.split('T')[0]} | signal: ${c.signal ?? 'general'}`
+    ).join('\n')
+  : 'No follow-ups due this cycle — all contacts are either fresh, replied, or completed the sequence.'}
+
+**FOLLOW-UP RULES:**
+- Write a DIFFERENT angle from the first email — new hook, a regulatory deadline, a short question, a relevant news item
+- Keep it under 100 words — shorter than the original
+- Never mention that this is a follow-up or apologise for following up
+- Send via send_outreach_email — the CRM auto-tracks the sequence
+- After 3 total emails with no reply the CRM stops scheduling — never exceed 3
+
+Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN: qualify live tenders (UK + international + devolved). THEN: act on HIGH priority buyer intent signals with new outreach. Write complete bids for any tender scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
     // Agentic loop — VERDANT runs until end_turn or 8 iterations
     const apiMessages: Anthropic.MessageParam[] = [{ role: 'user', content: contextMessage }]
