@@ -10,7 +10,6 @@ import { checkContactExists, upsertContact, markContactReplied } from '@/lib/out
 import { saveMemory } from '@/lib/verdant-memory'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
-import { executeMemoryCommand } from '@/lib/verdant-native-memory'
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
 
@@ -109,7 +108,6 @@ export async function executeOutreachEmail(input: {
 // ─── Tool Schema Definitions ──────────────────────────────────────────────────
 
 export const VERDANT_BASE_TOOLS: any[] = [
-  { type: 'memory_20250818' as const, name: 'memory' },
   // Native Anthropic server tools — executed by the API, not our code
   {
     type: 'web_search_20260209',
@@ -345,9 +343,6 @@ The screenshot is saved. Check the GreenStack dashboard → Browser Sessions to 
 
       return `✅ Reply logged for ${input.organisation}. Follow-up sequence cancelled. Draft response saved and Telegram alert sent. Review on dashboard to approve and send.`
     }
-
-    case 'memory':
-      return executeMemoryCommand(input.input ?? input)
 
     default:
       return `Unknown tool: ${name}`
