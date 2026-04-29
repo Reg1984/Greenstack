@@ -8,13 +8,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { sendOutreachEmail, queryCRM } from '@/lib/outreach-crm'
 import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
-import { scrapeUrl, searchAndScrape } from '@/lib/firecrawl'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
 import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
 
 const client = new Anthropic()
 
-const MORNING_TOOLS: Anthropic.Tool[] = [
+const MORNING_TOOLS: any[] = [
+  // Native server tools — executed by API automatically
+  { type: 'web_search_20260209', name: 'web_search', max_uses: 8, user_location: { type: 'approximate', city: 'London', region: 'England', country: 'GB', timezone: 'Europe/London' } },
+  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 10, max_content_tokens: 6000 },
   {
     name: 'send_email',
     description: 'Send an outreach email and log to CRM.',
@@ -61,39 +63,6 @@ const MORNING_TOOLS: Anthropic.Tool[] = [
       type: 'object' as const,
       properties: { path: { type: 'string' } },
       required: ['path'],
-    },
-  },
-  {
-    name: 'scrape_webpage',
-    description: 'Scrape a webpage and return clean markdown.',
-    input_schema: {
-      type: 'object' as const,
-      properties: { url: { type: 'string' } },
-      required: ['url'],
-    },
-  },
-  {
-    name: 'web_search_and_read',
-    description: 'Search the web and return full page content.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string' },
-        limit: { type: 'number' },
-      },
-      required: ['query'],
-    },
-  },
-  {
-    name: 'search_news',
-    description: 'Search for recent news — find trigger events for outreach.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string' },
-        limit: { type: 'number' },
-      },
-      required: ['query'],
     },
   },
   {
@@ -150,18 +119,6 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
       case 'list_website_files': {
         const files = await listRepoDir(input.path)
         return files.length ? files.join('\n') : `No files in ${input.path}`
-      }
-      case 'scrape_webpage': {
-        const result = await scrapeUrl(input.url)
-        return result.success ? result.markdown.slice(0, 3000) : `Failed to scrape ${input.url}`
-      }
-      case 'web_search_and_read': {
-        const results = await searchAndScrape(input.query, { limit: input.limit ?? 5 })
-        return results.map(r => `## ${r.title ?? r.url}\n${r.url}\n\n${r.markdown.slice(0, 600)}`).join('\n\n---\n\n')
-      }
-      case 'search_news': {
-        const results = await searchAndScrape(`${input.query} news 2025 2026`, { limit: input.limit ?? 5 })
-        return results.map(r => `## ${r.title ?? r.url}\n${r.url}\n\n${r.markdown.slice(0, 500)}`).join('\n\n---\n\n')
       }
       case 'lookup_company': {
         return await lookupCompaniesHouse(input.name)

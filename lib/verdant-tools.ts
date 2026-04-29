@@ -33,53 +33,8 @@ export async function sendTelegramMessage(text: string): Promise<string> {
 }
 
 // ─── Tool Executors ───────────────────────────────────────────────────────────
-
-export async function browseUrl(url: string): Promise<string> {
-  try {
-    const res = await fetch(`https://r.jina.ai/${url}`, {
-      headers: { Accept: 'text/plain', 'X-Return-Format': 'markdown' },
-    })
-    if (!res.ok) return `Could not fetch ${url} — status ${res.status}`
-    return (await res.text()).slice(0, 8000)
-  } catch (err) {
-    return `Browse error for ${url}: ${String(err)}`
-  }
-}
-
-export async function searchWeb(query: string): Promise<string> {
-  const exaKey = process.env.EXA_API_KEY
-  if (exaKey) {
-    try {
-      const res = await fetch('https://api.exa.ai/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': exaKey },
-        body: JSON.stringify({
-          query,
-          numResults: 8,
-          useAutoprompt: true,
-          type: 'neural',
-          contents: { text: { maxCharacters: 800 } },
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return (data?.results ?? [])
-          .map((r: any) => `## ${r.title}\n${r.url}\n${r.text ?? ''}`)
-          .join('\n\n')
-          .slice(0, 6000)
-      }
-    } catch { /* fall through to Jina */ }
-  }
-  try {
-    const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-      headers: { Accept: 'text/plain', 'X-Return-Format': 'markdown' },
-    })
-    if (!res.ok) return `Search failed for "${query}" — status ${res.status}`
-    return (await res.text()).slice(0, 6000)
-  } catch (err) {
-    return `Search error: ${String(err)}`
-  }
-}
+// Note: web_search and web_fetch are Anthropic server-side tools — the API
+// executes them automatically. No executor needed here.
 
 export async function executeOutreachEmail(input: {
   to_email: string
@@ -155,28 +110,18 @@ export async function executeOutreachEmail(input: {
 
 export const VERDANT_BASE_TOOLS: any[] = [
   { type: 'memory_20250818' as const, name: 'memory' },
+  // Native Anthropic server tools — executed by the API, not our code
   {
-    name: 'browse_url',
-    description: 'Fetch and read the full content of any public webpage. Use to read tender specs, research organisations, check GIZ/World Bank/UNGM notices, or read any document online.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        url: { type: 'string', description: 'Full URL starting with https://' },
-        reason: { type: 'string', description: 'Brief note on why you are browsing this URL' },
-      },
-      required: ['url'],
-    },
+    type: 'web_search_20260209',
+    name: 'web_search',
+    max_uses: 6,
+    user_location: { type: 'approximate', city: 'London', region: 'England', country: 'GB', timezone: 'Europe/London' },
   },
   {
-    name: 'search_web',
-    description: 'Search the web for current information — procurement contacts, company details, live tenders, regulatory updates, pricing benchmarks.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: { type: 'string', description: 'The search query' },
-      },
-      required: ['query'],
-    },
+    type: 'web_fetch_20260209',
+    name: 'web_fetch',
+    max_uses: 10,
+    max_content_tokens: 8000,
   },
   {
     name: 'send_outreach_email',
@@ -309,12 +254,6 @@ export const VERDANT_BASE_TOOLS: any[] = [
 
 export async function executeBaseTool(name: string, input: any): Promise<string> {
   switch (name) {
-    case 'browse_url':
-      return browseUrl(input.url)
-
-    case 'search_web':
-      return searchWeb(input.query)
-
     case 'send_outreach_email':
       return executeOutreachEmail(input)
 

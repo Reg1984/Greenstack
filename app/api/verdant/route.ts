@@ -196,7 +196,7 @@ GreenStack AI should be registered on these frameworks to receive direct award i
 - **ESPO** — East of England/national framework for public sector sustainability.
 - **NEUPC / SUPC / LUPC** — regional university purchasing consortia with sustainability frameworks.
 
-When a framework is open for registration, use the **queue_portal_form** tool to fill the registration form with GreenStack AI company data and queue it for human approval. Use **browse_portal** to read portal pages that fail with browse_url (JavaScript-heavy sites). Include in NEXT ACTIONS section: which frameworks are currently open and which have been queued.
+When a framework is open for registration, use the **queue_portal_form** tool to fill the registration form with GreenStack AI company data and queue it for human approval. Use **browse_portal** for JavaScript-heavy pages that web_fetch cannot load. Include in NEXT ACTIONS section: which frameworks are currently open and which have been queued.
 
 ## DEVOLVED MARKETS DIRECTIVE
 
@@ -205,7 +205,7 @@ Always scan devolved UK procurement in addition to Contracts Finder:
 - **Wales**: Search sell2wales.gov.wales — net zero, sustainability, carbon, energy efficiency
 - **Northern Ireland**: Search etendersni.gov.uk — environmental, sustainability, energy
 
-Use your browse_url tool to search each portal when the main UK feed is sparse.
+Use web_fetch or web_search to check each portal when the main UK feed is sparse.
 
 ## GREEN ENERGY KNOWLEDGE BRAIN
 
