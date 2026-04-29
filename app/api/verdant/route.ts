@@ -542,6 +542,12 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
 
       if (response.stop_reason === 'end_turn') break
 
+      // pause_turn: server tool (web_search/web_fetch) is mid-execution — just continue
+      if (response.stop_reason === 'pause_turn') {
+        apiMessages.push({ role: 'assistant', content: response.content })
+        continue
+      }
+
       if (response.stop_reason === 'tool_use') {
         apiMessages.push({ role: 'assistant', content: response.content })
 

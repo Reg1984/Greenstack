@@ -184,6 +184,12 @@ You are VERDANT. Think before you act. Be brilliant.`
         break
       }
 
+      // pause_turn: server tool (web_search/web_fetch) mid-execution — continue
+      if (response.stop_reason === 'pause_turn') {
+        apiMessages.push({ role: 'assistant', content: response.content })
+        continue
+      }
+
       if (response.stop_reason === 'tool_use') {
         // Add assistant turn with tool calls
         apiMessages.push({ role: 'assistant', content: response.content })
