@@ -31,9 +31,7 @@ ${COMPANY_PROFILE}
 - Maximum 120 words — shorter than the first email
 - No hard sell — peer-to-peer professional tone
 - Include https://www.greenstackai.co.uk/cbam for CBAM contacts, https://www.greenstackai.co.uk for others
-- Sign off: VERDANT | GreenStack AI | verdant@greenstackai.co.uk
-
-Return ONLY a JSON object: { "subject": "...", "body": "..." }`
+- Sign off: VERDANT | GreenStack AI | verdant@greenstackai.co.uk`
 
 async function sendFollowupEmail(contact: any): Promise<boolean> {
   try {
@@ -51,13 +49,26 @@ Return the JSON object only.`
       max_tokens: 512,
       system: FOLLOWUP_SYSTEM,
       messages: [{ role: 'user', content: prompt }],
-    })
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              subject: { type: 'string' },
+              body: { type: 'string' },
+            },
+            required: ['subject', 'body'],
+            additionalProperties: false,
+          },
+        },
+      },
+    } as any)
 
     const rawText = response.content[0].type === 'text' ? response.content[0].text : ''
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return false
+    if (!rawText) return false
 
-    const emailContent: { subject: string; body: string } = JSON.parse(jsonMatch[0])
+    const emailContent: { subject: string; body: string } = JSON.parse(rawText)
 
     // Send via Resend
     const apiKey = process.env.RESEND_API_KEY

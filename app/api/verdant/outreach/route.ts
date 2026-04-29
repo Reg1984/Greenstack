@@ -20,14 +20,7 @@ ${COMPANY_PROFILE}
 - For general sustainability outreach always include: "Learn more: https://www.greenstackai.co.uk"
 - Tone: confident, peer-to-peer. Not salesy. Not desperate. Smart professional talking to smart professional.
 - Length: under 200 words. Busy people don't read essays.
-- Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk
-
-## OUTPUT FORMAT
-Return ONLY a JSON object:
-{
-  "subject": "email subject line",
-  "body": "full email body as plain text"
-}`
+- Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk`
 
 // POST — draft and send outreach for a specific opportunity
 export async function POST(request: Request) {
@@ -41,25 +34,32 @@ export async function POST(request: Request) {
     // Draft the email with VERDANT
     const prompt = `Write a cold outreach email to ${contact_name ? contact_name + ' at ' : ''}${organisation}.
 Context: ${context || `We have identified ${organisation} as a strong prospect for GreenStack AI's sustainability consultancy services.`}
-${tender_title ? `Related tender/opportunity: ${tender_title}` : ''}
-
-Return the JSON object only.`
+${tender_title ? `Related tender/opportunity: ${tender_title}` : ''}`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: OUTREACH_SYSTEM,
       messages: [{ role: 'user', content: prompt }],
-    })
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              subject: { type: 'string' },
+              body: { type: 'string' },
+            },
+            required: ['subject', 'body'],
+            additionalProperties: false,
+          },
+        },
+      },
+    } as any)
 
     const rawText = response.content[0].type === 'text' ? response.content[0].text : ''
-    let emailContent: { subject: string; body: string }
-    try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-      emailContent = jsonMatch ? JSON.parse(jsonMatch[0]) : { subject: 'GreenStack AI — Sustainability Intelligence', body: rawText }
-    } catch {
-      return NextResponse.json({ error: 'Failed to parse email content' }, { status: 500 })
-    }
+    if (!rawText) return NextResponse.json({ error: 'No content generated' }, { status: 500 })
+    const emailContent: { subject: string; body: string } = JSON.parse(rawText)
 
     // Send via Resend
     const sendResult = await sendEmail({
