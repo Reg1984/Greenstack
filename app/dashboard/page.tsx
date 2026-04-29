@@ -878,12 +878,20 @@ export default function GreenStackApp() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ messages: newMessages }),
                         })
-                        const data = await res.json()
-                        const toolNote = data.toolsUsed?.length
-                          ? `\n\n🌐 *Browsed ${data.toolsUsed.length} source${data.toolsUsed.length > 1 ? 's' : ''}: ${data.toolsUsed.map((t: any) => t.input).join(', ')}*`
-                          : ''
-                        setVerdantChat([...newMessages, { role: 'assistant', content: data.reply + toolNote }])
-                        if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
+                        let data: any = {}
+                        try { data = await res.json() } catch { /* non-JSON response */ }
+                        if (!res.ok || !data.reply) {
+                          const errMsg = data.error || `Server error ${res.status} — try a shorter message or refresh the page.`
+                          setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
+                        } else {
+                          const toolNote = data.toolsUsed?.length
+                            ? `\n\n🌐 *Browsed ${data.toolsUsed.length} source${data.toolsUsed.length > 1 ? 's' : ''}: ${data.toolsUsed.map((t: any) => t.input).join(', ')}*`
+                            : ''
+                          setVerdantChat([...newMessages, { role: 'assistant', content: data.reply + toolNote }])
+                          if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
+                        }
+                      } catch (err: any) {
+                        setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ Request failed: ${err?.message ?? 'Unknown error'}. Try a shorter message or refresh the page.` }])
                       } finally {
                         setVerdantChatLoading(false)
                         setVerdantBrowsing(null)
@@ -909,9 +917,20 @@ export default function GreenStackApp() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ messages: newMessages }),
                       })
-                      const data = await res.json()
-                      setVerdantChat([...newMessages, { role: 'assistant', content: data.reply }])
-                      if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
+                      let data: any = {}
+                      try { data = await res.json() } catch { /* non-JSON response */ }
+                      if (!res.ok || !data.reply) {
+                        const errMsg = data.error || `Server error ${res.status} — try a shorter message or refresh the page.`
+                        setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
+                      } else {
+                        const toolNote = data.toolsUsed?.length
+                          ? `\n\n🌐 *Browsed ${data.toolsUsed.length} source${data.toolsUsed.length > 1 ? 's' : ''}: ${data.toolsUsed.map((t: any) => t.input).join(', ')}*`
+                          : ''
+                        setVerdantChat([...newMessages, { role: 'assistant', content: data.reply + toolNote }])
+                        if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
+                      }
+                    } catch (err: any) {
+                      setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ Request failed: ${err?.message ?? 'Unknown error'}. Try a shorter message or refresh the page.` }])
                     } finally {
                       setVerdantChatLoading(false)
                     }

@@ -68,7 +68,10 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [...VERDANT_BASE_TOOLS, ...CHAT_EXTRA_TO
 
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json()
+    const { messages: rawMessages } = await request.json()
+
+    // Trim history to last 20 messages to avoid huge payloads from accumulated conversation
+    const messages: Anthropic.MessageParam[] = (rawMessages ?? []).slice(-20)
 
     const supabase = await createClient()
     const [verdantMemory, persistentMemory] = await Promise.all([
