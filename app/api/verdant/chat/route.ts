@@ -170,7 +170,7 @@ You are VERDANT. Think before you act. Be brilliant.`
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
-        system: systemPrompt,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: VERDANT_TOOLS,
         messages: apiMessages,
       })

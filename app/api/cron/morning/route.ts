@@ -261,7 +261,7 @@ At the end, produce a concise briefing summarising: follow-ups sent, new outreac
         model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         tools: MORNING_TOOLS,
-        system: systemPrompt,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: currentMessages,
       })
 

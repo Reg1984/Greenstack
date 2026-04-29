@@ -520,14 +520,19 @@ ${followupsDue.length > 0
 Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN: qualify live tenders (UK + international + devolved). THEN: act on HIGH priority buyer intent signals with new outreach. Write complete bids for any tender scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
     // Agentic loop — VERDANT runs until end_turn or 8 iterations
-    const apiMessages: Anthropic.MessageParam[] = [{ role: 'user', content: contextMessage }]
+    // First user message caches the large context block (same across all iterations in a cycle)
+    const apiMessages: Anthropic.MessageParam[] = [{
+      role: 'user',
+      content: [{ type: 'text', text: contextMessage, cache_control: { type: 'ephemeral' } }],
+    }]
     let verdantOutput = ''
 
     for (let iteration = 0; iteration < 8; iteration++) {
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
-        system: VERDANT_SYSTEM_PROMPT,
+        // System prompt cached — ~500 lines sent 8× per cycle, saves ~90% on input tokens from iter 2
+        system: [{ type: 'text', text: VERDANT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         tools: VERDANT_BASE_TOOLS,
         messages: apiMessages,
       })
