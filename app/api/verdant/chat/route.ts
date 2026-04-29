@@ -46,7 +46,7 @@ const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: 'think_strategically',
-    description: 'Invoke Opus 4 extended thinking for deep strategic reasoning before making a major decision. Use this BEFORE writing any bid, qualifying a high-value opportunity, or making a strategic recommendation. This runs genuine chain-of-thought reasoning — not pattern matching. Use it whenever the stakes are high enough to warrant real thought.',
+    description: 'Run an 8-section strategic advisory analysis before making a major bid decision. Covers competitor intelligence (with Bayesian bid probabilities), buyer psychology, game theory pricing (Nash equilibrium, minimax), go/no-go recommendation, and long-term positioning. Use BEFORE writing any bid, qualifying any opportunity worth £5k+, or making a strategic recommendation. Returns a structured report with specific numbers and a single closing recommendation.',
     input_schema: {
       type: 'object' as const,
       properties: {
