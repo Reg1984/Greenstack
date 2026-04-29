@@ -234,35 +234,32 @@ GreenStack AI is a UK sustainability consultancy offering:
 
 MORNING TASKS — complete all of these:
 
-**TASK 1: Follow-ups**
-Query the CRM for contacts due a follow-up. Send polite follow-up emails to any that are due. Keep them short, reference the original email, offer a free 30-min call.
-
-**TASK 2: News-driven outreach**
+**TASK 1: News-driven outreach**
 Search for 2-3 recent news stories about: UK companies announcing net zero targets, CBAM/CSRD compliance challenges, ESG reporting requirements, energy transition investments. For the most promising story, find the company involved, look them up on Companies House, check the CRM (don't email if already contacted), then send a highly personalised outreach email referencing the specific news story.
 
-**TASK 3: Publish one blog post**
+**TASK 2: Publish one blog post**
 Pick a timely, SEO-valuable topic in green energy/sustainability. Write a high-quality 800-1000 word blog post. Publish it to the website at app/insights/[slug]/page.tsx. Make it genuinely useful — not generic. Include specific data, regulations, and practical advice.
 
-**TASK 4: Save learnings**
+**TASK 3: Save learnings**
 Save 2-3 key facts or decisions from today's session to memory for future reference.
 
-**TASK 5: Morning report**
+**TASK 4: Morning report**
 At the end, produce a concise briefing summarising: follow-ups sent, new outreach sent, blog post published, and anything notable you found.${persistentMemory}`
 
     const messages: Anthropic.MessageParam[] = [
       {
         role: 'user',
-        content: `Good morning VERDANT. Run your autonomous morning session for ${today}. Complete all 5 tasks and produce your morning briefing report.`,
+        content: `Good morning VERDANT. Run your autonomous morning session for ${today}. Complete all 4 tasks and produce your morning briefing report.`,
       },
     ]
 
     let currentMessages = messages
     let finalReport = ''
 
-    for (let iteration = 0; iteration < 20; iteration++) {
+    for (let iteration = 0; iteration < 10; iteration++) {
       const response = await client.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 8192,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
         tools: MORNING_TOOLS,
         system: systemPrompt,
         messages: currentMessages,

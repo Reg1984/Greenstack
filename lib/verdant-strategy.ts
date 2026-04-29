@@ -41,11 +41,11 @@ After reasoning, provide a clear structured recommendation.`
 
   try {
     const response = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 16000,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8000,
       thinking: {
         type: 'enabled',
-        budget_tokens: 10000,
+        budget_tokens: 5000,
       },
       messages: [{ role: 'user', content: prompt }],
     })
