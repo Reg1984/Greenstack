@@ -82,8 +82,12 @@ Produce a full 8-section strategic advisory report:
 5. GO / NO-GO DECISION
    Should GreenStack AI bid? Answer YES or NO, then defend it in exactly 3 bullet points. Consider: credentials, bandwidth, realistic win probability, and whether the margin justifies the bid cost.
 
-6. PRICING STRATEGY
-   What should GreenStack AI charge? Give a specific number or range. Justify against: our listed rates, the buyer's likely budget, competitor pricing, and value delivered. Should we undercut, match, or price at premium — and why?
+6. CALCULATED OUTCOMES
+   Run the decision tree to 3 levels of depth:
+   - If we bid and WIN: pipeline impact, capacity impact, reputation impact, follow-on opportunities created
+   - If we bid and LOSE: time cost, reputation impact, intelligence gained
+   - If we DON'T bid: opportunity cost, signal sent to market, better uses of the time
+   Assign expected value to each branch using your win probability estimate from section 5.
 
 7. BID POSITIONING
    POSITIONING: [Top 3 emphasis points for the bid]
