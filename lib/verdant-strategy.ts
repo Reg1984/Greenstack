@@ -49,15 +49,21 @@ Produce a full 8-section strategic advisory report:
 
 ---
 
-1. SITUATION ASSESSMENT
-   What is actually happening here — stripped of spin? Who is the buyer, what do they really need, and why are they procuring now? What is the political or commercial context driving this? State what we know as fact and what we are assuming.
+1. POSITION ASSESSMENT
+   Where does GreenStack AI currently stand in the market relative to this opportunity?
+   - Active pipeline value and how this opportunity fits in
+   - Win rate by sector and value band (state assumptions where data is missing)
+   - Buyer relationships established with this buyer or similar buyers
+   - Capability gaps that could disqualify or weaken our bid
+   - Capacity remaining — can we actually deliver this alongside current commitments?
+   - Reputation signals: what does our track record say to this evaluator?
 
-2. COMPETITOR INTELLIGENCE
-   Who is most likely bidding against us?
-   - Name the probable competitors: Big Four, specialist boutiques, incumbents, local consultancies
-   - For each: historical pricing patterns, bid strengths and weaknesses, likely strategy on this specific opportunity
-   - Predicted Bayesian probability (%) that each competitor bids on this opportunity and why
-   - Where are we stronger and where are we weaker — specifically?
+2. OPPONENT MODELING
+   Who are we competing against, and what do we know about them?
+   - Identified competitors by sector: Big Four, specialist boutiques, incumbents, local consultancies
+   - For each: historical pricing patterns, bid strengths and weaknesses
+   - Their likely strategy on this specific opportunity
+   - Predicted Bayesian probability (%) that each competitor bids — and why
 
 3. BUYER INTELLIGENCE
    What does the buyer actually want, beyond the spec?
