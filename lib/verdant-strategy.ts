@@ -79,8 +79,14 @@ Produce a full 8-section strategic advisory report:
    - Where is the optimal signal portfolio — which credentials, evidence, and positioning maximise perceived value per word in the submission?
    - In repeated-game terms, what is the long-term relationship value of this buyer to GreenStack AI?
 
-5. GO / NO-GO DECISION
-   Should GreenStack AI bid? Answer YES or NO, then defend it in exactly 3 bullet points. Consider: credentials, bandwidth, realistic win probability, and whether the margin justifies the bid cost.
+5. CHESS-EQUIVALENT STRATEGIC OPTIONS
+   Frame the decision in chess terms — pick ONE and explain why it's the right move:
+   - OPENING (standard known-good move): pursue this tender aggressively with a proven bid structure
+   - POSITIONAL PLAY (build for later): bid conservatively to establish buyer relationship even if win is unlikely
+   - SACRIFICE FOR ADVANTAGE: low-margin bid to disrupt competitor pipeline or block their entry into our region
+   - PASS: not the right battle — conserve resources for higher-value positions
+   - COMBINATION: explain how this move fits into a 3-move sequence toward a larger strategic goal
+   State which option you recommend, why, and what the next two moves are if it plays out as expected.
 
 6. CALCULATED OUTCOMES
    Run the decision tree to 3 levels of depth:
