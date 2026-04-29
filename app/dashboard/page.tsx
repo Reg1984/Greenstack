@@ -194,7 +194,7 @@ export default function GreenStackApp() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
       
-      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes, browserRes, replyRes] = await Promise.all([
+      const [tendersRes, bidsRes, activitiesRes, verdantRes, invoicesRes, outreachRes, browserRes] = await Promise.all([
         supabase.from("tenders").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("bids").select("*").order("created_at", { ascending: false }).limit(20),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(10),
@@ -202,7 +202,6 @@ export default function GreenStackApp() {
         supabase.from("invoices").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("outreach_emails").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("browser_sessions").select("id,status,url,purpose,form_data,screenshot_base64,result_screenshot_base64,notes,needs_human,error_message,submitted_at,reviewed_at,created_at").order("created_at", { ascending: false }).limit(30),
-        supabase.from("reply_drafts").select("*").order("created_at", { ascending: false }).limit(50),
       ])
       if (tendersRes.data) setTenders(tendersRes.data)
       if (bidsRes.data) setBids(bidsRes.data)
@@ -216,7 +215,10 @@ export default function GreenStackApp() {
       }
       if (outreachRes.data) setOutreachEmails(outreachRes.data)
       if (browserRes.data) setBrowserSessions(browserRes.data as BrowserSession[])
-      if (replyRes.data) setReplyDrafts(replyRes.data)
+      // reply_drafts loaded separately — table may not exist yet
+      supabase.from("reply_drafts").select("*").order("created_at", { ascending: false }).limit(50)
+        .then(({ data }) => { if (data) setReplyDrafts(data) })
+        .catch(() => { /* table not yet created — silently skip */ })
       setLoading(false)
     }
     loadData()
