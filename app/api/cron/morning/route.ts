@@ -212,6 +212,7 @@ At the end, produce a concise briefing summarising: follow-ups sent, new outreac
 
     let currentMessages = messages
     let finalReport = ''
+    let containerId: string | null = null
 
     for (let iteration = 0; iteration < 10; iteration++) {
       const response = await client.messages.create({
@@ -220,7 +221,17 @@ At the end, produce a concise briefing summarising: follow-ups sent, new outreac
         tools: MORNING_TOOLS,
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: currentMessages,
-      })
+        ...(containerId ? { container: containerId } : {}),
+      } as any)
+
+      // Track container_id for server-side tool continuity (web_search/web_fetch)
+      if ((response as any).container?.id) containerId = (response as any).container.id
+
+      // pause_turn: server tool mid-execution — continue with container
+      if (response.stop_reason === 'pause_turn') {
+        currentMessages = [...currentMessages, { role: 'assistant' as const, content: response.content }]
+        continue
+      }
 
       if (response.stop_reason !== 'tool_use') {
         const text = response.content.find(b => b.type === 'text') as Anthropic.TextBlock | undefined

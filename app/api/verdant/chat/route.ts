@@ -168,6 +168,7 @@ You are VERDANT. Think before you act. Be brilliant.`
     const apiMessages: Anthropic.MessageParam[] = messages
     let finalReply = ''
     const toolsUsed: { tool: string; input: any; result: string }[] = []
+    let containerId: string | null = null
 
     for (let iteration = 0; iteration < 10; iteration++) {
       const response = await client.messages.create({
@@ -176,7 +177,11 @@ You are VERDANT. Think before you act. Be brilliant.`
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: VERDANT_TOOLS,
         messages: apiMessages,
-      })
+        ...(containerId ? { container: containerId } : {}),
+      } as any)
+
+      // Track container_id for server-side tool continuity (web_search/web_fetch)
+      if ((response as any).container?.id) containerId = (response as any).container.id
 
       if (response.stop_reason === 'end_turn') {
         // Done — extract final text
@@ -187,7 +192,7 @@ You are VERDANT. Think before you act. Be brilliant.`
         break
       }
 
-      // pause_turn: server tool (web_search/web_fetch) mid-execution — continue
+      // pause_turn: server tool (web_search/web_fetch) mid-execution — pass container and continue
       if (response.stop_reason === 'pause_turn') {
         apiMessages.push({ role: 'assistant', content: response.content })
         continue

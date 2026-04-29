@@ -526,6 +526,7 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
       content: [{ type: 'text', text: contextMessage, cache_control: { type: 'ephemeral' } }],
     }]
     let verdantOutput = ''
+    let containerId: string | null = null
 
     for (let iteration = 0; iteration < 8; iteration++) {
       const response = await client.messages.create({
@@ -535,14 +536,18 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
         system: [{ type: 'text', text: VERDANT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         tools: VERDANT_BASE_TOOLS,
         messages: apiMessages,
-      })
+        ...(containerId ? { container: containerId } : {}),
+      } as any)
+
+      // Track container_id for server-side tool continuity (web_search/web_fetch)
+      if ((response as any).container?.id) containerId = (response as any).container.id
 
       const textBlocks = response.content.filter(b => b.type === 'text').map(b => (b as Anthropic.TextBlock).text)
       if (textBlocks.length) verdantOutput += textBlocks.join('\n')
 
       if (response.stop_reason === 'end_turn') break
 
-      // pause_turn: server tool (web_search/web_fetch) is mid-execution — just continue
+      // pause_turn: server tool (web_search/web_fetch) is mid-execution — pass container and continue
       if (response.stop_reason === 'pause_turn') {
         apiMessages.push({ role: 'assistant', content: response.content })
         continue
