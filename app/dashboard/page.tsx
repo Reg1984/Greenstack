@@ -187,47 +187,47 @@ export default function GreenStackApp() {
         body: JSON.stringify({ messages: newMessages }),
       })
 
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
         const errText = await res.text().catch(() => '')
         let errMsg = `Server error ${res.status}`
         try { errMsg = JSON.parse(errText).error ?? errMsg } catch { /* not JSON */ }
-        setChat((prev: any) => [...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
+        setChat([...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
         return
       }
 
-      // Read NDJSON stream — build mode returns plain JSON, chat returns stream
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
       let finalData: any = null
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (!line.trim()) continue
-          try {
-            const chunk = JSON.parse(line)
-            if (chunk.action) setStatus(chunk.action)
-            if (chunk.reply !== undefined || chunk.error !== undefined) finalData = chunk
-          } catch { /* partial line */ }
+      if (res.body) {
+        // Streaming NDJSON path (chat endpoint)
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) {
+            if (!line.trim()) continue
+            try {
+              const chunk = JSON.parse(line)
+              if (chunk.action) setStatus(chunk.action)
+              if (chunk.reply !== undefined || chunk.error !== undefined) finalData = chunk
+            } catch { /* partial line */ }
+          }
         }
-      }
-
-      // Handle any remaining buffer
-      if (buffer.trim()) {
-        try {
-          const chunk = JSON.parse(buffer)
-          if (chunk.reply !== undefined || chunk.error !== undefined) finalData = chunk
-        } catch { /* ignore */ }
-      }
-
-      if (!finalData) {
-        // Build mode or non-streaming — try parsing the whole buffer as JSON
-        try { finalData = JSON.parse(buffer || '{}') } catch { /* ignore */ }
+        // flush remaining buffer
+        if (buffer.trim()) {
+          try {
+            const chunk = JSON.parse(buffer)
+            if (chunk.reply !== undefined || chunk.error !== undefined) finalData = chunk
+          } catch { /* ignore */ }
+        }
+      } else {
+        // Fallback: plain JSON response (build mode or environments where body is null)
+        finalData = await res.json().catch(() => null)
       }
 
       if (finalData?.error) {
@@ -239,7 +239,7 @@ export default function GreenStackApp() {
         setChat([...newMessages, { role: 'assistant', content: finalData.reply + toolNote }])
         if (finalData.buildPlan) setBuildPlan(finalData.buildPlan)
       } else {
-        setChat([...newMessages, { role: 'assistant', content: '⚠️ No reply received. Please try again.' }])
+        setChat([...newMessages, { role: 'assistant', content: '⚠️ No reply received — VERDANT may still be thinking. Try again.' }])
       }
     } catch (err: any) {
       setChat([...newMessages, { role: 'assistant', content: `⚠️ Request failed: ${err?.message ?? 'Unknown error'}` }])
