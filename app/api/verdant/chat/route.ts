@@ -55,25 +55,22 @@ const VERDANT_TOOLS: Anthropic.Tool[] = [...VERDANT_BASE_TOOLS, ...CHAT_EXTRA_TO
 
 export async function POST(request: Request) {
   const encoder = new TextEncoder()
-  let streamController!: ReadableStreamDefaultController<Uint8Array>
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>()
+  const writer = writable.getWriter()
 
-  const stream = new ReadableStream<Uint8Array>({
-    start(c) { streamController = c },
-  })
-
-  const send = (data: object) => {
+  const send = async (data: object) => {
     try {
-      streamController.enqueue(encoder.encode(JSON.stringify(data) + '\n'))
-    } catch { /* controller closed */ }
+      await writer.write(encoder.encode(JSON.stringify(data) + '\n'))
+    } catch { /* stream closed */ }
   }
 
-  // Run the full agentic loop in background — stream keeps connection alive
+  // Run agentic loop — TransformStream keeps response alive until writer.close()
   ;(async () => {
     try {
       const { messages: rawMessages } = await request.json()
       const messages: Anthropic.MessageParam[] = (rawMessages ?? []).slice(-20)
 
-      send({ status: 'loading', action: 'Loading intelligence...' })
+      await send({ status: 'loading', action: 'Loading intelligence...' })
 
       const supabase = await createClient()
 
@@ -151,7 +148,7 @@ Use think_strategically BEFORE writing any bid or qualifying any opportunity wor
 
 You are VERDANT. Think before you act. Be brilliant.`
 
-      send({ status: 'thinking', action: 'VERDANT is thinking...' })
+      await send({ status: 'thinking', action: 'VERDANT is thinking...' })
 
       const apiMessages: Anthropic.MessageParam[] = messages
       let finalReply = ''
@@ -180,7 +177,7 @@ You are VERDANT. Think before you act. Be brilliant.`
 
         if (response.stop_reason === 'pause_turn') {
           apiMessages.push({ role: 'assistant', content: response.content })
-          send({ status: 'searching', action: 'Browsing the web...' })
+          await send({ status: 'searching', action: 'Browsing the web...' })
           continue
         }
 
@@ -200,7 +197,7 @@ You are VERDANT. Think before you act. Be brilliant.`
               block.name === 'recall_market_analysis' ? 'Loading market analysis...' :
               block.name
 
-            send({ status: 'tool', action: toolLabel })
+            await send({ status: 'tool', action: toolLabel })
 
             let result = ''
             if (block.name === 'think_strategically') {
@@ -245,16 +242,19 @@ You are VERDANT. Think before you act. Be brilliant.`
         break
       }
 
-      send({ reply: finalReply, toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined })
+      await send({ reply: finalReply, toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined })
     } catch (error) {
       console.error('VERDANT chat error:', error)
-      send({ error: String(error) })
+      await send({ error: String(error) })
     } finally {
-      streamController.close()
+      await writer.close().catch(() => {})
     }
   })()
 
-  return new Response(stream, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
+    },
   })
 }

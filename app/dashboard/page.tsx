@@ -226,8 +226,12 @@ export default function GreenStackApp() {
           } catch { /* ignore */ }
         }
       } else {
-        // Fallback: plain JSON response (build mode or environments where body is null)
-        finalData = await res.json().catch(() => null)
+        // Fallback: body is null — read as text and try to parse last JSON line
+        const text = await res.text().catch(() => '')
+        const lines = text.split('\n').filter(l => l.trim())
+        for (const line of lines.reverse()) {
+          try { finalData = JSON.parse(line); break } catch { /* try next */ }
+        }
       }
 
       if (finalData?.error) {
