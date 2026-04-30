@@ -76,20 +76,21 @@ export async function POST(request: Request) {
       send({ status: 'loading', action: 'Loading intelligence...' })
 
       const supabase = await createClient()
-      const [verdantMemory, persistentMemory] = await Promise.all([
-        loadVerdantMemory(),
-        loadTopMemories(),
-      ])
 
-      const [{ data: tenders }, { data: bids }, { data: recentCycles }, crmSummary] = await Promise.all([
-        supabase.from('tenders').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('bids').select('*').order('created_at', { ascending: false }).limit(10),
-        supabase.from('activity_log').select('metadata').eq('type', 'verdant_cycle').order('created_at', { ascending: false }).limit(3),
+      // Run all DB queries in parallel — select only fields needed for context
+      const [
+        persistentMemory,
+        { data: tenders },
+        { data: bids },
+        crmSummary,
+      ] = await Promise.all([
+        loadTopMemories(),
+        supabase.from('tenders').select('id,title,value,status,sector,buyer,deadline,ai_score').order('created_at', { ascending: false }).limit(10),
+        supabase.from('bids').select('id,title,value,status,buyer').order('created_at', { ascending: false }).limit(5),
         getCRMSummary(),
       ])
 
       const pipelineValue = tenders?.reduce((sum, t) => sum + (t.value || 0), 0) ?? 0
-      const lastCycleOutput = recentCycles?.[0]?.metadata?.output ?? 'No cycles run yet.'
 
       const systemPrompt = `You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You are now in interactive mode, working directly with your human partner to make decisions together.
 
@@ -125,20 +126,15 @@ You can browse the web and search in real time. Use these tools proactively:
 ${COMPANY_PROFILE}
 
 ## ACCUMULATED INTELLIGENCE
-${verdantMemory}
 ${persistentMemory}
 
 ## LIVE PIPELINE
-- Active tenders: ${tenders?.length ?? 0}
-- Total pipeline value: £${(pipelineValue / 1000000).toFixed(2)}M
-- Active bids: ${bids?.length ?? 0}
+- Active tenders: ${tenders?.length ?? 0} | Pipeline value: £${(pipelineValue / 1000000).toFixed(2)}M | Active bids: ${bids?.length ?? 0}
 - ${crmSummary}
+${tenders?.length ? `- Recent tenders: ${tenders.slice(0,5).map(t => `${t.title} (£${((t.value||0)/1000).toFixed(0)}k, ${t.status})`).join(' | ')}` : ''}
 
 ## CRM TOOLS AVAILABLE
-Use check_crm before sending ANY outreach email — it prevents duplicate contact and shows relationship history. Use draft_content to create LinkedIn posts or capability statements ready for human review.
-
-## MOST RECENT CYCLE OUTPUT (summary)
-${lastCycleOutput.slice(0, 1500)}
+Use check_crm before sending ANY outreach email. Use recall_memory to search past intelligence. Use draft_content to create LinkedIn posts or capability statements.
 
 ## STRATEGIC ADVISOR
 Use think_strategically BEFORE writing any bid or qualifying any opportunity worth £5k+. It runs an 8-section analysis: position assessment, opponent modeling, buyer intelligence, game theory pricing, chess strategic options, decision tree outcomes, bid positioning, and long-term market positioning.
@@ -162,10 +158,10 @@ You are VERDANT. Think before you act. Be brilliant.`
       const toolsUsed: { tool: string; input: any; result: string }[] = []
       let containerId: string | null = null
 
-      for (let iteration = 0; iteration < 10; iteration++) {
+      for (let iteration = 0; iteration < 6; iteration++) {
         const response: Anthropic.Message = await (client.messages.create as any)({
           model: 'claude-sonnet-4-6',
-          max_tokens: 8192,
+          max_tokens: 4096,
           system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
           tools: VERDANT_TOOLS,
           messages: apiMessages,

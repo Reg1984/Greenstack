@@ -74,7 +74,7 @@ export async function loadTopMemories(): Promise<string> {
       .select('category, key, value')
       .order('importance', { ascending: false })
       .order('updated_at', { ascending: false })
-      .limit(40)
+      .limit(20)
     if (!data?.length) return ''
     const grouped: Record<string, string[]> = {}
     for (const m of data) {
