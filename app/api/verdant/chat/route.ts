@@ -8,13 +8,9 @@ import { getCRMSummary } from '@/lib/outreach-crm'
 import { VERDANT_BASE_TOOLS, executeBaseTool } from '@/lib/verdant-tools'
 import { extractTenderFields, isGemmaAvailable } from '@/lib/gemma'
 import { thinkStrategically } from '@/lib/verdant-strategy'
-import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// browseUrl, searchWeb, sendOutreachEmail — imported from @/lib/verdant-tools
-
-// Chat-specific tools (in addition to VERDANT_BASE_TOOLS)
 const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
   {
     name: 'parse_tender_doc',
@@ -33,10 +29,7 @@ const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        type: {
-          type: 'string',
-          enum: ['linkedin_post', 'blog_article', 'capability_statement', 'case_study'],
-        },
+        type: { type: 'string', enum: ['linkedin_post', 'blog_article', 'capability_statement', 'case_study'] },
         title: { type: 'string' },
         body: { type: 'string', description: 'Full content body' },
         target_audience: { type: 'string' },
@@ -50,14 +43,8 @@ const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        opportunity: {
-          type: 'string',
-          description: 'Full description of the tender or opportunity — buyer, value, deadline, requirements, evaluation criteria',
-        },
-        question: {
-          type: 'string',
-          description: 'The specific strategic question to reason through — e.g. "Should we bid, and if so what is our winning angle?"',
-        },
+        opportunity: { type: 'string', description: 'Full description of the tender or opportunity — buyer, value, deadline, requirements, evaluation criteria' },
+        question: { type: 'string', description: 'The specific strategic question to reason through' },
       },
       required: ['opportunity', 'question'],
     },
@@ -67,29 +54,44 @@ const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
 const VERDANT_TOOLS: Anthropic.Tool[] = [...VERDANT_BASE_TOOLS, ...CHAT_EXTRA_TOOLS]
 
 export async function POST(request: Request) {
-  try {
-    const { messages: rawMessages } = await request.json()
+  const encoder = new TextEncoder()
+  let streamController!: ReadableStreamDefaultController<Uint8Array>
 
-    // Trim history to last 20 messages to avoid huge payloads from accumulated conversation
-    const messages: Anthropic.MessageParam[] = (rawMessages ?? []).slice(-20)
+  const stream = new ReadableStream<Uint8Array>({
+    start(c) { streamController = c },
+  })
 
-    const supabase = await createClient()
-    const [verdantMemory, persistentMemory] = await Promise.all([
-      loadVerdantMemory(),
-      loadTopMemories(),
-    ])
+  const send = (data: object) => {
+    try {
+      streamController.enqueue(encoder.encode(JSON.stringify(data) + '\n'))
+    } catch { /* controller closed */ }
+  }
 
-    const [{ data: tenders }, { data: bids }, { data: recentCycles }, crmSummary] = await Promise.all([
-      supabase.from('tenders').select('*').order('created_at', { ascending: false }).limit(20),
-      supabase.from('bids').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('activity_log').select('metadata').eq('type', 'verdant_cycle').order('created_at', { ascending: false }).limit(3),
-      getCRMSummary(),
-    ])
+  // Run the full agentic loop in background — stream keeps connection alive
+  ;(async () => {
+    try {
+      const { messages: rawMessages } = await request.json()
+      const messages: Anthropic.MessageParam[] = (rawMessages ?? []).slice(-20)
 
-    const pipelineValue = tenders?.reduce((sum, t) => sum + (t.value || 0), 0) ?? 0
-    const lastCycleOutput = recentCycles?.[0]?.metadata?.output ?? 'No cycles run yet.'
+      send({ status: 'loading', action: 'Loading intelligence...' })
 
-    const systemPrompt = `You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You are now in interactive mode, working directly with your human partner to make decisions together.
+      const supabase = await createClient()
+      const [verdantMemory, persistentMemory] = await Promise.all([
+        loadVerdantMemory(),
+        loadTopMemories(),
+      ])
+
+      const [{ data: tenders }, { data: bids }, { data: recentCycles }, crmSummary] = await Promise.all([
+        supabase.from('tenders').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('bids').select('*').order('created_at', { ascending: false }).limit(10),
+        supabase.from('activity_log').select('metadata').eq('type', 'verdant_cycle').order('created_at', { ascending: false }).limit(3),
+        getCRMSummary(),
+      ])
+
+      const pipelineValue = tenders?.reduce((sum, t) => sum + (t.value || 0), 0) ?? 0
+      const lastCycleOutput = recentCycles?.[0]?.metadata?.output ?? 'No cycles run yet.'
+
+      const systemPrompt = `You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You are now in interactive mode, working directly with your human partner to make decisions together.
 
 ## YOUR ROLE IN CHAT MODE
 - Be direct, confident and decisive
@@ -138,18 +140,8 @@ Use check_crm before sending ANY outreach email — it prevents duplicate contac
 ## MOST RECENT CYCLE OUTPUT (summary)
 ${lastCycleOutput.slice(0, 1500)}
 
-## STRATEGIC REASONING — OPUS 4 EXTENDED THINKING
-You have access to a powerful strategic reasoning engine via the **think_strategically** tool. This runs claude-opus-4-5 with extended chain-of-thought reasoning — genuine strategic thought, not pattern matching.
-
-**Use it BEFORE:**
-- Writing any bid or proposal
-- Qualifying a tender worth £10k+
-- Making a major recommendation on market strategy
-- Deciding whether to pursue a specific buyer or opportunity
-
-**Do not use it for:** routine research, sending outreach emails, or answering factual questions.
-
-The tool reasons through winnability, buyer psychology, competitive positioning, and risk — then returns a full strategic recommendation with a confidence score. Use that reasoning to write dramatically better bids.
+## STRATEGIC ADVISOR
+Use think_strategically BEFORE writing any bid or qualifying any opportunity worth £5k+. It runs an 8-section analysis: position assessment, opponent modeling, buyer intelligence, game theory pricing, chess strategic options, decision tree outcomes, bid positioning, and long-term market positioning.
 
 ## WHAT YOU CAN DO IN CHAT
 - Qualify any specific tender the human brings to you — browse the full spec, then think_strategically before recommending
@@ -157,114 +149,116 @@ The tool reasons through winnability, buyer psychology, competitive positioning,
 - Research any organisation in real time before outreach
 - Find live GIZ, World Bank and UN tender opportunities
 - Recommend which opportunities to prioritise
-- Advise on pricing strategy
+- Recall memory with recall_memory and recall_market_analysis tools
 - Draft outreach emails to potential clients with real intelligence behind them
-- Build a GreenStack Intelligence Report for any organisation
 - Discuss strategy and make decisions together
 
 You are VERDANT. Think before you act. Be brilliant.`
 
-    // Agentic loop — VERDANT runs until it stops calling tools
-    const apiMessages: Anthropic.MessageParam[] = messages
-    let finalReply = ''
-    const toolsUsed: { tool: string; input: any; result: string }[] = []
-    let containerId: string | null = null
+      send({ status: 'thinking', action: 'VERDANT is thinking...' })
 
-    for (let iteration = 0; iteration < 10; iteration++) {
-      const response: Anthropic.Message = await (client.messages.create as any)({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 8192,
-        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
-        tools: VERDANT_TOOLS,
-        messages: apiMessages,
-        ...(containerId ? { container: containerId } : {}),
-      })
+      const apiMessages: Anthropic.MessageParam[] = messages
+      let finalReply = ''
+      const toolsUsed: { tool: string; input: any; result: string }[] = []
+      let containerId: string | null = null
 
-      // Track container_id for server-side tool continuity (web_search/web_fetch)
-      if ((response as any).container?.id) containerId = (response as any).container.id
+      for (let iteration = 0; iteration < 10; iteration++) {
+        const response: Anthropic.Message = await (client.messages.create as any)({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8192,
+          system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+          tools: VERDANT_TOOLS,
+          messages: apiMessages,
+          ...(containerId ? { container: containerId } : {}),
+        })
 
-      if (response.stop_reason === 'end_turn') {
-        // Done — extract final text
+        if ((response as any).container?.id) containerId = (response as any).container.id
+
+        if (response.stop_reason === 'end_turn') {
+          finalReply = response.content
+            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+            .map(b => b.text)
+            .join('\n')
+          break
+        }
+
+        if (response.stop_reason === 'pause_turn') {
+          apiMessages.push({ role: 'assistant', content: response.content })
+          send({ status: 'searching', action: 'Browsing the web...' })
+          continue
+        }
+
+        if (response.stop_reason === 'tool_use') {
+          apiMessages.push({ role: 'assistant', content: response.content })
+          const toolResults: Anthropic.ToolResultBlockParam[] = []
+
+          for (const block of response.content) {
+            if (block.type !== 'tool_use') continue
+
+            const input = block.input as any
+            const toolLabel = block.name === 'web_search' ? `Searching: ${input.query ?? ''}` :
+              block.name === 'web_fetch' ? `Reading: ${input.url ?? ''}` :
+              block.name === 'think_strategically' ? 'Running strategic advisor...' :
+              block.name === 'send_outreach_email' ? `Sending email to ${input.organisation ?? ''}` :
+              block.name === 'recall_memory' ? `Recalling memory: ${input.query ?? ''}` :
+              block.name === 'recall_market_analysis' ? 'Loading market analysis...' :
+              block.name
+
+            send({ status: 'tool', action: toolLabel })
+
+            let result = ''
+            if (block.name === 'think_strategically') {
+              result = await thinkStrategically(input.opportunity, input.question)
+              toolsUsed.push({ tool: 'strategic_advisor', input: input.question, result: result.slice(0, 200) })
+            } else if (block.name === 'parse_tender_doc') {
+              const fields = await extractTenderFields(input.tender_text)
+              result = JSON.stringify(fields, null, 2)
+              toolsUsed.push({ tool: 'gemma_parse', input: input.tender_text.slice(0, 50) + '...', result: result.slice(0, 200) })
+            } else if (block.name === 'draft_content') {
+              try {
+                await supabase.from('content_drafts').insert({
+                  type: input.type,
+                  title: input.title,
+                  body: input.body,
+                  target_audience: input.target_audience ?? null,
+                  status: 'draft',
+                  created_at: new Date().toISOString(),
+                })
+                result = `Content draft saved: "${input.title}" (${input.type}) — available for review in dashboard.`
+              } catch (err) {
+                result = `Content draft created but could not save to database: ${String(err)}`
+              }
+              toolsUsed.push({ tool: 'content', input: input.title, result: result.slice(0, 200) })
+            } else {
+              result = await executeBaseTool(block.name, input)
+              toolsUsed.push({ tool: block.name, input: JSON.stringify(input).slice(0, 80), result: result.slice(0, 200) })
+            }
+
+            toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result })
+          }
+
+          apiMessages.push({ role: 'user', content: toolResults })
+          continue
+        }
+
+        // Any other stop reason
         finalReply = response.content
-          .filter(b => b.type === 'text')
-          .map(b => (b as Anthropic.TextBlock).text)
+          .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+          .map(b => b.text)
           .join('\n')
         break
       }
 
-      // pause_turn: server tool (web_search/web_fetch) mid-execution — pass container and continue
-      if (response.stop_reason === 'pause_turn') {
-        apiMessages.push({ role: 'assistant', content: response.content })
-        continue
-      }
-
-      if (response.stop_reason === 'tool_use') {
-        // Add assistant turn with tool calls
-        apiMessages.push({ role: 'assistant', content: response.content })
-
-        // Execute each tool call
-        const toolResults: Anthropic.ToolResultBlockParam[] = []
-
-        for (const block of response.content) {
-          if (block.type !== 'tool_use') continue
-
-          let result = ''
-          const input = block.input as any
-
-          if (block.name === 'think_strategically') {
-            result = await thinkStrategically(input.opportunity, input.question)
-            toolsUsed.push({ tool: 'opus4_thinking', input: input.question, result: result.slice(0, 200) })
-          } else if (block.name === 'parse_tender_doc') {
-            const fields = await extractTenderFields(input.tender_text)
-            result = JSON.stringify(fields, null, 2)
-            toolsUsed.push({ tool: 'gemma_parse', input: input.tender_text.slice(0, 50) + '...', result: result.slice(0, 200) })
-          } else if (block.name === 'draft_content') {
-            try {
-              await supabase.from('content_drafts').insert({
-                type: input.type,
-                title: input.title,
-                body: input.body,
-                target_audience: input.target_audience ?? null,
-                status: 'draft',
-                created_at: new Date().toISOString(),
-              })
-              result = `Content draft saved: "${input.title}" (${input.type}) — available for review in dashboard.`
-            } catch (err) {
-              result = `Content draft created but could not save to database: ${String(err)}`
-            }
-            toolsUsed.push({ tool: 'content', input: input.title, result: result.slice(0, 200) })
-          } else {
-            // All base tools handled by shared executor
-            result = await executeBaseTool(block.name, input)
-            toolsUsed.push({ tool: block.name, input: JSON.stringify(input).slice(0, 80), result: result.slice(0, 200) })
-          }
-
-          toolResults.push({
-            type: 'tool_result',
-            tool_use_id: block.id,
-            content: result,
-          })
-        }
-
-        // Add tool results and continue
-        apiMessages.push({ role: 'user', content: toolResults })
-        continue
-      }
-
-      // Any other stop reason — extract what we have
-      finalReply = response.content
-        .filter(b => b.type === 'text')
-        .map(b => (b as Anthropic.TextBlock).text)
-        .join('\n')
-      break
+      send({ reply: finalReply, toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined })
+    } catch (error) {
+      console.error('VERDANT chat error:', error)
+      send({ error: String(error) })
+    } finally {
+      streamController.close()
     }
+  })()
 
-    return NextResponse.json({
-      reply: finalReply,
-      toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
-    })
-  } catch (error) {
-    console.error('VERDANT chat error:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
-  }
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
 }

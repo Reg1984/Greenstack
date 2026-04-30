@@ -170,6 +170,85 @@ export default function GreenStackApp() {
   
   const supabase = createClient()
 
+  // ── Shared VERDANT chat sender — streams NDJSON, keeps connection alive ──
+  async function sendToVerdant(
+    newMessages: {role: string, content: string}[],
+    buildMode: boolean,
+    setChat: (msgs: any) => void,
+    setStatus: (s: string | null) => void,
+    setBuildPlan: (p: any) => void,
+    setLoading: (b: boolean) => void,
+  ) {
+    try {
+      const endpoint = buildMode ? '/api/verdant/build' : '/api/verdant/chat'
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      })
+
+      if (!res.ok || !res.body) {
+        const errText = await res.text().catch(() => '')
+        let errMsg = `Server error ${res.status}`
+        try { errMsg = JSON.parse(errText).error ?? errMsg } catch { /* not JSON */ }
+        setChat((prev: any) => [...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
+        return
+      }
+
+      // Read NDJSON stream — build mode returns plain JSON, chat returns stream
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let finalData: any = null
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const chunk = JSON.parse(line)
+            if (chunk.action) setStatus(chunk.action)
+            if (chunk.reply !== undefined || chunk.error !== undefined) finalData = chunk
+          } catch { /* partial line */ }
+        }
+      }
+
+      // Handle any remaining buffer
+      if (buffer.trim()) {
+        try {
+          const chunk = JSON.parse(buffer)
+          if (chunk.reply !== undefined || chunk.error !== undefined) finalData = chunk
+        } catch { /* ignore */ }
+      }
+
+      if (!finalData) {
+        // Build mode or non-streaming — try parsing the whole buffer as JSON
+        try { finalData = JSON.parse(buffer || '{}') } catch { /* ignore */ }
+      }
+
+      if (finalData?.error) {
+        setChat([...newMessages, { role: 'assistant', content: `⚠️ ${finalData.error}` }])
+      } else if (finalData?.reply) {
+        const toolNote = finalData.toolsUsed?.length
+          ? `\n\n🌐 *Used ${finalData.toolsUsed.length} tool${finalData.toolsUsed.length > 1 ? 's' : ''}: ${finalData.toolsUsed.map((t: any) => t.tool).join(', ')}*`
+          : ''
+        setChat([...newMessages, { role: 'assistant', content: finalData.reply + toolNote }])
+        if (finalData.buildPlan) setBuildPlan(finalData.buildPlan)
+      } else {
+        setChat([...newMessages, { role: 'assistant', content: '⚠️ No reply received. Please try again.' }])
+      }
+    } catch (err: any) {
+      setChat([...newMessages, { role: 'assistant', content: `⚠️ Request failed: ${err?.message ?? 'Unknown error'}` }])
+    } finally {
+      setLoading(false)
+      setStatus(null)
+    }
+  }
+
   useEffect(() => {
     const stored = sessionStorage.getItem("gs_auth")
     if (stored === "true") setAuthed(true)
@@ -870,31 +949,7 @@ export default function GreenStackApp() {
                       setVerdantChatLoading(true)
                       setPendingBuildPlan(null)
                       setVerdantBrowsing(null)
-                      try {
-                        const endpoint = verdantBuildMode ? '/api/verdant/build' : '/api/verdant/chat'
-                        const res = await fetch(endpoint, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ messages: newMessages }),
-                        })
-                        let data: any = {}
-                        try { data = await res.json() } catch { /* non-JSON response */ }
-                        if (!res.ok || !data.reply) {
-                          const errMsg = data.error || `Server error ${res.status} — try a shorter message or refresh the page.`
-                          setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
-                        } else {
-                          const toolNote = data.toolsUsed?.length
-                            ? `\n\n🌐 *Browsed ${data.toolsUsed.length} source${data.toolsUsed.length > 1 ? 's' : ''}: ${data.toolsUsed.map((t: any) => t.input).join(', ')}*`
-                            : ''
-                          setVerdantChat([...newMessages, { role: 'assistant', content: data.reply + toolNote }])
-                          if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
-                        }
-                      } catch (err: any) {
-                        setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ Request failed: ${err?.message ?? 'Unknown error'}. Try a shorter message or refresh the page.` }])
-                      } finally {
-                        setVerdantChatLoading(false)
-                        setVerdantBrowsing(null)
-                      }
+                      await sendToVerdant(newMessages, verdantBuildMode, setVerdantChat, setVerdantBrowsing, setPendingBuildPlan, setVerdantChatLoading)
                     }
                   }}
                   placeholder="Ask VERDANT... (press Enter to send)"
@@ -909,27 +964,9 @@ export default function GreenStackApp() {
                     setVerdantChat(newMessages)
                     setVerdantChatLoading(true)
                     setPendingBuildPlan(null)
+                    setVerdantBrowsing(null)
                     try {
-                      const endpoint = verdantBuildMode ? '/api/verdant/build' : '/api/verdant/chat'
-                      const res = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ messages: newMessages }),
-                      })
-                      let data: any = {}
-                      try { data = await res.json() } catch { /* non-JSON response */ }
-                      if (!res.ok || !data.reply) {
-                        const errMsg = data.error || `Server error ${res.status} — try a shorter message or refresh the page.`
-                        setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ ${errMsg}` }])
-                      } else {
-                        const toolNote = data.toolsUsed?.length
-                          ? `\n\n🌐 *Browsed ${data.toolsUsed.length} source${data.toolsUsed.length > 1 ? 's' : ''}: ${data.toolsUsed.map((t: any) => t.input).join(', ')}*`
-                          : ''
-                        setVerdantChat([...newMessages, { role: 'assistant', content: data.reply + toolNote }])
-                        if (data.buildPlan) setPendingBuildPlan(data.buildPlan)
-                      }
-                    } catch (err: any) {
-                      setVerdantChat([...newMessages, { role: 'assistant', content: `⚠️ Request failed: ${err?.message ?? 'Unknown error'}. Try a shorter message or refresh the page.` }])
+                      await sendToVerdant(newMessages, verdantBuildMode, setVerdantChat, setVerdantBrowsing, setPendingBuildPlan, setVerdantChatLoading)
                     } finally {
                       setVerdantChatLoading(false)
                     }
