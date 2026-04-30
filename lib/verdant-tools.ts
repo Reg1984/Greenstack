@@ -7,7 +7,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { checkContactExists, upsertContact, markContactReplied } from '@/lib/outreach-crm'
-import { saveMemory } from '@/lib/verdant-memory'
+import { saveMemory, recallMemory } from '@/lib/verdant-memory'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
 
@@ -153,6 +153,28 @@ export const VERDANT_BASE_TOOLS: any[] = [
     },
   },
   {
+    name: 'recall_memory',
+    description: 'Search VERDANT\'s persistent memory by keyword. Use this when you need to recall: what we know about a specific buyer, competitor, or sector; past bid decisions; outreach history; or any previously saved intelligence. Returns matching memory entries.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'Keyword or phrase to search for in memory — e.g. "NHS", "EY competitor", "CBAM outreach", "monthly analysis"' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'recall_market_analysis',
+    description: 'Retrieve the most recent monthly market analysis or a specific month\'s analysis. Use when asked about market position, strategic direction, or to compare current situation against last month\'s assessment.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        period: { type: 'string', description: 'Optional. Month in YYYY-MM format, e.g. "2026-04". Omit for most recent.' },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'save_memory',
     description: 'Save intelligence or a decision to persistent memory — available in ALL future cycles. Use proactively to remember: organisations targeted, contacts found, bid decisions made, market intelligence discovered, anything worth knowing next time.',
     input_schema: {
@@ -264,6 +286,22 @@ export async function executeBaseTool(name: string, input: any): Promise<string>
 
     case 'send_telegram':
       return sendTelegramMessage(input.message)
+
+    case 'recall_memory':
+      return recallMemory(input.query)
+
+    case 'recall_market_analysis': {
+      const supabase = await createClient()
+      const query = supabase
+        .from('market_analyses')
+        .select('period, analysis, key_findings, created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (input.period) query.eq('period', input.period)
+      const { data, error } = await query.single()
+      if (error || !data) return 'No market analysis found. Run the monthly market analysis first.'
+      return `## MARKET ANALYSIS — ${data.period}\n${data.analysis}`
+    }
 
     case 'save_memory':
       await saveMemory(input.category, input.key, input.value, input.importance ?? 5)
