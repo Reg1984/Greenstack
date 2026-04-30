@@ -292,12 +292,12 @@ export async function executeBaseTool(name: string, input: any): Promise<string>
 
     case 'recall_market_analysis': {
       const supabase = await createClient()
-      const query = supabase
+      let query = supabase
         .from('market_analyses')
         .select('period, analysis, key_findings, created_at')
         .order('created_at', { ascending: false })
         .limit(1)
-      if (input.period) query.eq('period', input.period)
+      if (input.period) query = query.eq('period', input.period) as any
       const { data, error } = await query.single()
       if (error || !data) return 'No market analysis found. Run the monthly market analysis first.'
       return `## MARKET ANALYSIS — ${data.period}\n${data.analysis}`

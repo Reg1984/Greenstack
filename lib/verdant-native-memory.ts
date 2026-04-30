@@ -117,7 +117,7 @@ export async function executeMemoryCommand(input: any): Promise<string> {
         return `No replacement was performed, old_str \`${input.old_str}\` did not appear verbatim in ${input.path}.`
       }
       if (occurrences > 1) {
-        const matchLines = content.split('\n').reduce((acc: number[], line, i) => {
+        const matchLines = content.split('\n').reduce((acc: number[], line: string, i: number) => {
           if (line.includes(input.old_str)) acc.push(i + 1)
           return acc
         }, [])

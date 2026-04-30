@@ -529,7 +529,7 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
     let containerId: string | null = null
 
     for (let iteration = 0; iteration < 8; iteration++) {
-      const response = await client.messages.create({
+      const response: Anthropic.Message = await (client.messages.create as any)({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
         // System prompt cached — ~500 lines sent 8× per cycle, saves ~90% on input tokens from iter 2
@@ -537,7 +537,7 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
         tools: VERDANT_BASE_TOOLS,
         messages: apiMessages,
         ...(containerId ? { container: containerId } : {}),
-      } as any)
+      })
 
       // Track container_id for server-side tool continuity (web_search/web_fetch)
       if ((response as any).container?.id) containerId = (response as any).container.id

@@ -171,14 +171,14 @@ You are VERDANT. Think before you act. Be brilliant.`
     let containerId: string | null = null
 
     for (let iteration = 0; iteration < 10; iteration++) {
-      const response = await client.messages.create({
+      const response: Anthropic.Message = await (client.messages.create as any)({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: VERDANT_TOOLS,
         messages: apiMessages,
         ...(containerId ? { container: containerId } : {}),
-      } as any)
+      })
 
       // Track container_id for server-side tool continuity (web_search/web_fetch)
       if ((response as any).container?.id) containerId = (response as any).container.id

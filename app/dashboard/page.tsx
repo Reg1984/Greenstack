@@ -216,9 +216,8 @@ export default function GreenStackApp() {
       if (outreachRes.data) setOutreachEmails(outreachRes.data)
       if (browserRes.data) setBrowserSessions(browserRes.data as BrowserSession[])
       // reply_drafts loaded separately — table may not exist yet
-      supabase.from("reply_drafts").select("*").order("created_at", { ascending: false }).limit(50)
+      void supabase.from("reply_drafts").select("*").order("created_at", { ascending: false }).limit(50)
         .then(({ data }) => { if (data) setReplyDrafts(data) })
-        .catch(() => { /* table not yet created — silently skip */ })
       setLoading(false)
     }
     loadData()
