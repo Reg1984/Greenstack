@@ -298,10 +298,17 @@ function Hero({ onDashboard }: { onDashboard: () => void }) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const handleEmailSubmit = () => {
+  const handleEmailSubmit = async () => {
     if (!email || !email.includes("@")) return;
     setSubmitted(true);
     setEmail("");
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "homepage" }),
+      });
+    } catch { /* silent — UI already confirmed */ }
   };
 
   return (
