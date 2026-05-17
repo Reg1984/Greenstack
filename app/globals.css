@@ -111,6 +111,66 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
 }
+
+/* ── Layout utility classes ── */
+.gs-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.gs-video-bottom {
+  padding: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.gs-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+}
+.gs-form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Mobile breakpoint (≤ 640px) ── */
+@media (max-width: 640px) {
+  /* Navbar: hide text links, keep logo + dashboard */
+  .gs-nav-links {
+    display: none;
+  }
+  /* Nav pill: tighten padding so logo + dashboard fit */
+  .gs-nav-pill {
+    padding: 10px 16px !important;
+  }
+  /* Video overlay: stack card above button */
+  .gs-video-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px;
+  }
+  /* Footer row: stack */
+  .gs-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  /* Contact form: name + email go full-width */
+  .gs-form-2col {
+    grid-template-columns: 1fr;
+  }
+  /* Section vertical padding: shrink 140px → 72px */
+  .gs-section-big {
+    padding-top: 72px !important;
+    padding-bottom: 56px !important;
+  }
+}
+
+/* ── Tablet breakpoint (≤ 768px) ── */
 @media (max-width: 768px) {
   .gs-grid-2,
   .gs-grid-3 {

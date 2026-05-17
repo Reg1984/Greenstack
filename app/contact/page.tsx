@@ -109,11 +109,9 @@ export default function ContactPage() {
                   <MapPin size={18} color="rgba(134,239,172,0.8)" />
                 </div>
                 <div>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>Registered Address</p>
-                  <p style={{ color: '#fff', fontSize: '1rem', fontWeight: 500, lineHeight: 1.6 }}>
-                    29 Chillingham Street<br />
-                    Liverpool, L8 9RX<br />
-                    England
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>Location</p>
+                  <p style={{ color: '#fff', fontSize: '1rem', fontWeight: 500 }}>
+                    Liverpool, England
                   </p>
                 </div>
               </div>
@@ -180,7 +178,7 @@ export default function ContactPage() {
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="gs-form-2col">
                   <div>
                     <label style={labelStyle}>Your name</label>
                     <input

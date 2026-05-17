@@ -265,7 +265,7 @@ function Navbar({ onDashboard }: { onDashboard: () => void }) {
       position: "absolute", top: 0, left: 0, right: 0,
       zIndex: 20, padding: "20px 24px", display: "flex", justifyContent: "center",
     }}>
-      <div className="liquid-glass" style={{
+      <div className="liquid-glass gs-nav-pill" style={{
         borderRadius: "9999px", maxWidth: "800px", width: "100%",
         padding: "12px 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -277,7 +277,7 @@ function Navbar({ onDashboard }: { onDashboard: () => void }) {
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+        <div className="gs-nav-links">
           <Link href="/insights" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Insights</Link>
           <a href="/cbam" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>CBAM</a>
           <Link href="/contact" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Contact</Link>
@@ -453,7 +453,7 @@ function AboutSection() {
   ];
 
   return (
-    <section ref={ref} style={{
+    <section ref={ref} className="gs-section-big" style={{
       background: "#000", padding: "140px 24px 100px",
       backgroundImage: "radial-gradient(ellipse at top, rgba(0,255,135,0.03) 0%, transparent 60%)",
     }}>
@@ -556,10 +556,7 @@ function FeaturedVideoSection() {
             background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%, transparent 100%)",
           }} />
 
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "40px", display: "flex", justifyContent: "space-between", alignItems: "flex-end",
-          }}>
+          <div className="gs-video-bottom" style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
             <div className="liquid-glass" style={{ borderRadius: "16px", padding: "24px 28px", maxWidth: "380px" }}>
               <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "10px" }}>
                 Our Approach
@@ -588,7 +585,7 @@ function PhilosophySection() {
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section style={{ background: "#000", padding: "140px 24px" }}>
+    <section className="gs-section-big" style={{ background: "#000", padding: "140px 24px" }}>
       <div ref={ref} style={{ maxWidth: "960px", margin: "0 auto" }}>
         <motion.h2
           initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -695,7 +692,7 @@ function ServicesSection() {
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section style={{
+    <section className="gs-section-big" style={{
       background: "#000", padding: "140px 24px",
       backgroundImage: "radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, transparent 60%)",
     }}>
@@ -759,10 +756,7 @@ function ServicesSection() {
         </div>
 
         {/* Footer */}
-        <div style={{
-          marginTop: "40px",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}>
+        <div className="gs-footer-bottom">
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Leaf size={16} color="rgba(134,239,172,0.6)" />
             <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.8rem", letterSpacing: "-0.01em" }}>
