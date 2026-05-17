@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   Globe,
   ArrowRight,
@@ -277,13 +278,12 @@ function Navbar({ onDashboard }: { onDashboard: () => void }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
-          {["Tenders", "Platform", "About"].map(l => (
-            <span key={l} style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, cursor: "pointer" }}>{l}</span>
-          ))}
+          <Link href="/insights" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Insights</Link>
+          <a href="/cbam" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>CBAM</a>
+          <a href="mailto:info@greenstackai.co.uk" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Contact</a>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <a href="mailto:info@greenstackai.co.uk" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", cursor: "pointer", textDecoration: "none" }}>Contact</a>
           <div className="liquid-glass" style={{ borderRadius: "9999px", padding: "8px 20px", cursor: "pointer" }} onClick={onDashboard}>
             <span style={{ color: "#fff", fontSize: "0.85rem", fontWeight: 500 }}>Dashboard</span>
           </div>
