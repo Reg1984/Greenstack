@@ -280,7 +280,7 @@ function Navbar({ onDashboard }: { onDashboard: () => void }) {
         <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
           <Link href="/insights" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Insights</Link>
           <a href="/cbam" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>CBAM</a>
-          <a href="mailto:info@greenstackai.co.uk" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Contact</a>
+          <Link href="/contact" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Contact</Link>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
