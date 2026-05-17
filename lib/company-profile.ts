@@ -120,4 +120,26 @@ GreenStack AI operates globally. AI delivery means no geographic limitations —
 - Sort Code: 04-00-05
 - Account Number: 60913409
 - Use these details on all invoices for client payments.
+
+---
+
+## BID HISTORY & LESSONS LEARNED
+
+**IMPORTANT:** This section records past tender outcomes. Use it to calibrate future bids — avoid repeating approaches that failed, and double down on what works.
+
+### Unsuccessful Bids
+
+**Lowestoft Town Council — Carbon Emissions Report**
+- Date: May 2026
+- Contracting authority: Lowestoft Town Council, Hamilton House, Lowestoft, Suffolk
+- Contact: Michael Winter, Communications and IT Officer
+- Result: UNSUCCESSFUL — "overall strength of shortlisted bids"
+- No specific feedback provided in rejection letter
+- Lessons / hypotheses:
+  - As a brand-new company with no completed client case studies, small local councils may favour established incumbents or firms with a proven local government track record
+  - "Carbon Emissions Report" is a commoditised service — price and demonstrated experience likely dominated the scoring
+  - Consider requesting a formal debrief from the council to understand scoring breakdown
+  - For future local authority carbon/emissions bids: lead with methodology transparency, AI speed advantage, and cost savings — frame newness as AI-native not as inexperience
+  - Small town councils (Lowestoft population ~70k) may have tight budgets — pricing competitively is critical
+  - Worth following up for future opportunities — rejection does not mean a closed door
 `

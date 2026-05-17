@@ -10,6 +10,7 @@ import { checkContactExists, upsertContact, markContactReplied } from '@/lib/out
 import { saveMemory, recallMemory } from '@/lib/verdant-memory'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
+import { checkGmailInbox, markAsRead } from '@/lib/gmail'
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
 
@@ -256,6 +257,24 @@ export const VERDANT_BASE_TOOLS: any[] = [
     },
   },
   {
+    name: 'check_inbox',
+    description: 'Check Gmail inbox for replies to GreenStack AI outreach, tender results, debrief responses, or any sustainability-related emails. Call this at the START of every cycle to catch replies before doing anything else. Returns unread emails with sender, subject, and body. Automatically marks found emails as read.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Gmail search query. Default: "is:unread (greenstack OR greenstackai OR sustainability OR tender OR carbon OR debrief OR verdant)" — override if looking for something specific.',
+        },
+        max_results: {
+          type: 'number',
+          description: 'Max emails to return. Default 10.',
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'queue_portal_form',
     description: 'Fill a procurement portal registration or application form using a real browser, then queue it for human approval before submitting. Use for: Crown Commercial Service supplier registration, GIZ DAMOS portal, UNGM profile completion, World Bank STEP, YPO, ESPO, NHS frameworks. VERDANT fills the form with GreenStack AI company data and takes a screenshot — the human reviews and approves before anything is submitted.',
     input_schema: {
@@ -346,6 +365,18 @@ The screenshot is saved. Check the GreenStack dashboard → Browser Sessions to 
       } catch (err) {
         return `Portal form error: ${String(err)}`
       }
+    }
+
+    case 'check_inbox': {
+      if (!process.env.GMAIL_CLIENT_ID) return 'Gmail not configured — add GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN to Vercel env vars.'
+      const query = input.query ?? 'is:unread (greenstack OR greenstackai OR sustainability OR tender OR carbon OR debrief OR verdant)'
+      const messages = await checkGmailInbox(query, input.max_results ?? 10)
+      if (!messages.length) return `No unread emails matching: ${query}`
+      await Promise.all(messages.map(m => markAsRead(m.id)))
+      const summary = messages.map(m =>
+        `---\nFrom: ${m.from}\nDate: ${m.date}\nSubject: ${m.subject}\n\n${m.body || m.snippet}`
+      ).join('\n\n')
+      return `Found ${messages.length} email(s) — marked as read:\n\n${summary}`
     }
 
     case 'update_goal_strategy':

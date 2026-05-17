@@ -183,22 +183,14 @@ export default function InsightsPage() {
         </div>
 
         {/* Featured article */}
-        <Link href={`/insights/${featured.slug}`} style={{ textDecoration: 'none', display: 'block', marginBottom: '48px' }}>
-          <div style={{
+        <Link href={`/insights/${featured.slug}`} style={{ textDecoration: 'none', display: 'block', marginBottom: '48px' }} className="insights-featured-link">
+          <div className="insights-featured-card" style={{
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '20px',
             padding: '40px',
             background: 'rgba(255,255,255,0.02)',
             transition: 'border-color 0.2s, background 0.2s',
           }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(134,239,172,0.25)'
-              ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(134,239,172,0.03)'
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.08)'
-              ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.02)'
-            }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <span style={{
@@ -234,8 +226,8 @@ export default function InsightsPage() {
         {/* Article grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
           {rest.map(article => (
-            <Link key={article.slug} href={`/insights/${article.slug}`} style={{ textDecoration: 'none' }}>
-              <div style={{
+            <Link key={article.slug} href={`/insights/${article.slug}`} style={{ textDecoration: 'none' }} className="insights-card-link">
+              <div className="insights-card" style={{
                 border: '1px solid rgba(255,255,255,0.07)',
                 borderRadius: '16px',
                 padding: '28px',
@@ -245,14 +237,6 @@ export default function InsightsPage() {
                 background: 'rgba(255,255,255,0.01)',
                 transition: 'border-color 0.2s, background 0.2s',
               }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.15)'
-                  ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)'
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)'
-                  ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.01)'
-                }}
               >
                 <div style={{ marginBottom: '14px' }}>
                   <span style={{
@@ -287,6 +271,11 @@ export default function InsightsPage() {
         </div>
 
       </div>
+
+      <style>{`
+        .insights-featured-card:hover { border-color: rgba(134,239,172,0.25) !important; background: rgba(134,239,172,0.03) !important; }
+        .insights-card:hover { border-color: rgba(255,255,255,0.15) !important; background: rgba(255,255,255,0.03) !important; }
+      `}</style>
     </div>
   )
 }
