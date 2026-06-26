@@ -1,12 +1,12 @@
 import { ArticleLayout } from '@/components/ArticleLayout'
 
 export const article = {
-  title: "SBTi Corporate Net Zero Standard V2.0: What UK Companies Must Do Before February 2028",
-  date: "2026-06-23",
+  title: "SBTi Net Zero Standard V2.0: What UK Companies Must Do Now",
+  date: "2026-06-26",
   description:
-    "The Science Based Targets initiative published its biggest overhaul of corporate climate targets on 11 June 2026. SBTi V2.0 changes how near-term and long-term targets are set, introduces mandatory Scope 1 separation, and ends the 'set and forget' era. Here's what UK businesses need to do now.",
+    "The Science-Based Targets initiative published its Corporate Net Zero Standard V2.0 on 11 June 2026 — the most significant update to corporate climate target-setting in a decade. Here's what has changed, who is affected, and what UK businesses should do before the February 2027 validation window opens.",
   author: "VERDANT | GreenStack AI",
-  tags: ["SBTi", "Net Zero", "Science Based Targets", "Carbon Targets", "ESG", "Climate Strategy"],
+  tags: ["SBTi", "Net Zero", "Corporate Climate Targets", "Science-Based Targets", "Sustainability Reporting"],
 }
 
 export default function Page() {
@@ -14,255 +14,263 @@ export default function Page() {
     <ArticleLayout article={article}>
 
       <p>
-        On <strong>11 June 2026</strong>, the Science Based Targets initiative (SBTi) published Version 2.0 
-        of its Corporate Net-Zero Standard — the most significant overhaul of corporate climate target-setting 
-        since the original standard launched in 2021. With over <strong>10,000 companies globally</strong> now 
-        holding SBTi-validated targets (covering roughly 41% of global market capitalisation), this is not a 
-        niche update. It reshapes how every serious corporate net zero commitment must be structured.
+        On <strong>11 June 2026</strong>, the Science-Based Targets initiative (SBTi) published the final
+        version of its Corporate Net-Zero Standard V2.0 — the culmination of nearly two years of
+        consultation, redrafting, and intense debate among climate scientists, businesses, and NGOs.
+        The SBTi calls it "the most comprehensive framework for corporate climate action to date."
       </p>
 
       <p>
-        In the UK, over <strong>1,850 companies are SBTi-committed</strong> — but only around 509 have fully 
-        validated net zero targets. The gap between ambition and delivery is already large. V2.0 narrows 
-        the space for ambiguity even further.
+        For UK businesses, the timing is highly significant. UK Sustainability Reporting Standards (UK SRS)
+        mandatory climate disclosures begin for listed companies in <strong>January 2027</strong>. ESOS
+        Phase 4 compliance is due by <strong>5 December 2027</strong>. Institutional investors,
+        procurement teams, and supply chain partners are scrutinising net zero claims with unprecedented
+        rigour. V2.0 raises the bar — and businesses that set targets under the old standard need to
+        understand what has changed and whether any action is required.
       </p>
 
       <p>
-        This post explains what has changed, what the transition timeline looks like, and — critically — 
-        what your business should be doing right now.
+        This post explains the key changes in V2.0, who is and isn't affected, and — critically — what
+        practical steps UK companies should be taking right now.
       </p>
 
-      <h2>The Transition Timeline: What Applies When</h2>
+      <h2>What Is the SBTi Corporate Net Zero Standard?</h2>
 
       <p>
-        Before diving into the substance of V2.0, the timeline is worth understanding clearly:
+        The SBTi Corporate Net Zero Standard is the world's leading framework for setting corporate
+        climate targets aligned with the Paris Agreement's 1.5°C pathway. A company that validates
+        its targets with the SBTi receives the widely-recognised "Science Based Target" badge — a signal
+        to investors, customers, and regulators that its net zero commitment is grounded in science
+        rather than marketing.
+      </p>
+
+      <p>
+        As of mid-2026, over 9,000 companies globally have committed to or validated targets under the
+        SBTi framework, including thousands of UK businesses across financial services, manufacturing,
+        retail, technology, and property.
+      </p>
+
+      <h2>What Has Changed in V2.0?</h2>
+
+      <h3>1. A Hierarchy of Decarbonisation Mechanisms</h3>
+      <p>
+        One of the most significant changes in V2.0 is the formal introduction of a <strong>hierarchy of
+        mechanisms</strong> — from direct emissions reductions at the top, through value chain engagement
+        and renewable energy procurement, down to carbon removals and offsets at the base. Under the
+        original standard, the role of offsets and carbon credits was contested and often unclear.
+        V2.0 resolves this: <em>direct emissions reductions must come first</em>. Carbon credits and
+        neutralisation mechanisms are explicitly positioned as a complement to — not a substitute for —
+        real reductions.
+      </p>
+
+      <p>
+        This matters enormously for UK companies that have leaned heavily on carbon credit purchases
+        (including, for example, through Amazon's newly launched UK Sustainability Exchange) to
+        demonstrate progress. Those credits count — but only if they sit on top of a credible reduction
+        pathway, not in place of one.
+      </p>
+
+      <h3>2. A "Best Efforts" Implementation Approach</h3>
+      <p>
+        V2.0 introduces a <strong>"best efforts" standard</strong> for implementation, acknowledging
+        that not every decarbonisation lever will be available to every company in every sector. Rather
+        than treating non-delivery on specific actions as automatic non-compliance, V2.0 asks companies
+        to demonstrate that they pursued every available option and escalated where barriers existed.
+        This is a pragmatic recognition that the energy transition is uneven — but it is not a
+        relaxation of ambition. Targets themselves remain anchored to 1.5°C.
+      </p>
+
+      <h3>3. SME Accommodations</h3>
+      <p>
+        V2.0 includes specific pathways and reduced data requirements for <strong>small and medium-sized
+        enterprises</strong> — broadly defined as companies with fewer than 500 employees or below
+        specified revenue thresholds. Previously, the standard's data requirements created significant
+        barriers for SMEs, particularly around Scope 3 value chain emissions. V2.0 allows SMEs to use
+        sector-specific emission factors and simplified reporting where granular supplier data is
+        genuinely unavailable.
+      </p>
+      <p>
+        For UK mid-market businesses considering SBTi validation for the first time — perhaps in response
+        to customer demands, UK SRS supply chain disclosure requirements, or investor pressure — this
+        is the most accessible entry point the standard has ever offered.
+      </p>
+
+      <h3>4. Sector, Supply Chain, and Geography-Specific Targets</h3>
+      <p>
+        V2.0 allows companies to set targets tailored to <strong>specific geographies, supply chain
+        tiers, or operating sectors</strong> — rather than requiring a single monolithic corporate-wide
+        target that may obscure very different decarbonisation challenges within a diversified business.
+        A UK conglomerate with a low-carbon services arm and a high-intensity manufacturing division,
+        for example, can now set differentiated pathways that reflect the underlying reality.
+      </p>
+
+      <h3>5. Strengthened Scope 3 Requirements for Larger Companies</h3>
+      <p>
+        For large companies, V2.0 tightens expectations around <strong>Scope 3 (value chain)
+        emissions</strong>. Scope 3 typically accounts for 70–90% of a company's total carbon
+        footprint and has historically been the weakest part of corporate net zero commitments.
+        V2.0 requires more rigorous supplier engagement, clearer timelines for Scope 3 target
+        achievement, and stronger evidence that value chain interventions are actually reducing
+        emissions rather than simply shifting them.
+      </p>
+
+      <h2>Who Is Affected — and Who Isn't?</h2>
+
+      <h3>Companies With Existing Validated Targets</h3>
+      <p>
+        If your company already has SBTi-validated targets under the previous standard, <strong>you do
+        not need to reset or revalidate your targets</strong>. Existing targets remain fully valid
+        throughout their target cycle, subject to the standard five-year review provisions. However,
+        you can voluntarily adopt V2.0 innovations — such as the hierarchy of mechanisms and best
+        efforts approach — to strengthen your strategy.
+      </p>
+
+      <h3>Companies Currently in the Commitment or Submission Queue</h3>
+      <p>
+        If you have made an SBTi commitment but have not yet had targets validated, you will need to
+        decide whether to proceed under the existing validation framework (available until
+        <strong>1 February 2027</strong>) or wait and submit under V2.0. For most companies,
+        proceeding now under the current framework makes sense — do not let the transition create
+        inertia. The current standard remains open for validation.
+      </p>
+
+      <h3>Companies Setting Targets for the First Time</h3>
+      <p>
+        V2.0 validation opens on <strong>1 February 2027</strong>. If you are setting targets for the
+        first time, you have a window between now and February to prepare your emissions inventory,
+        engage your supply chain, and develop your near-term and long-term target ambitions before
+        formally submitting under V2.0. Use this time well — eight months goes quickly.
+      </p>
+
+      <h2>The UK Regulatory Context: Why V2.0 Matters More Than Ever</h2>
+
+      <p>
+        V2.0 does not exist in isolation. It lands at a moment of unprecedented regulatory pressure on
+        UK corporate climate action:
       </p>
 
       <ul>
-        <li><strong>Throughout 2026:</strong> Version 1.3.1 remains the applicable framework for all target 
-        validation submissions. If your company is setting targets this year, use V1.3.1 now.</li>
-        <li><strong>Q1 2027 – 31 January 2028:</strong> Transition period. Companies may submit under either 
-        V1.3.1 or V2.0.</li>
-        <li><strong>From 1 February 2028:</strong> V2.0 becomes mandatory for all new target submissions. 
-        V1.3.1 is retired.</li>
-        <li><strong>Existing validated targets:</strong> Near-term targets approved under V1.x remain valid 
-        until the end of their target timeframe. You do not need to resubmit immediately — but you will 
-        need to align when you next renew.</li>
+        <li>
+          <strong>UK SRS (from January 2027):</strong> Listed companies will be required to disclose
+          their net zero targets, transition plans, and climate-related risks under IFRS S1 and S2-aligned
+          standards. Investors will expect SBTi validation (or equivalent) as evidence that targets are
+          credible.
+        </li>
+        <li>
+          <strong>UK Carbon Budget 7 (set June 2026):</strong> The government laid the UK's seventh
+          carbon budget before Parliament in June 2026, committing to a 87% reduction in emissions
+          by 2040. This tightens the policy backdrop and increases the likelihood of future mandatory
+          net zero target requirements for large businesses.
+        </li>
+        <li>
+          <strong>ESOS Phase 4 (December 2027):</strong> Large companies must complete energy audits
+          and — for the first time — produce mandatory energy action plans. SBTi-aligned net zero
+          targets inform credible action plans and reduce regulatory risk.
+        </li>
+        <li>
+          <strong>Procurement and Supply Chain Pressure:</strong> FTSE 350 and large public sector
+          buyers are increasingly requiring suppliers to have SBTi-validated or equivalent targets as
+          a condition of preferred supplier status. This is no longer a nice-to-have in competitive
+          tender processes.
+        </li>
       </ul>
 
-      <p>
-        The practical implication: if your company is planning to set or renew SBTi targets in the next 
-        18 months, you should understand V2.0 now, even if you technically submit under V1.3.1.
-      </p>
+      <h2>What Should UK Businesses Do Right Now?</h2>
 
-      <h2>The Five Most Important Changes in V2.0</h2>
-
-      <h3>1. Scope 1 Gets Its Own Dedicated Target</h3>
-
-      <p>
-        Under V1.x, companies set a combined near-term target covering Scope 1 and Scope 2 emissions 
-        together, with a 95% coverage threshold. V2.0 separates these entirely: <strong>Scope 1 now 
-        requires its own dedicated target with 100% coverage</strong>.
-      </p>
-
-      <p>
-        This matters because bundling Scope 1 and 2 allowed some companies to offset lagging Scope 1 
-        reductions (typically harder to abate — process heat, fleet, industrial furnaces) with rapid 
-        Scope 2 progress through renewable electricity procurement. That flexibility disappears. 
-        If your Scope 1 emissions are material — manufacturing facilities, HGV fleets, gas-fired 
-        processes — you need a credible, stand-alone decarbonisation plan for them, not just a 
-        portfolio average.
-      </p>
-
-      <p>
-        V2.0 offers companies three methodological options for setting their Scope 1 target, including 
-        approaches based on asset replacement timelines and sector-specific decarbonisation pathways. 
-        This is genuinely more flexible — but it requires more analytical work upfront.
-      </p>
-
-      <h3>2. A Company Category System Replaces the One-Size-Fits-All Approach</h3>
-
-      <p>
-        V2.0 introduces a formal tiering system rather than treating every company identically:
-      </p>
-
+      <h3>If you have no SBTi commitment yet</h3>
       <ul>
-        <li><strong>Category A:</strong> Large and mid-sized companies in high-income countries (which 
-        includes virtually all UK businesses of meaningful scale). Full requirements apply — near-term 
-        Scope 1, 2, and 3 targets are mandatory where Scope 3 exceeds 40% of total emissions.</li>
-        <li><strong>Category B:</strong> SMEs in lower-income countries. Receive additional flexibility 
-        on Scope 3 and transition timelines.</li>
+        <li>
+          <strong>Complete your baseline GHG inventory</strong> covering Scopes 1, 2, and 3 —
+          this is the non-negotiable foundation for any science-aligned target. Without accurate
+          baseline data, you cannot set credible targets.
+        </li>
+        <li>
+          <strong>Identify your material Scope 3 categories</strong> using the GHG Protocol Corporate
+          Value Chain Standard. For most companies, categories 1 (purchased goods and services), 3
+          (fuel and energy), and 11 (use of sold products) will dominate.
+        </li>
+        <li>
+          <strong>Begin supplier engagement</strong> now — particularly for Scope 3 Category 1. Waiting
+          until you are in the SBTi submission queue to start supplier conversations is a common mistake
+          that causes significant delays.
+        </li>
+        <li>
+          <strong>Decide on your target year</strong>. Near-term targets (5–10 years) and long-term
+          net zero targets (by 2050 at latest) are both required. V2.0 allows more flexibility in
+          interim milestones but does not relax the 2050 end point.
+        </li>
+        <li>
+          <strong>Consider whether to submit before 1 February 2027</strong> under the existing
+          standard or wait for V2.0. For most companies without complex sector-specific needs, the
+          existing standard is perfectly adequate and submitting now avoids queue delays at the V2.0
+          launch.
+        </li>
       </ul>
 
-      <p>
-        For UK SMEs specifically: <strong>Scope 3 targets remain optional under V2.0</strong>, consistent 
-        with current SBTi SME criteria. However, if your business supplies large Category A companies — 
-        and the Scope 3 reporting requirements of UK SRS and CSRD mean that most significant suppliers 
-        will — you should expect substantially more supplier questionnaires requesting your emissions 
-        data. V2.0 makes Scope 3 supply chain engagement a Category A obligation, which flows directly 
-        down to their suppliers whether those suppliers are SBTi-committed or not.
-      </p>
-
-      <h3>3. The End of "Set and Forget" — Annual Progress Checks Introduced</h3>
-
-      <p>
-        One of the most operationally significant changes in V2.0 is the introduction of <strong>annual 
-        progress reporting and cyclical target renewal</strong>. Under V1.x, companies set targets, got 
-        them validated, and then largely managed disclosure themselves. V2.0 formally ends that model.
-      </p>
-
-      <p>
-        Companies will be required to demonstrate annual progress against their validated targets. 
-        Targets will be subject to renewal cycles rather than running indefinitely once approved. 
-        This brings SBTi validation much closer to the ongoing disclosure model now embedded in 
-        UK SRS (IFRS S1/S2), where progress against climate commitments must be reported annually 
-        in financial statements.
-      </p>
-
-      <p>
-        The practical implication: your net zero roadmap cannot be a static document. You need 
-        live carbon accounting infrastructure — not a one-time emissions inventory — and processes 
-        to report against milestones each year.
-      </p>
-
-      <h3>4. Carbon Credits Get a Formal but Strictly Bounded Role</h3>
-
-      <p>
-        V2.0 introduces an <strong>Ongoing Emissions Responsibility (OER) framework</strong> that for 
-        the first time gives carbon credits a defined, legitimate role within an SBTi-validated net zero 
-        target — but within tight limits.
-      </p>
-
-      <p>
-        Under V2.0, carbon removal credits (high-permanence, nature-based or engineered) may be used 
-        to neutralise residual emissions that remain after a company has achieved its long-term 
-        decarbonisation target. The framework does not permit using credits to offset near-term 
-        reductions or to delay abatement. Critically, long-lived carbon removals (direct air capture, 
-        enhanced weathering, biochar with permanence credentials) are given preference over 
-        shorter-lived nature-based credits for the neutralisation obligation.
-      </p>
-
-      <p>
-        For UK companies with existing voluntary carbon offset portfolios: review them against V2.0's 
-        permanence and additionality requirements. Credits that were acceptable under V1.x may not 
-        meet the new OER criteria — particularly shorter-duration forestry offsets.
-      </p>
-
-      <h3>5. Renewable Energy Certificates: Location and Time-Matching Now Required</h3>
-
-      <p>
-        This change will be inconvenient for many UK businesses. Under V1.x, unbundled Renewable 
-        Energy Guarantees of Origin (REGOs) or equivalent certificates were broadly acceptable for 
-        Scope 2 market-based accounting. Under V2.0, <strong>unbundled RECs lose eligibility unless 
-        they meet strict time-matching and location-matching criteria</strong>.
-      </p>
-
-      <p>
-        In practice, this means that cheap, unbundled annual REGOs — which have become a commodity 
-        purchase costing a few pence per MWh — will no longer count towards SBTi-verified Scope 2 
-        targets. Companies will need to shift to:
-      </p>
-
+      <h3>If you have a committed but unvalidated target</h3>
       <ul>
-        <li>Power Purchase Agreements (PPAs) with genuine additionality</li>
-        <li>Behind-the-meter renewable generation</li>
-        <li>Granular certificate schemes meeting hourly or at minimum monthly matching requirements</li>
+        <li>
+          Accelerate your submission — the 24-month commitment window is finite, and the SBTi
+          validation queue has historically run long.
+        </li>
+        <li>
+          Review your draft targets against V2.0 innovations. Even if submitting under the current
+          standard, adopting the hierarchy of mechanisms and addressing Scope 3 rigorously will
+          future-proof your strategy.
+        </li>
       </ul>
 
-      <p>
-        This is a significant cost implication for energy-intensive businesses relying on REGO 
-        certificates to claim "100% renewable electricity" in their Scope 2 reporting. Expect 
-        market pressure on hourly-matched certificates and PPAs to increase materially as V2.0 
-        adoption scales.
-      </p>
-
-      <h2>What This Means for UK SRS and CSRD Alignment</h2>
-
-      <p>
-        SBTi V2.0 does not exist in isolation. UK companies face a convergence of frameworks in 2026–2027:
-      </p>
-
+      <h3>If you have validated targets</h3>
       <ul>
-        <li><strong>UK SRS (IFRS S1/S2):</strong> Mandatory climate disclosures from January 2027 for 
-        UK-listed companies and large PIEs. Requires disclosure of targets, transition plans, and 
-        annual progress — directly aligned with V2.0's annual progress reporting requirement.</li>
-        <li><strong>CSRD:</strong> After Omnibus I reforms, the scope has narrowed, but large UK 
-        companies with significant EU operations or EU-listed debt remain in scope. CSRD requires 
-        disclosure of targets under the European Sustainability Reporting Standards (ESRS), 
-        which are broadly compatible with but not identical to SBTi V2.0 framing.</li>
-        <li><strong>UK Carbon Budget 7:</strong> Set in June 2026 at an 87% emissions reduction 
-        by 2042. This accelerated trajectory puts pressure on sector-level decarbonisation, 
-        which in turn shapes the SBTi sector pathways underpinning V2.0 targets.</li>
-      </ul>
-
-      <p>
-        The strategic message is clear: <strong>SBTi V2.0 targets, UK SRS disclosures, and a credible 
-        transition plan are now three components of the same integrated obligation</strong>. Treating 
-        them as separate workstreams is inefficient and creates inconsistency risk.
-      </p>
-
-      <h2>Your Practical Action Plan for June–December 2026</h2>
-
-      <h3>If You Do Not Yet Have SBTi Targets</h3>
-      <ul>
-        <li><strong>Set targets under V1.3.1 now</strong> — do not wait for V2.0 to become available. 
-        Getting validated under V1.3.1 in 2026 locks in credible commitments before the February 2028 
-        mandatory switchover, and existing near-term targets remain valid until their endpoint.</li>
-        <li>Conduct a Scope 1, 2, and 3 emissions baseline inventory — you cannot set science-based 
-        targets without this.</li>
-        <li>Assess your Scope 3 coverage: if Scope 3 exceeds 40% of total emissions, near-term 
-        Scope 3 targets will be required under either version of the standard.</li>
-      </ul>
-
-      <h3>If You Have Existing V1.x Targets</h3>
-      <ul>
-        <li>Review your Scope 2 approach — specifically your REGO / REC strategy against V2.0's 
-        location and time-matching requirements. Plan the transition to granular certificates or PPAs.</li>
-        <li>Assess your Scope 1 emissions. Under V2.0, these cannot be offset by Scope 2 progress. 
-        Build a dedicated Scope 1 decarbonisation workplan.</li>
-        <li>Audit your carbon credit portfolio for OER eligibility — particularly any forestry 
-        offsets with short permanence windows.</li>
-        <li>Implement annual carbon accounting processes. If you're not measuring and reporting 
-        progress every year already, build that infrastructure now before UK SRS requires it.</li>
-      </ul>
-
-      <h3>If You Are an SME Supplying Large Companies</h3>
-      <ul>
-        <li>Expect increased Scope 3 supplier questionnaires from your large customers in 2027 as 
-        they seek to comply with Category A Scope 3 obligations under V2.0.</li>
-        <li>Consider getting SBTi SME targets validated proactively — it will differentiate you 
-        in procurement processes and reduce friction when you receive supplier questionnaires.</li>
+        <li>
+          Review the five-year milestone approach in V2.0 and assess whether your current progress
+          trajectory is credible. The SBTi is increasing scrutiny of progress reporting — not just
+          target-setting.
+        </li>
+        <li>
+          Examine your use of carbon credits against V2.0's hierarchy. If credits are currently
+          a primary mechanism rather than a residual-emissions tool, this creates reputational and
+          regulatory risk.
+        </li>
       </ul>
 
       <h2>How GreenStack AI Can Help</h2>
 
       <p>
-        Navigating the convergence of SBTi V2.0, UK SRS, and CSRD requirements is genuinely complex. 
-        GreenStack AI provides:
+        Building a science-aligned net zero strategy — from baseline emissions inventory through to
+        SBTi target submission — is complex, data-intensive work. Most businesses attempting it for
+        the first time underestimate the Scope 3 data challenge and the time required to engage
+        their supply chain meaningfully.
       </p>
 
+      <p>
+        GreenStack AI's <strong>Net Zero Roadmap service costs £11,250</strong> — approximately half
+        what major consultancies charge for equivalent work. Delivered in six weeks, it covers:
+      </p>
       <ul>
-        <li><strong>Net Zero Roadmaps — £11,250:</strong> A fully scoped decarbonisation pathway with 
-        science-based targets aligned to SBTi V2.0, phased abatement levers across all three scopes, 
-        interim milestones, and a transition plan ready for UK SRS disclosure. Competitors charge 
-        £22,500 for equivalent work.</li>
-        <li><strong>CSRD Compliance Reports — £8,000:</strong> For UK businesses with EU reporting 
-        obligations post-Omnibus I, we deliver a full double materiality assessment and ESRS-aligned 
-        disclosure report at half the large-consultancy rate.</li>
-        <li><strong>ESOS Energy Audits — £3,750:</strong> For UK large companies whose ESOS Phase 4 
-        energy audit feeds directly into their Scope 1 and 2 baseline for SBTi target-setting.</li>
+        <li>Full Scope 1, 2, and 3 emissions baseline (or review of existing baseline)</li>
+        <li>Material Scope 3 category assessment and supplier engagement strategy</li>
+        <li>Near-term and long-term target development aligned with SBTi V2.0 requirements</li>
+        <li>Gap analysis between your current trajectory and your 1.5°C-aligned pathway</li>
+        <li>Practical decarbonisation roadmap with prioritised actions, owner assignments, and
+        milestones — ready to drop into your UK SRS transition plan</li>
       </ul>
 
       <p>
-        <strong>The window to act under V1.3.1 is open for the rest of 2026.</strong> If your business 
-        needs SBTi targets set and validated — or needs to understand exactly how V2.0 changes your 
-        existing commitments — the time to start is now, not in early 2027 when the queue at the 
-        SBTi validation portal will be long.
+        We also offer a standalone <strong>CSRD Compliance Report at £8,000</strong> for businesses
+        that need to address EU reporting obligations alongside their UK SRS requirements —
+        particularly relevant for UK companies with EU operations or significant EU customer bases
+        post-Omnibus I.
       </p>
 
       <p>
-        <a href="mailto:info@greenstackai.co.uk">Contact GreenStack AI</a> for a free 30-minute 
-        scoping call on SBTi target-setting or net zero roadmap development.
+        The V2.0 launch has reset the standard for what good looks like. If your net zero strategy
+        was built on the previous framework — or if you haven't started yet — now is the moment to act.
+      </p>
+
+      <p>
+        <a href="mailto:hello@greenstackai.co.uk">Contact GreenStack AI</a> to book a free 30-minute
+        net zero strategy scoping call.
       </p>
 
     </ArticleLayout>
