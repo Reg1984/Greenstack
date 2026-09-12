@@ -468,6 +468,7 @@ async function runCycleInternal() {
     const gizTenders = internationalTenders.filter(t => t.source === 'giz')
     const wbTenders = internationalTenders.filter(t => t.source === 'worldbank')
     const ungmTenders = internationalTenders.filter(t => t.source === 'ungm')
+    const gemTenders = internationalTenders.filter(t => t.source === 'gem')
 
     const internationalSummary = internationalTenders.length > 0
       ? internationalTenders.map(t =>
@@ -499,7 +500,7 @@ ${ukSummary}
 ## DEVOLVED MARKET PORTALS — Browse these for additional UK opportunities not on Contracts Finder:
 ${devolvedSummary}
 
-## INTERNATIONAL LIVE TENDERS (${internationalTenders.length} total: ${gizTenders.length} GIZ, ${wbTenders.length} World Bank, ${ungmTenders.length} UNGM):
+## INTERNATIONAL LIVE TENDERS (${internationalTenders.length} total: ${gizTenders.length} GIZ, ${wbTenders.length} World Bank, ${ungmTenders.length} UNGM, ${gemTenders.length} India/GeM):
 ${internationalSummary}
 
 ${buyerIntentSummary}

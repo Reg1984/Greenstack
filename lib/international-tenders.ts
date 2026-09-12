@@ -14,7 +14,7 @@ export interface InternationalTender {
   organisation: string
   country: string
   url: string
-  source: 'ungm' | 'worldbank' | 'giz'
+  source: 'ungm' | 'worldbank' | 'giz' | 'gem'
   published: string
 }
 
@@ -313,14 +313,160 @@ export async function fetchIndiaTenders(): Promise<InternationalTender[]> {
   return tenders
 }
 
+// GeM (Government e-Marketplace) — India's central government procurement portal
+// gem.gov.in handles all central ministry purchases; Ministry of Environment (MoEFCC)
+// is the most relevant for sustainability consulting.
+// Also tries CPPP (eprocure.gov.in) as a fallback — that portal uses server-side HTML.
+export async function fetchGeM(): Promise<InternationalTender[]> {
+  const tenders: InternationalTender[] = []
+  const seen = new Set<string>()
+
+  // --- Attempt 1: GeM advance-search (HTML, may be JS-rendered so may return empty) ---
+  const gemKeywords = ['sustainability', 'environment', 'renewable energy', 'green building', 'climate']
+  await Promise.allSettled(gemKeywords.slice(0, 3).map(async keyword => {
+    try {
+      const url = `https://bidplus.gem.gov.in/advance-search?searchedText=${encodeURIComponent(keyword)}&page=1`
+      const res = await fetchWithTimeout(url, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (compatible; GreenStack/1.0)',
+        },
+        cache: 'no-store',
+      }, 12000)
+      if (!res.ok) return
+
+      const html = await res.text()
+
+      // GeM bid numbers: BID/YYYY/X/NNNNNNN or GEM/YYYY/X/NNNNNNN
+      const bidNos = [...html.matchAll(/(?:BID|GEM)\/\d{4}\/[A-Z]\/\d+/g)].map(m => m[0])
+      if (bidNos.length === 0) return
+
+      // All text from <td> cells — bid title and deadline sit near the bid number
+      const cells = [...html.matchAll(/<td[^>]*?>([\s\S]*?)<\/td>/gi)]
+        .map(m => m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+        .filter(t => t.length > 5)
+
+      let searchFrom = 0
+      for (const bidNo of bidNos) {
+        if (seen.has(bidNo)) continue
+        seen.add(bidNo)
+
+        const idx = cells.findIndex((c, i) => i >= searchFrom && c.includes(bidNo))
+        if (idx === -1) continue
+        searchFrom = idx + 1
+
+        const nearCells = cells.slice(idx, idx + 8)
+        const title = nearCells.find(c => c.length > 20 && !/^\d{2}\/\d{2}\/\d{4}$/.test(c) && !c.includes(bidNo))
+          ?? keyword
+
+        const isRelevant = SUSTAINABILITY_KEYWORDS.some(kw => title.toLowerCase().includes(kw))
+        if (!isRelevant) continue
+
+        const dateMatch = nearCells.join(' ').match(/(\d{2})\/(\d{2})\/(\d{4})/)
+        const deadline = dateMatch
+          ? new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`).toLocaleDateString('en-GB')
+          : 'See GeM portal'
+
+        tenders.push({
+          id: `gem-${bidNo}`,
+          title,
+          description: `Government of India procurement via GeM — ${bidNo}`,
+          value: 0,
+          deadline,
+          organisation: 'Government of India (GeM)',
+          country: 'India',
+          url: `https://bidplus.gem.gov.in/showbidlist/${bidNo}`,
+          source: 'gem',
+          published: new Date().toISOString(),
+        })
+      }
+    } catch {
+      // Non-fatal per keyword
+    }
+  }))
+
+  // --- Attempt 2: CPPP (Central Public Procurement Portal) — server-side rendered ---
+  // eprocure.gov.in has a searchable tender list with static HTML output
+  try {
+    const cpppKeywords = ['sustainability', 'environment']
+    const cpppResults = await Promise.allSettled(cpppKeywords.map(async keyword => {
+      const url = `https://eprocure.gov.in/cppp/tenderssearch/cppp/main/all?tenderTitle=${encodeURIComponent(keyword)}`
+      const res = await fetchWithTimeout(url, {
+        headers: {
+          Accept: 'text/html',
+          'User-Agent': 'Mozilla/5.0 (compatible; GreenStack/1.0)',
+        },
+        cache: 'no-store',
+      }, 12000)
+      if (!res.ok) return null
+      return res.text()
+    }))
+
+    for (const result of cpppResults) {
+      if (result.status !== 'fulfilled' || !result.value) continue
+      const html = result.value
+
+      // CPPP renders a table: Tender ID | Title | Ministry | Last Date
+      const rows = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)]
+      for (const row of rows) {
+        const rowText = row[1]
+        const cells = [...rowText.matchAll(/<td[^>]*?>([\s\S]*?)<\/td>/gi)]
+          .map(m => m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+          .filter(t => t.length > 2)
+
+        if (cells.length < 3) continue
+
+        // CPPP tender IDs typically start with year/number
+        const tenderId = cells.find(c => /\d{4}\/\d+/.test(c)) ?? ''
+        const title = cells.find(c => c.length > 25 && !c.match(/^\d/) && !c.match(/^\d{2}\/\d{2}\/\d{4}$/)) ?? ''
+        if (!title || !tenderId) continue
+
+        const id = `cppp-${tenderId.replace(/\s+/g, '-')}`
+        if (seen.has(id)) continue
+        seen.add(id)
+
+        const isRelevant = SUSTAINABILITY_KEYWORDS.some(kw => title.toLowerCase().includes(kw))
+        if (!isRelevant) continue
+
+        const dateMatch = cells.join(' ').match(/(\d{2})\/(\d{2})\/(\d{4})/)
+        const deadline = dateMatch
+          ? new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`).toLocaleDateString('en-GB')
+          : 'See CPPP portal'
+
+        const linkMatch = row[1].match(/href="([^"]+)"/)
+
+        tenders.push({
+          id,
+          title,
+          description: `Central government India procurement via CPPP — ${tenderId}`,
+          value: 0,
+          deadline,
+          organisation: 'Government of India (CPPP)',
+          country: 'India',
+          url: linkMatch
+            ? `https://eprocure.gov.in${linkMatch[1]}`
+            : 'https://eprocure.gov.in/cppp',
+          source: 'gem',
+          published: new Date().toISOString(),
+        })
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  return tenders
+}
+
 export async function fetchAllInternationalTenders(): Promise<InternationalTender[]> {
-  const [worldBank, ungm, giz, ted, india] = await Promise.all([
+  const [worldBank, ungm, giz, ted, india, gem] = await Promise.all([
     fetchWorldBankTenders(),
     fetchUNGMTenders(),
     fetchGIZTenders(),
     fetchTEDTenders(),
     fetchIndiaTenders(),
+    fetchGeM(),
   ])
 
-  return [...worldBank, ...ungm, ...giz, ...ted, ...india]
+  return [...worldBank, ...ungm, ...giz, ...ted, ...india, ...gem]
 }
