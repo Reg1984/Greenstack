@@ -111,7 +111,7 @@ export async function loadVerdantMemory(): Promise<string> {
 - Total tenders analysed: ${memory.pipeline_stats.total_tenders_found}
 - Total qualified to bid: ${memory.pipeline_stats.total_qualified}
 - Total declined: ${memory.pipeline_stats.total_declined}
-- Average qualification score: ${memory.pipeline_stats.avg_score}
+- Qualification rate: ${memory.pipeline_stats.avg_score}% of tenders analysed have qualified to bid
 - Highest value opportunity seen: £${memory.pipeline_stats.top_opportunity_value?.toLocaleString()}
 
 **Winning Patterns (prioritise these):**
@@ -192,6 +192,13 @@ export async function saveVerdantMemory(cycleOutput: string, liveTendersCount: n
     const prevQualified = prev?.pipeline_stats.total_qualified ?? 0
     const prevDeclined = prev?.pipeline_stats.total_declined ?? 0
 
+    // Genuine qualification rate across all cycles to date — previously this
+    // was a hardcoded 72 whenever anything was qualified this cycle, which
+    // wasn't measuring anything real.
+    const cumulativeFound = prevFound + liveTendersCount
+    const cumulativeQualified = prevQualified + qualifiedCount
+    const avgScore = cumulativeFound > 0 ? Math.round((cumulativeQualified / cumulativeFound) * 100) : 0
+
     const updatedMemory: VerdantMemory = {
       winning_patterns: [
         ...new Set([...(prev?.winning_patterns ?? []), ...winningPatterns])
@@ -212,7 +219,7 @@ export async function saveVerdantMemory(cycleOutput: string, liveTendersCount: n
         total_tenders_found: prevFound + liveTendersCount,
         total_qualified: prevQualified + qualifiedCount,
         total_declined: prevDeclined + declinedCount,
-        avg_score: qualifiedCount > 0 ? 72 : (prev?.pipeline_stats.avg_score ?? 0),
+        avg_score: avgScore,
         top_opportunity_value: Math.max(topValue, prev?.pipeline_stats.top_opportunity_value ?? 0),
       },
       last_updated: new Date().toISOString(),

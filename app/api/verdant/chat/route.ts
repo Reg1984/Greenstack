@@ -37,18 +37,10 @@ const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
       required: ['type', 'title', 'body'],
     },
   },
-  {
-    name: 'think_strategically',
-    description: 'Run an 8-section strategic advisory analysis before making a major bid decision. Covers competitor intelligence (with Bayesian bid probabilities), buyer psychology, game theory pricing (Nash equilibrium, minimax), go/no-go recommendation, and long-term positioning. Use BEFORE writing any bid, qualifying any opportunity worth £5k+, or making a strategic recommendation. Returns a structured report with specific numbers and a single closing recommendation.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        opportunity: { type: 'string', description: 'Full description of the tender or opportunity — buyer, value, deadline, requirements, evaluation criteria' },
-        question: { type: 'string', description: 'The specific strategic question to reason through' },
-      },
-      required: ['opportunity', 'question'],
-    },
-  },
+  // think_strategically now lives in VERDANT_BASE_TOOLS (lib/verdant-tools.ts) so the
+  // autonomous cycle gets it too — kept out of this list to avoid a duplicate tool
+  // name in VERDANT_TOOLS below. The dispatch branch further down still special-cases
+  // it directly rather than falling through to executeBaseTool, unchanged.
 ]
 
 const VERDANT_TOOLS: Anthropic.Tool[] = [...VERDANT_BASE_TOOLS, ...CHAT_EXTRA_TOOLS]
@@ -131,7 +123,10 @@ ${persistentMemory}
 ${tenders?.length ? `- Recent tenders: ${tenders.slice(0,5).map(t => `${t.title} (£${((t.value||0)/1000).toFixed(0)}k, ${t.status})`).join(' | ')}` : ''}
 
 ## CRM TOOLS AVAILABLE
-Use check_crm before sending ANY outreach email. Use recall_memory to search past intelligence. Use draft_content to create LinkedIn posts or capability statements.
+Use check_crm before sending ANY outreach email. Use recall_memory for quick one-line facts. Use draft_content to create LinkedIn posts or capability statements.
+
+## PERSISTENT MEMORY FILES
+You also have a \`memory\` tool — files under /memories/ shared with the autonomous cycle. Check it (\`command: 'view'\`, \`path: '/memories'\`) before relying purely on what's in this prompt, especially for a specific organisation or competitor the cycle may have already logged. Write back anything durable you learn in this conversation the same way.
 
 ## STRATEGIC ADVISOR
 Use think_strategically BEFORE writing any bid or qualifying any opportunity worth £5k+. It runs an 8-section analysis: position assessment, opponent modeling, buyer intelligence, game theory pricing, chess strategic options, decision tree outcomes, bid positioning, and long-term market positioning.

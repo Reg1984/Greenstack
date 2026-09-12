@@ -298,6 +298,58 @@ export async function queryCRM(filter: string = 'all'): Promise<string> {
   }
 }
 
+/**
+ * Real reply-rate breakdown by sector and country, computed directly from
+ * outreach_contacts outcomes — not inferred from keywords in VERDANT's own
+ * cycle narrative. This is the actual signal for "what's working."
+ */
+export async function getOutreachPerformance(): Promise<string> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('outreach_contacts')
+      .select('sector, country, status')
+      .in('status', ['emailed', 'followed_up', 'replied'])
+
+    if (!data || data.length < 5) {
+      return 'Outreach performance: not enough contacted volume yet to draw sector/country conclusions (need 5+, have ' + (data?.length ?? 0) + ').'
+    }
+
+    const bucket = (key: 'sector' | 'country') => {
+      const counts: Record<string, { sent: number; replied: number }> = {}
+      for (const c of data) {
+        const k = (c[key] ?? 'unknown').toString().trim() || 'unknown'
+        if (!counts[k]) counts[k] = { sent: 0, replied: 0 }
+        counts[k].sent++
+        if (c.status === 'replied') counts[k].replied++
+      }
+      return Object.entries(counts)
+        .filter(([, v]) => v.sent >= 3) // ignore noise from tiny samples
+        .map(([k, v]) => ({ key: k, sent: v.sent, replied: v.replied, rate: Math.round((v.replied / v.sent) * 100) }))
+        .sort((a, b) => b.rate - a.rate)
+    }
+
+    const bySector = bucket('sector')
+    const byCountry = bucket('country')
+
+    const fmt = (rows: { key: string; sent: number; replied: number; rate: number }[]) =>
+      rows.length
+        ? rows.map(r => `- ${r.key}: ${r.rate}% reply rate (${r.replied}/${r.sent} sent)`).join('\n')
+        : '- Not enough volume per segment yet (need 3+ contacted per segment)'
+
+    return `## REAL OUTREACH PERFORMANCE (from actual outreach_contacts outcomes, not narrative text)
+**By sector:**
+${fmt(bySector)}
+
+**By country:**
+${fmt(byCountry)}
+
+Weight new outreach toward whatever is actually converting above — not what feels intuitively promising.`
+  } catch {
+    return 'Outreach performance: query failed this cycle.'
+  }
+}
+
 /** Mark contact as replied */
 export async function markContactReplied(contactId: string): Promise<void> {
   try {

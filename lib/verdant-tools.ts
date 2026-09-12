@@ -8,6 +8,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { checkContactExists, upsertContact, markContactReplied } from '@/lib/outreach-crm'
 import { saveMemory, recallMemory } from '@/lib/verdant-memory'
+import { executeMemoryCommand } from '@/lib/verdant-native-memory'
+import { thinkStrategically } from '@/lib/verdant-strategy'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
 import { checkGmailInbox, markAsRead } from '@/lib/gmail'
@@ -121,6 +123,25 @@ export const VERDANT_BASE_TOOLS: any[] = [
     name: 'web_fetch',
     max_uses: 10,
     max_content_tokens: 8000,
+  },
+  // Native Anthropic memory tool — persistent files under /memories, addressable
+  // across every cycle and chat session. Replaces having to re-derive context
+  // from the flattened verdant_memory blob every time.
+  {
+    type: 'memory_20250818',
+    name: 'memory',
+  },
+  {
+    name: 'think_strategically',
+    description: 'Run an 8-section strategic advisory analysis before making a major bid decision. Covers competitor intelligence (with Bayesian bid probabilities), buyer psychology, game theory pricing (Nash equilibrium, minimax), go/no-go recommendation, and long-term positioning. Use BEFORE writing any bid, qualifying any opportunity worth £5k+, or making a strategic recommendation. Returns a structured report with specific numbers and a single closing recommendation.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        opportunity: { type: 'string', description: 'Full description of the tender or opportunity — buyer, value, deadline, requirements, evaluation criteria' },
+        question: { type: 'string', description: 'The specific strategic question to reason through' },
+      },
+      required: ['opportunity', 'question'],
+    },
   },
   {
     name: 'send_outreach_email',
@@ -315,6 +336,12 @@ export async function executeBaseTool(name: string, input: any): Promise<string>
 
 async function executeBaseToolInner(name: string, input: any): Promise<string> {
   switch (name) {
+    case 'memory':
+      return executeMemoryCommand(input)
+
+    case 'think_strategically':
+      return thinkStrategically(input.opportunity, input.question)
+
     case 'send_outreach_email':
       return executeOutreachEmail(input)
 

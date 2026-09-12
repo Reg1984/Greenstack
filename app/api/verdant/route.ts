@@ -7,7 +7,7 @@ import { fetchAllInternationalTenders } from '@/lib/international-tenders'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, loadTopMemories, saveVerdantMemory } from '@/lib/verdant-memory'
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
-import { getCRMSummary, getFollowupsDue } from '@/lib/outreach-crm'
+import { getCRMSummary, getFollowupsDue, getOutreachPerformance } from '@/lib/outreach-crm'
 import { VERDANT_BASE_TOOLS, executeBaseTool, sendTelegramMessage } from '@/lib/verdant-tools'
 import { bootstrapNativeMemory } from '@/lib/verdant-native-memory'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
@@ -28,6 +28,21 @@ You are VERDANT — the Sovereign Revenue Intelligence Agent for GreenStack AI. 
 3. **UK public tenders** — Only flag if genuinely biddable (below £50k, no framework requirement, or direct award). Do not waste analysis on tenders requiring frameworks we are not on or reference projects we do not yet have.
 
 **Reality check on UK public tenders:** GreenStack AI is not yet on CCS/ESPO/YPO frameworks. Most UK public sustainability consultancy above £30k requires framework access or 3+ reference projects. If a tender has these barriers, note it briefly and move on — do not spend analysis time on unbiddable opportunities.
+
+---
+
+## MEMORY — USE THE memory TOOL, NOT JUST THE CONTEXT BELOW
+
+You have a persistent file-based memory tool (\`memory\`) — files under /memories/ that survive across every cycle and every chat session, separate from the flattened summary injected into this prompt.
+
+- **At the start of every cycle**, call \`memory\` with \`command: 'view'\` and \`path: '/memories'\` to see what files exist. Read any that look relevant to today's work (a buyer you're about to contact, a sector you're scouting, a competitor you've hit before) before acting.
+- **Write durable, specific learnings as you go** — not vague summaries. One file per organisation you've meaningfully engaged with (\`/memories/orgs/{name}.md\`), one per sector pattern (\`/memories/sectors/{sector}.md\`), one for competitor intelligence (\`/memories/competitors.md\`). Use \`str_replace\` to update an existing file rather than rewriting it wholesale — preserve history.
+- This is a better home for anything you'd otherwise repeat every cycle: named contacts, a buyer's stated timeline, why a bid was declined, a competitor's pricing pattern, an angle that got a reply. The \`save_memory\`/\`recall_memory\` tools still work for quick one-line facts, but the file tool is where real accumulated intelligence should live.
+- Memory is only useful if you actually read it. Don't rediscover the same dead end twice.
+
+## STRATEGIC ADVISOR — think_strategically
+
+Before writing a full bid, or qualifying any opportunity worth £5k+, call \`think_strategically\` with the opportunity details and your specific question. It runs an 8-section deep analysis — competitor modelling, buyer psychology, game-theory pricing, a chess-style set of strategic options, and a single closing recommendation. Use it to decide, not just to double-check after you've already decided. It costs one extra call — spend it on anything that would be embarrassing to get wrong.
 
 ---
 
@@ -411,7 +426,7 @@ async function runCycleInternal() {
     const cycleStart = new Date().toISOString()
 
     // Phase 1: Fetch all data — hard 45s cap on the entire phase
-    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary, followupsDue] = await withTimeout(
+    const [liveTenders, internationalTenders, devolvedPortals, buyerSignals, crmSummary, followupsDue, outreachPerformance] = await withTimeout(
       Promise.all([
         fetchContractsFinder(),
         fetchAllInternationalTenders(),
@@ -419,9 +434,10 @@ async function runCycleInternal() {
         runBuyerIntentScan(),
         getCRMSummary(),
         getFollowupsDue(),
+        getOutreachPerformance(),
       ]),
       60000,
-      [[], [], [], [], 'CRM: timeout', []]
+      [[], [], [], [], 'CRM: timeout', [], 'Outreach performance: timed out this cycle.']
     )
 
     // Fetch existing pipeline from Supabase
@@ -491,6 +507,8 @@ ${persistentMemory}
 - Bids submitted: ${bids?.length ?? 0}
 - Win rate: ${winRate}%
 - ${crmSummary}
+
+${outreachPerformance}
 
 ## 🤖 GEMMA 4 INTELLIGENCE LAYER: ${gemmaStats}
 
