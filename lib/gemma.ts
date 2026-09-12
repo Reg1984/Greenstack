@@ -43,6 +43,10 @@ async function callGemma(
             ...(json ? { responseMimeType: 'application/json' } : {}),
           },
         }),
+        // Without a timeout, a hung Gemma call could sit until Vercel kills the
+        // whole function — a single classification call shouldn't be able to
+        // burn the entire cycle's 300s budget.
+        signal: AbortSignal.timeout(20_000),
       }
     )
 

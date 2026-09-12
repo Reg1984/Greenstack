@@ -291,7 +291,29 @@ export const VERDANT_BASE_TOOLS: any[] = [
 
 // ─── Tool Executor ────────────────────────────────────────────────────────────
 
+/**
+ * Strip unpaired UTF-16 surrogates from tool output before it reaches the
+ * Anthropic API. Scraped page text (browse_portal) and email bodies
+ * (check_inbox) sometimes get truncated or mis-decoded mid-character,
+ * leaving a lone surrogate half. JSON.stringify happily encodes those as
+ * \uD8xx/\uDCxx escapes, but the resulting request body isn't valid UTF-8 —
+ * Anthropic's API then rejects the whole request with a JSON parse error
+ * ("no low surrogate in string"), killing the entire VERDANT cycle over one
+ * bad tool result.
+ */
+function stripLoneSurrogates(text: string): string {
+  return text.replace(
+    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
+    ''
+  )
+}
+
 export async function executeBaseTool(name: string, input: any): Promise<string> {
+  const result = await executeBaseToolInner(name, input)
+  return stripLoneSurrogates(result)
+}
+
+async function executeBaseToolInner(name: string, input: any): Promise<string> {
   switch (name) {
     case 'send_outreach_email':
       return executeOutreachEmail(input)
