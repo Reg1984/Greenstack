@@ -1535,7 +1535,7 @@ export default function GreenStackApp() {
         const sendReply = async (draft: any) => {
           setReplySending(draft.id)
           try {
-            const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\nwww.greenstackai.co.uk`
+            const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\ngreenstackai.co.uk`
             const res = await fetch('/api/verdant/outreach', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

@@ -744,7 +744,7 @@ async function sendEmailAlert(liveTenders: any[], verdantOutput: string) {
               <h3 style="color:#065f46">📊 VERDANT Analysis</h3>
               <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:12px;color:#374151;white-space:pre-wrap;font-family:monospace">${analysisSnippet}</div>
               <div style="margin-top:24px;text-align:center">
-                <a href="https://www.greenstackai.co.uk/dashboard" style="background:#059669;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">View Full Dashboard →</a>
+                <a href="https://greenstackai.co.uk/dashboard" style="background:#059669;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">View Full Dashboard →</a>
               </div>
               <p style="margin-top:24px;font-size:11px;color:#9ca3af;text-align:center">VERDANT | GreenStack AI | verdant@greenstackai.co.uk</p>
             </div>

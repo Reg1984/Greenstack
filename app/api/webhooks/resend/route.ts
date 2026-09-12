@@ -5,7 +5,7 @@
  * To activate:
  * 1. In Resend dashboard → Domains → greenstackai.co.uk → Inbound
  * 2. Add MX record: inbound.resend.com (priority 10) for the domain
- * 3. Set webhook URL to: https://www.greenstackai.co.uk/api/webhooks/resend
+ * 3. Set webhook URL to: https://greenstackai.co.uk/api/webhooks/resend
  * 4. Resend will forward all inbound emails as JSON to this endpoint
  */
 

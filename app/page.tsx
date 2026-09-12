@@ -408,7 +408,7 @@ function Hero({ onDashboard }: { onDashboard: () => void }) {
             <Twitter size={18} color="rgba(255,255,255,0.7)" />
           </div>
         </a>
-        <a href="https://www.greenstackai.co.uk" target="_blank" rel="noopener noreferrer">
+        <a href="https://greenstackai.co.uk" target="_blank" rel="noopener noreferrer">
           <div className="liquid-glass" style={{ borderRadius: "50%", padding: "14px", cursor: "pointer" }}>
             <Globe size={18} color="rgba(255,255,255,0.7)" />
           </div>
@@ -735,7 +735,7 @@ function ServicesSection() {
             </div>
             <div>
               <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>Website</p>
-              <a href="https://www.greenstackai.co.uk" style={{ color: "#fff", fontSize: "1rem", textDecoration: "none" }}>
+              <a href="https://greenstackai.co.uk" style={{ color: "#fff", fontSize: "1rem", textDecoration: "none" }}>
                 greenstackai.co.uk
               </a>
             </div>

@@ -59,7 +59,7 @@ export async function executeOutreachEmail(input: {
   if (!apiKey) return `Email queued for ${input.to_email} — no RESEND_API_KEY configured`
 
   // Ensure every email is signed off as Reginald Orme
-  const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\nwww.greenstackai.co.uk`
+  const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\ngreenstackai.co.uk`
   const bodyWithSignoff = input.body.includes('Reginald') ? input.body : input.body.trimEnd() + signoff
 
   const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${bodyWithSignoff.replace(/\n/g, '<br/>')}</div>`
@@ -134,7 +134,7 @@ export const VERDANT_BASE_TOOLS: any[] = [
         subject: { type: 'string', description: 'Specific subject line — not generic' },
         body: {
           type: 'string',
-          description: 'Full email body, under 200 words. For CBAM leads include https://www.greenstackai.co.uk/cbam. For general outreach use https://www.greenstackai.co.uk. Do NOT add a sign-off — Reginald Orme sign-off is added automatically.',
+          description: 'Full email body, under 200 words. For CBAM leads include https://greenstackai.co.uk/cbam. For general outreach use https://greenstackai.co.uk. Do NOT add a sign-off — Reginald Orme sign-off is added automatically.',
         },
         signal: { type: 'string', description: 'Why this lead is warm, e.g. cbam_exposure, sustainability_job, net_zero_target' },
       },
@@ -358,7 +358,7 @@ async function executeBaseToolInner(name: string, input: any): Promise<string> {
       // Call the browser agent route — it handles AI form analysis + Playwright fill + Supabase save
       const appUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : 'https://www.greenstackai.co.uk'
+        : 'https://greenstackai.co.uk'
       try {
         const res = await fetch(`${appUrl}/api/verdant/browser`, {
           method: 'POST',

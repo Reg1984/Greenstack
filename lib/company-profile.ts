@@ -9,7 +9,7 @@ export const COMPANY_PROFILE = `
 **Status:** Active
 **Registered Address:** 29 Chillingham Street, Liverpool, England, L8 9RX
 **Contact Email:** info@greenstackai.co.uk
-**Website:** https://www.greenstackai.co.uk
+**Website:** https://greenstackai.co.uk
 
 **CRITICAL CONTEXT — COMPANY STAGE:**
 GreenStack AI is a brand-new market entrant. It has been actively trading for only a few weeks (since April 2026). It has no completed client projects yet, no published case studies, and no revenue history. The registered company (SATSSTRATEGY EDUCATION LTD) is 13 months old but was operating under a different purpose. Do NOT claim months or years of sustainability consultancy experience. Do NOT reference past client wins. Be honest about early-stage status — position newness as an advantage (AI-native from day one, no legacy processes, founder-led personal attention) not as a liability.

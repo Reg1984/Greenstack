@@ -291,7 +291,7 @@ export async function draftOutreachEmail(params: {
 
 Target: ${params.contactTitle ?? 'Sustainability/ESG team'} at ${params.organisation} (${params.sector}, ${params.country})
 Why we're contacting: ${params.signal}
-${params.isCBAM ? 'Include CBAM compliance angle and link: https://www.greenstackai.co.uk/cbam' : 'Include link: https://www.greenstackai.co.uk'}
+${params.isCBAM ? 'Include CBAM compliance angle and link: https://greenstackai.co.uk/cbam' : 'Include link: https://greenstackai.co.uk'}
 
 GreenStack AI delivers:
 - AI-native sustainability intelligence reports

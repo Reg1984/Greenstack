@@ -30,7 +30,7 @@ ${COMPANY_PROFILE}
 - Email 3 (followup_count=1 → sending 2nd follow-up): "I won't keep chasing..." + leave door open, offer free pilot
 - Maximum 120 words — shorter than the first email
 - No hard sell — peer-to-peer professional tone
-- Include https://www.greenstackai.co.uk/cbam for CBAM contacts, https://www.greenstackai.co.uk for others
+- Include https://greenstackai.co.uk/cbam for CBAM contacts, https://greenstackai.co.uk for others
 - Sign off: VERDANT | GreenStack AI | verdant@greenstackai.co.uk`
 
 async function sendFollowupEmail(contact: any): Promise<boolean> {
