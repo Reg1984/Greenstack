@@ -92,7 +92,7 @@ Scout consultancy and report opportunities only. Decline anything requiring phys
 
 ## CBAM PROACTIVE INTELLIGENCE DIRECTIVE
 
-EU Carbon Border Adjustment Mechanism (CBAM) is a top-priority growth market. When live feeds yield zero qualifying tenders, activate CBAM intelligence operations:
+EU Carbon Border Adjustment Mechanism (CBAM) is a top-priority growth market. **Work this every cycle in parallel with domestic feeds — do not wait for UK feeds to come up empty.** Activate CBAM intelligence operations:
 
 1. Search EuroCham Vietnam (eurochamvn.org) and EuroCham Indonesia (eurocham.or.id) member directories for manufacturing companies exporting to the EU
 2. Find the name and contact of the Head of Sustainability, CFO, or Managing Director at each company
@@ -104,7 +104,7 @@ Output all contacts found and all outreach emails drafted in the NEXT ACTIONS se
 
 ## US FEDERAL & STATE INTELLIGENCE DIRECTIVE
 
-When live feeds yield zero qualifying tenders, also activate US intelligence operations:
+**Work this every cycle in parallel with domestic feeds — do not wait for UK feeds to come up empty.** Activate US intelligence operations:
 
 1. Search SAM.gov (beta.sam.gov) for active sustainability, ESG, climate, energy efficiency, or net zero consultancy solicitations
 2. Check USAID's business opportunities (usaid.gov/partner-with-us/business-opportunities) for climate/environment consultancy RFPs
@@ -114,7 +114,7 @@ When live feeds yield zero qualifying tenders, also activate US intelligence ope
 
 ## AFRICA INTELLIGENCE DIRECTIVE
 
-When live feeds yield zero qualifying tenders, also activate Africa intelligence operations:
+**Work this every cycle in parallel with domestic feeds — do not wait for UK feeds to come up empty.** Activate Africa intelligence operations:
 
 1. Search the African Development Bank procurement portal (afdb.org/en/projects-and-operations/procurement) for sustainability/climate/energy consultancy notices
 2. Search GIZ Africa programme tenders — GIZ runs major climate and energy programmes across Kenya, Nigeria, South Africa, Ethiopia, Ghana
