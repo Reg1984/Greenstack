@@ -8,6 +8,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { checkContactExists, upsertContact, markContactReplied } from '@/lib/outreach-crm'
 import { saveMemory, recallMemory } from '@/lib/verdant-memory'
+import { createDirective, updateDirective } from '@/lib/verdant-directives'
 import { executeMemoryCommand } from '@/lib/verdant-native-memory'
 import { thinkStrategically } from '@/lib/verdant-strategy'
 import { navigateAndExtract } from '@/lib/browser-agent'
@@ -235,6 +236,20 @@ export const VERDANT_BASE_TOOLS: any[] = [
     },
   },
   {
+    name: 'manage_directive',
+    description: 'Create, update, complete, block, or cancel a standing directive — a freeform command that gets worked every cycle until closed, unlike a one-off action. Use action="create" when Reg gives you an open-ended instruction to pursue persistently (e.g. "land a meeting with X", "get a reply from Y") — this is different from update_goal_strategy, which is for numeric KPI targets, not freeform tasks. Use action="update" every cycle you take any action toward an existing directive, even if nothing changed. Use action="complete" the moment it is genuinely done. Use action="block" ONLY when truly stuck and a human decision is required — give a specific, actionable reason.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        action: { type: 'string', enum: ['create', 'update', 'complete', 'block', 'cancel'] },
+        instruction: { type: 'string', description: 'Required for action="create" — the standing command to pursue every cycle.' },
+        directive_id: { type: 'string', description: 'Required for update/complete/block/cancel — the directive ID from the STANDING DIRECTIVES context block.' },
+        note: { type: 'string', description: 'Required for update/complete/block/cancel — what you did this cycle, why it is complete, or the specific reason it is blocked.' },
+      },
+      required: ['action'],
+    },
+  },
+  {
     name: 'update_goal_strategy',
     description: 'Update your strategy and log an action toward an active goal. Call this at the end of every cycle to record what you did and adjust your approach to hit the target.',
     input_schema: {
@@ -338,6 +353,16 @@ async function executeBaseToolInner(name: string, input: any): Promise<string> {
   switch (name) {
     case 'memory':
       return executeMemoryCommand(input)
+
+    case 'manage_directive': {
+      if (input.action === 'create') {
+        if (!input.instruction) return 'Error: instruction is required to create a directive'
+        return createDirective(input.instruction)
+      }
+      if (!input.directive_id) return 'Error: directive_id is required for this action'
+      if (!input.note && input.action !== 'update') return 'Error: note is required for complete/block/cancel'
+      return updateDirective(input.directive_id, input.action, input.note ?? 'No update note provided')
+    }
 
     case 'think_strategically':
       return thinkStrategically(input.opportunity, input.question)

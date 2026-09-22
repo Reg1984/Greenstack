@@ -12,6 +12,7 @@ import { VERDANT_BASE_TOOLS, executeBaseTool, sendTelegramMessage } from '@/lib/
 import { bootstrapNativeMemory } from '@/lib/verdant-native-memory'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
 import { formatGoalsForVerdant, updateGoalProgress } from '@/lib/verdant-goals'
+import { formatDirectivesForVerdant } from '@/lib/verdant-directives'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -450,11 +451,12 @@ async function runCycleInternal() {
     const wonBids = bids?.filter(b => b.status === 'won').length ?? 0
     const winRate = bids?.length ? Math.round((wonBids / bids.length) * 100) : 0
 
-    // Load accumulated memory + active goals
-    const [verdantMemory, persistentMemory, goalsContext] = await Promise.all([
+    // Load accumulated memory + active goals + standing directives
+    const [verdantMemory, persistentMemory, goalsContext, directivesContext] = await Promise.all([
       loadVerdantMemory(),
       loadTopMemories(),
       formatGoalsForVerdant(),
+      formatDirectivesForVerdant(),
     ])
 
     // Phase 2: Gemma pre-filter — hard 25s cap, falls back to all tenders
@@ -500,6 +502,10 @@ CYCLE: ${cycleStart}
 
 ${verdantMemory}
 ${persistentMemory}
+
+${directivesContext}
+
+${goalsContext}
 
 ## CURRENT PIPELINE:
 - Tenders in system: ${tenders?.length ?? 0}
