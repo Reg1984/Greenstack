@@ -102,66 +102,7 @@ EU Carbon Border Adjustment Mechanism (CBAM) is a top-priority growth market. **
 
 Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
 
-## US FEDERAL & STATE INTELLIGENCE DIRECTIVE
-
-**Work this every cycle in parallel with domestic feeds — do not wait for UK feeds to come up empty.** Activate US intelligence operations:
-
-1. Search SAM.gov (beta.sam.gov) for active sustainability, ESG, climate, energy efficiency, or net zero consultancy solicitations
-2. Check USAID's business opportunities (usaid.gov/partner-with-us/business-opportunities) for climate/environment consultancy RFPs
-3. Search EPA and Department of Energy grants/contracts for consultancy scope
-4. Target large US corporations (Fortune 500) with unfulfilled ESG/CSRD reporting obligations — especially those with EU operations subject to CSRD
-5. Draft cold outreach emails to US Sustainability Officers, Chief ESG Officers, or VP Environment at companies with significant EU revenue exposure
-
-## AFRICA INTELLIGENCE DIRECTIVE
-
-**Work this every cycle in parallel with domestic feeds — do not wait for UK feeds to come up empty.** Activate Africa intelligence operations:
-
-1. Search the African Development Bank procurement portal (afdb.org/en/projects-and-operations/procurement) for sustainability/climate/energy consultancy notices
-2. Search GIZ Africa programme tenders — GIZ runs major climate and energy programmes across Kenya, Nigeria, South Africa, Ethiopia, Ghana
-3. Check USAID Africa mission procurement opportunities — climate and clean energy are priority sectors
-4. Target South African corporates with JSE sustainability reporting obligations and UK/EU trade exposure
-5. Target Kenyan and Nigerian businesses seeking international ESG credibility for export financing
-6. Look for African Union climate finance and green economy programme consultancy needs
-
-Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.
-
-## GCC INTELLIGENCE DIRECTIVE
-
-The Gulf Cooperation Council (Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, Oman) is a priority growth market. Vision 2030, UAE Net Zero 2050, and COP28/29 legacy programmes are driving massive sustainability consultancy demand:
-
-1. **Saudi Arabia** — Search Saudi Vision 2030 procurement (etimad.sa), NEOM project sustainability tenders, Saudi Aramco ESG reporting RFPs, PIF (Public Investment Fund) portfolio ESG frameworks. Target: Saudi Green Initiative consultancy needs.
-2. **UAE** — Search UAE government tenders (mofaic.gov.ae), ADNOC sustainability strategy RFPs, Emirates Global Aluminium CBAM exposure (EGA exports aluminium to EU — CBAM directly applies), Abu Dhabi sustainability office.
-3. **Qatar** — Search Kahramaa (Qatar General Electricity & Water) sustainability tenders, QatarEnergy net zero roadmap support, QFC (Qatar Financial Centre) ESG reporting frameworks.
-4. **GCC-wide** — Search IsDB (Islamic Development Bank) climate finance consultancy notices at isdb.org/procurement. Search UNDP Arab States regional office procurement. Target multinational corporations with GCC operations needing CSRD reports covering Middle East subsidiaries.
-5. **CBAM angle** — UAE and Saudi Arabia are major aluminium and steel exporters to Europe. Emirates Global Aluminium (EGA), Alba (Bahrain Aluminium), Qatar Steel, and Saudi Steel all face CBAM obligations on EU exports. These are warm outbound targets.
-6. **Key contacts** — GIZ has a regional office in Amman and programmes in Saudi Arabia, Jordan, Egypt. EBRD has GCC operations. World Bank has active climate lending in the region.
-
-Output all GCC contacts found and outreach emails drafted in the NEXT ACTIONS section.
-
-## GERMANY / BERLIN INTELLIGENCE DIRECTIVE
-
-Germany is an active market via DTVP registration (CX247EE547EE5) and ausschreibungen.giz.de. Live TED feed is now active for German sustainability tenders.
-
-1. **Berlin Senate** — berlin.de/sen/finanzen/haushalt/vergabe — sustainability consultancy for Berlin public estate, climate emergency programmes, Berliner Energie und Klimaschutzprogramm (BEK)
-2. **German Federal** — Bundesministerium für Wirtschaft (BMWK), Umweltbundesamt (UBA) — environmental/climate consultancy
-3. **KfW** — kfw.de/kfw-group/Newsroom/Ausschreibungen — Germany's development bank, active sustainability programme procurement
-4. **BMZ tenders** — via GIZ/DTVP, German federal development ministry
-5. **Berlin climate targets** — Berlin aims for climate neutrality by 2045; large estate decarbonisation programme = sustained consultancy demand
-6. When TED feed yields German results, flag them as DTVP-accessible — we can bid directly via CX247EE547EE5
-
-## INDIA INTELLIGENCE DIRECTIVE
-
-India is a high-priority CBAM market. Indian steel, aluminium and cement exporters face CBAM obligations on EU exports NOW. Live ADB + World Bank India feed is active.
-
-1. **CBAM outreach** — Target Indian steel exporters (Tata Steel, JSW Steel, SAIL, Jindal Steel), aluminium producers (Hindalco, Vedanta/Balco), cement (UltraTech, ACC) — all face EU CBAM obligations
-2. **GeM (Government e-Marketplace)** — gem.gov.in — India's central procurement portal, sustainability/climate consultancy tenders posted here
-3. **MoEFCC** — Ministry of Environment, Forest and Climate Change — climate policy consultancy tenders
-4. **UNDP India** — undp.org/india — active procurement for climate/sustainability programmes
-5. **GIZ India** — GIZ has a large India programme (renewable energy, climate policy, industrial decarbonisation) — monitor ausschreibungen.giz.de for India tenders
-6. **Indian corporates** — SEBI's BRSR (Business Responsibility and Sustainability Reporting) is now mandatory for top 1000 listed companies — creates ESG consultancy demand
-7. When targeting Indian exporters: frame pitch around CBAM competitive advantage — "verified low-carbon data protects your EU market access and wins new customers"
-
-Output all Germany/India contacts found and outreach emails drafted in the NEXT ACTIONS section.
+{{ROTATING_REGION_DIRECTIVES}}
 
 ## REGULATORY CALENDAR — KEY DEADLINES TO EXPLOIT
 
@@ -373,6 +314,10 @@ List required documents. Flag anything needing human input. Track pipeline patte
 
 ---
 
+## BUDGET DISCIPLINE — READ THIS BEFORE YOU START RESEARCHING
+
+You have a limited number of tool-call rounds this cycle before it auto-terminates. A cycle that researches ten leads and sends zero emails is worse than one that researches three and sends three. **Do not let research crowd out sending.** As soon as you have ONE qualified lead with a real contact, draft and send the email immediately — do not wait to finish scanning every region first. Interleave: find a lead, send to it, find the next, send to it. If you notice you're several rounds in and haven't sent anything yet, stop researching and send what you already have.
+
 ## OUTPUT FORMAT
 
 🔍 OPPORTUNITIES FOUND: [N]
@@ -386,6 +331,89 @@ List required documents. Flag anything needing human input. Track pipeline patte
 🔄 NEXT ACTIONS: [dated]
 
 You are VERDANT. Begin.`
+
+// Secondary regions were previously gated "only if UK feeds are empty" (a bug — they
+// almost never ran). Un-gating them to run unconditionally every cycle (commit 416810f)
+// overloaded the 8-iteration/270s budget so badly that cycles ran out of room before
+// ever sending an email — confirmed 2026-09-23: zero outreach since that change deployed.
+// Fix: keep CBAM always-on (explicitly top-priority), rotate the other five across the
+// two daily cycles (07:00 UTC / 19:00 UTC) so each still gets worked daily without
+// crowding out actually sending anything.
+const US_DIRECTIVE = `## US FEDERAL & STATE INTELLIGENCE DIRECTIVE
+
+Work this cycle in parallel with domestic feeds. Activate US intelligence operations:
+
+1. Search SAM.gov (beta.sam.gov) for active sustainability, ESG, climate, energy efficiency, or net zero consultancy solicitations
+2. Check USAID's business opportunities (usaid.gov/partner-with-us/business-opportunities) for climate/environment consultancy RFPs
+3. Search EPA and Department of Energy grants/contracts for consultancy scope
+4. Target large US corporations (Fortune 500) with unfulfilled ESG/CSRD reporting obligations — especially those with EU operations subject to CSRD
+5. Draft cold outreach emails to US Sustainability Officers, Chief ESG Officers, or VP Environment at companies with significant EU revenue exposure`
+
+const AFRICA_DIRECTIVE = `## AFRICA INTELLIGENCE DIRECTIVE
+
+Work this cycle in parallel with domestic feeds. Activate Africa intelligence operations:
+
+1. Search the African Development Bank procurement portal (afdb.org/en/projects-and-operations/procurement) for sustainability/climate/energy consultancy notices
+2. Search GIZ Africa programme tenders — GIZ runs major climate and energy programmes across Kenya, Nigeria, South Africa, Ethiopia, Ghana
+3. Check USAID Africa mission procurement opportunities — climate and clean energy are priority sectors
+4. Target South African corporates with JSE sustainability reporting obligations and UK/EU trade exposure
+5. Target Kenyan and Nigerian businesses seeking international ESG credibility for export financing
+6. Look for African Union climate finance and green economy programme consultancy needs
+
+Output all contacts found and all outreach emails drafted in the NEXT ACTIONS section.`
+
+const GCC_DIRECTIVE = `## GCC INTELLIGENCE DIRECTIVE
+
+The Gulf Cooperation Council (Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, Oman) is a priority growth market. Vision 2030, UAE Net Zero 2050, and COP28/29 legacy programmes are driving massive sustainability consultancy demand:
+
+1. **Saudi Arabia** — Search Saudi Vision 2030 procurement (etimad.sa), NEOM project sustainability tenders, Saudi Aramco ESG reporting RFPs, PIF (Public Investment Fund) portfolio ESG frameworks. Target: Saudi Green Initiative consultancy needs.
+2. **UAE** — Search UAE government tenders (mofaic.gov.ae), ADNOC sustainability strategy RFPs, Emirates Global Aluminium CBAM exposure (EGA exports aluminium to EU — CBAM directly applies), Abu Dhabi sustainability office.
+3. **Qatar** — Search Kahramaa (Qatar General Electricity & Water) sustainability tenders, QatarEnergy net zero roadmap support, QFC (Qatar Financial Centre) ESG reporting frameworks.
+4. **GCC-wide** — Search IsDB (Islamic Development Bank) climate finance consultancy notices at isdb.org/procurement. Search UNDP Arab States regional office procurement. Target multinational corporations with GCC operations needing CSRD reports covering Middle East subsidiaries.
+5. **CBAM angle** — UAE and Saudi Arabia are major aluminium and steel exporters to Europe. Emirates Global Aluminium (EGA), Alba (Bahrain Aluminium), Qatar Steel, and Saudi Steel all face CBAM obligations on EU exports. These are warm outbound targets.
+6. **Key contacts** — GIZ has a regional office in Amman and programmes in Saudi Arabia, Jordan, Egypt. EBRD has GCC operations. World Bank has active climate lending in the region.
+
+Output all GCC contacts found and outreach emails drafted in the NEXT ACTIONS section.`
+
+const GERMANY_DIRECTIVE = `## GERMANY / BERLIN INTELLIGENCE DIRECTIVE
+
+Germany is an active market via DTVP registration (CX247EE547EE5) and ausschreibungen.giz.de. Live TED feed is now active for German sustainability tenders.
+
+1. **Berlin Senate** — berlin.de/sen/finanzen/haushalt/vergabe — sustainability consultancy for Berlin public estate, climate emergency programmes, Berliner Energie und Klimaschutzprogramm (BEK)
+2. **German Federal** — Bundesministerium für Wirtschaft (BMWK), Umweltbundesamt (UBA) — environmental/climate consultancy
+3. **KfW** — kfw.de/kfw-group/Newsroom/Ausschreibungen — Germany's development bank, active sustainability programme procurement
+4. **BMZ tenders** — via GIZ/DTVP, German federal development ministry
+5. **Berlin climate targets** — Berlin aims for climate neutrality by 2045; large estate decarbonisation programme = sustained consultancy demand
+6. When TED feed yields German results, flag them as DTVP-accessible — we can bid directly via CX247EE547EE5`
+
+const INDIA_DIRECTIVE = `## INDIA INTELLIGENCE DIRECTIVE
+
+India is a high-priority CBAM market. Indian steel, aluminium and cement exporters face CBAM obligations on EU exports NOW. Live ADB + World Bank India feed is active.
+
+1. **CBAM outreach** — Target Indian steel exporters (Tata Steel, JSW Steel, SAIL, Jindal Steel), aluminium producers (Hindalco, Vedanta/Balco), cement (UltraTech, ACC) — all face EU CBAM obligations
+2. **GeM (Government e-Marketplace)** — gem.gov.in — India's central procurement portal, sustainability/climate consultancy tenders posted here
+3. **MoEFCC** — Ministry of Environment, Forest and Climate Change — climate policy consultancy tenders
+4. **UNDP India** — undp.org/india — active procurement for climate/sustainability programmes
+5. **GIZ India** — GIZ has a large India programme (renewable energy, climate policy, industrial decarbonisation) — monitor ausschreibungen.giz.de for India tenders
+6. **Indian corporates** — SEBI's BRSR (Business Responsibility and Sustainability Reporting) is now mandatory for top 1000 listed companies — creates ESG consultancy demand
+7. When targeting Indian exporters: frame pitch around CBAM competitive advantage — "verified low-carbon data protects your EU market access and wins new customers"
+
+Output all Germany/India contacts found and outreach emails drafted in the NEXT ACTIONS section.`
+
+/** UK + CBAM run every cycle. The other five regions alternate by cycle so no single
+ * cycle's research budget gets overloaded — each still gets worked at least once a day
+ * across the two scheduled cycles (07:00 and 19:00 UTC). */
+function buildSystemPrompt(cycleStartHourUTC: number): string {
+  const morningCycle = cycleStartHourUTC < 12
+  const active = morningCycle ? [US_DIRECTIVE, AFRICA_DIRECTIVE] : [GCC_DIRECTIVE, GERMANY_DIRECTIVE, INDIA_DIRECTIVE]
+  const deferred = morningCycle ? 'GCC, Germany and India' : 'US and Africa'
+
+  const rotatingBlock = `${active.join('\n\n')}
+
+*(${deferred} intelligence directives are worked next cycle — rotating regions keeps each cycle's research budget from crowding out actually sending outreach emails. If you finish everything above with iterations to spare, work ${deferred} too.)*`
+
+  return VERDANT_SYSTEM_PROMPT.replace('{{ROTATING_REGION_DIRECTIVES}}', rotatingBlock)
+}
 
 export async function GET(request: Request) {
   // Allow Vercel cron (passes CRON_SECRET) or unauthenticated internal calls
@@ -553,13 +581,14 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
     }]
     let verdantOutput = ''
     let containerId: string | null = null
+    const cycleSystemPrompt = buildSystemPrompt(new Date(cycleStart).getUTCHours())
 
-    for (let iteration = 0; iteration < 8; iteration++) {
+    for (let iteration = 0; iteration < 10; iteration++) {
       const response: Anthropic.Message = await (client.messages.create as any)({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
-        // System prompt cached — ~500 lines sent 8× per cycle, saves ~90% on input tokens from iter 2
-        system: [{ type: 'text', text: VERDANT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+        // System prompt cached — same text reused across all iterations in this cycle
+        system: [{ type: 'text', text: cycleSystemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: VERDANT_BASE_TOOLS,
         messages: apiMessages,
         ...(containerId ? { container: containerId } : {}),
