@@ -127,4 +127,10 @@ ALTER TABLE public.partner_referrals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public access" ON public.partner_referrals FOR ALL USING (true);
 
 -- Lets the radar match regulatory changes to clients by Companies House SIC code.
-ALTER TABLE public.outreach_contacts ADD COLUMN IF NOT EXISTS sic_codes TEXT[];
+-- Conditional: production was found (2026-09-27) without 006_verdant_crm.sql applied.
+DO $$
+BEGIN
+  IF to_regclass('public.outreach_contacts') IS NOT NULL THEN
+    ALTER TABLE public.outreach_contacts ADD COLUMN IF NOT EXISTS sic_codes TEXT[];
+  END IF;
+END $$;
