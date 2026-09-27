@@ -13,6 +13,7 @@ import { bootstrapNativeMemory } from '@/lib/verdant-native-memory'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
 import { formatGoalsForVerdant, updateGoalProgress } from '@/lib/verdant-goals'
 import { formatDirectivesForVerdant } from '@/lib/verdant-directives'
+import { formatRadarForVerdant } from '@/lib/regulatory-radar'
 import { NextResponse } from 'next/server'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -44,6 +45,15 @@ You have a persistent file-based memory tool (\`memory\`) — files under /memor
 ## STRATEGIC ADVISOR — think_strategically
 
 Before writing a full bid, or qualifying any opportunity worth £5k+, call \`think_strategically\` with the opportunity details and your specific question. It runs an 8-section deep analysis — competitor modelling, buyer psychology, game-theory pricing, a chess-style set of strategic options, and a single closing recommendation. Use it to decide, not just to double-check after you've already decided. It costs one extra call — spend it on anything that would be embarrassing to get wrong.
+
+## OPERATING MODEL — VERDANT IS THE BRAIN, REG STEERS THE SHIP
+
+Clients buy VERDANT's brain with Reg accountable in the real world. You do the reading, the watching, the calculating and the finding; Reg makes the calls, signs off, and shows up. Four capabilities make you better than a room of consultants — use them:
+
+1. **Knowledge from primary sources (\`consult_knowledge\`).** VERDANT Academy studies the standards and regulations themselves and self-tests on them. Before you state ANY threshold, date, definition or method in an email, bid or memo, call \`consult_knowledge\` and cite the source it gives. Nothing found → verify with web_fetch from the official source. Never state regulation from memory. Never claim VERDANT or GreenStack holds a certificate, accreditation or qualification — say "studied from the primary source" instead.
+2. **Regulatory Radar (\`check_regulatory_radar\`, and the RADAR block in your context).** Fresh, verified changes are the best outreach hook there is. When a change hits a client, tell them first — draft it via log_reply-style drafts or outreach, citing the source.
+3. **Traceable calculations (\`search_emission_factors\` → \`create_calculation_pack\`).** Never type an emission factor or do carbon arithmetic in your head. Pick exact DESNZ rows, let the engine calculate, and report unresolved items honestly. Packs are drafts until a qualified human signs off.
+4. **Partner Network (\`find_partners\` → \`propose_partner_referral\`).** When an opportunity is real but needs an accredited signatory, site work, a framework we're not on, or capacity we don't have — don't drop it. Refer it to a vetted partner. Reg approves every referral. This is why the best consultants want to work with VERDANT: it brings them pre-researched work.
 
 ---
 
@@ -480,11 +490,12 @@ async function runCycleInternal() {
     const winRate = bids?.length ? Math.round((wonBids / bids.length) * 100) : 0
 
     // Load accumulated memory + active goals + standing directives
-    const [verdantMemory, persistentMemory, goalsContext, directivesContext] = await Promise.all([
+    const [verdantMemory, persistentMemory, goalsContext, directivesContext, radarContext] = await Promise.all([
       loadVerdantMemory(),
       loadTopMemories(),
       formatGoalsForVerdant(),
       formatDirectivesForVerdant(),
+      formatRadarForVerdant(),
     ])
 
     // Phase 2: Gemma pre-filter — hard 25s cap, falls back to all tenders
@@ -532,6 +543,8 @@ ${verdantMemory}
 ${persistentMemory}
 
 ${directivesContext}
+
+${radarContext}
 
 ${goalsContext}
 
