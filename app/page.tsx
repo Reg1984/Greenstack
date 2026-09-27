@@ -280,6 +280,8 @@ function Navbar({ onDashboard }: { onDashboard: () => void }) {
         <div className="gs-nav-links">
           <Link href="/insights" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Insights</Link>
           <a href="/cbam" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>CBAM</a>
+          <Link href="/credentials" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Knowledge</Link>
+          <Link href="/partners" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Partners</Link>
           <Link href="/contact" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Contact</Link>
         </div>
 

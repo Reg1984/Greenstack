@@ -14,6 +14,11 @@ import { thinkStrategically } from '@/lib/verdant-strategy'
 import { navigateAndExtract } from '@/lib/browser-agent'
 import { updateGoalProgress } from '@/lib/verdant-goals'
 import { checkGmailInbox, markAsRead } from '@/lib/gmail'
+import { consultKnowledge } from '@/lib/verdant-academy'
+import { formatRadarForVerdant } from '@/lib/regulatory-radar'
+import { searchFactors, latestFactorSet, createCalculationPack, factorPath } from '@/lib/emissions-engine'
+import { findPartners, proposeReferral } from '@/lib/partner-network'
+import { signToken, siteUrl } from '@/lib/admin-token'
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
 
@@ -323,6 +328,92 @@ export const VERDANT_BASE_TOOLS: any[] = [
       required: ['url', 'purpose'],
     },
   },
+  {
+    name: 'consult_knowledge',
+    description: 'Search VERDANT Academy study notes — cited notes VERDANT wrote by studying the primary sources (GHG Protocol, DESNZ factors, SECR, ESOS, IFRS S1/S2 & UK SRS, CSRD/ESRS, EU & UK CBAM, SBTi, TCFD, GRI, green claims, PCAF). Call this BEFORE stating any regulatory threshold, date, definition or method in an email, bid or client memo, and cite the source it returns. If nothing is found, verify with web_fetch from the official source — never state it from memory.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'What you need to know, e.g. "ESOS qualification threshold turnover balance sheet"' },
+        module: { type: 'string', description: 'Optional module slug to restrict to, e.g. "esos", "eu-cbam", "ghg-protocol-scope-3"' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'check_regulatory_radar',
+    description: 'Get material regulatory changes the Radar detected from official sources (GOV.UK, EU, FCA, EFRAG, SBTi) — each with a plain-English summary, who is affected, deadline, actions, source URL, and which of our clients it hits. Use for timely outreach hooks and to warn clients first.',
+    input_schema: {
+      type: 'object' as const,
+      properties: { days: { type: 'number', description: 'Look-back window in days. Default 7.' } },
+      required: [],
+    },
+  },
+  {
+    name: 'search_emission_factors',
+    description: 'Search the official DESNZ GHG conversion factors loaded into the database. Returns exact factor rows (id, path, unit, value). You MUST use this to pick factor_ids before create_calculation_pack — never type a factor value yourself.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'e.g. "natural gas gross", "electricity UK", "diesel average biofuel blend", "business travel air long-haul"' },
+        factor_set: { type: 'string', description: 'Optional, e.g. "DESNZ 2025". Defaults to all loaded sets.' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'create_calculation_pack',
+    description: 'Create an auditor-traceable GHG calculation pack for a client. The engine (not you) does the arithmetic from the cited DESNZ factor rows, checks units, and lists anything unresolved rather than estimating. Returns totals plus a signed review link. It is a DRAFT until a qualified human signs it off.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        client: { type: 'string' },
+        reporting_period: { type: 'string', description: 'e.g. "1 Jan 2025 – 31 Dec 2025"' },
+        activities: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              factor_id: { type: 'string', description: 'Exact id from search_emission_factors' },
+              quantity: { type: 'number' },
+              unit: { type: 'string', description: 'Unit of the activity data — must match the factor unit' },
+              description: { type: 'string' },
+              evidence: { type: 'string', description: 'Where the activity data came from' },
+            },
+            required: ['factor_id', 'quantity', 'unit', 'description'],
+          },
+        },
+      },
+      required: ['client', 'reporting_period', 'activities'],
+    },
+  },
+  {
+    name: 'find_partners',
+    description: 'Find vetted partner consultants in the GreenStack Partner Network whose specialisms and region fit an opportunity. Use when an opportunity is real but we cannot deliver it alone — it needs an accredited signatory (ESOS Lead Assessor, ISO 14064 verifier), on-site work, a framework we are not on, or capacity we lack.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        needs: { type: 'string', description: 'Specialisms needed, e.g. "ESOS lead assessor manufacturing"' },
+        region: { type: 'string', description: 'Optional region/country' },
+      },
+      required: ['needs'],
+    },
+  },
+  {
+    name: 'propose_partner_referral',
+    description: 'Propose referring an opportunity to a vetted partner (id from find_partners). Reg is emailed an approve/reject link — nothing reaches the partner until Reg approves. Include enough detail in opportunity for the partner to act.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        partner_id: { type: 'string' },
+        opportunity: { type: 'string', description: 'Buyer, need, value, deadline, source link, and what research VERDANT already has' },
+        client_org: { type: 'string' },
+        estimated_value: { type: 'number', description: 'GBP' },
+        why_this_partner: { type: 'string' },
+      },
+      required: ['partner_id', 'opportunity', 'why_this_partner'],
+    },
+  },
 ]
 
 // ─── Tool Executor ────────────────────────────────────────────────────────────
@@ -486,6 +577,44 @@ The screenshot is saved. Check the GreenStack dashboard → Browser Sessions to 
 
       return `✅ Reply logged for ${input.organisation}. Follow-up sequence cancelled. Draft response saved and Telegram alert sent. Review on dashboard to approve and send.`
     }
+
+    case 'consult_knowledge':
+      return consultKnowledge(input.query, input.module)
+
+    case 'check_regulatory_radar':
+      return (await formatRadarForVerdant(input.days ?? 7)) || 'No material regulatory changes detected in that window.'
+
+    case 'search_emission_factors': {
+      const rows = await searchFactors(input.query, input.factor_set)
+      if (!rows.length) {
+        const latest = await latestFactorSet()
+        return latest
+          ? `No factor rows matched "${input.query}" (loaded sets include ${latest}). Try broader terms, e.g. just the fuel name.`
+          : 'No DESNZ factors are loaded yet. Reg must run scripts/import-desnz-factors.mjs with the official flat file. Do NOT calculate emissions until then.'
+      }
+      return rows.map(f => `${f.id} | ${f.scope ?? ''} | ${factorPath(f)} | ${f.factor} ${f.ghg_unit} per ${f.unit}`).join('\n')
+    }
+
+    case 'create_calculation_pack': {
+      let pack: Awaited<ReturnType<typeof createCalculationPack>>
+      try {
+        pack = await createCalculationPack(input)
+      } catch (err) {
+        return `Calculation pack failed: ${String(err)}. Check the 013_super_consultant.sql migration has been run.`
+      }
+      let link = ''
+      try { link = `\nReview/download: ${siteUrl()}/api/verdant/calc/${pack.id}?token=${signToken('calc', pack.id)}` } catch { /* no link secret configured */ }
+      const unresolved = pack.unresolved.map(u => `  • ${u.description ?? 'pack'}: ${u.reason}`).join('\n')
+      return `Calculation pack ${pack.id} created (DRAFT — needs qualified sign-off).
+Total: ${pack.totals.tonnes_co2e_total} tCO2e | by scope: ${JSON.stringify(pack.totals.tonnes_co2e_by_scope)}
+Lines calculated: ${pack.lines.length} | Unresolved: ${pack.unresolved.length}${unresolved ? `\n${unresolved}` : ''}${link}`
+    }
+
+    case 'find_partners':
+      return findPartners(input.needs, input.region)
+
+    case 'propose_partner_referral':
+      return proposeReferral(input)
 
     default:
       return `Unknown tool: ${name}`
