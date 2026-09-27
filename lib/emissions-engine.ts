@@ -56,6 +56,8 @@ export function factorPath(f: FactorRow): string {
 // differences and must match exactly.
 const normUnit = (u: string) => u.toLowerCase().replace(/\s+/g, '').replace(/s$/, '')
 
+export const isTotalCo2e = (ghgUnit: string) => ghgUnit.trim().toLowerCase() === 'kg co2e'
+
 /** Pure calculation — no I/O, so it can be checked in isolation. */
 export function computeLines(inputs: ActivityInput[], factors: Map<string, FactorRow>) {
   const lines: CalcLine[] = []
@@ -68,7 +70,9 @@ export function computeLines(inputs: ActivityInput[], factors: Map<string, Facto
       unresolved.push({ ...input, reason: `Unit mismatch: activity is "${input.unit}" but factor is per "${f.unit}". Convert the activity data first — the engine does not guess conversions.` })
       continue
     }
-    if (!/co2e/i.test(f.ghg_unit)) { unresolved.push({ ...input, reason: `Factor is expressed in "${f.ghg_unit}", not CO2e — pick the kg CO2e row` }); continue }
+    // DESNZ also publishes per-gas rows ("kg CO2e of CO2 per unit", "...of CH4...") — only the
+    // total "kg CO2e" row is a full GHG factor; using a per-gas row would under-report.
+    if (!isTotalCo2e(f.ghg_unit)) { unresolved.push({ ...input, reason: `Factor is "${f.ghg_unit}", a single-gas component — pick the total "kg CO2e" row` }); continue }
     const kg = input.quantity * f.factor
     lines.push({
       ...input,
@@ -95,7 +99,7 @@ export function computeLines(inputs: ActivityInput[], factors: Map<string, Facto
 export async function searchFactors(query: string, factorSet?: string, limit = 15): Promise<FactorRow[]> {
   const supabase = await createClient()
   const terms = query.split(/\s+/).filter(t => t.length > 1).slice(0, 5)
-  let q = supabase.from('emission_factors').select('*').ilike('ghg_unit', '%co2e%').limit(200)
+  let q = supabase.from('emission_factors').select('*').ilike('ghg_unit', 'kg co2e').limit(200)
   if (factorSet) q = q.eq('factor_set', factorSet)
   for (const t of terms) {
     const like = `*${t.replace(/[%_*,().]/g, '')}*`
