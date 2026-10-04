@@ -21,9 +21,10 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('academy')
 const MODEL = 'claude-sonnet-4-6'
 const MASTERY_THRESHOLD = 85
 const REFRESH_AFTER_DAYS = 60
@@ -151,7 +152,7 @@ export const CURRICULUM: CurriculumModule[] = [
 
 const WEB_TOOLS: any[] = [
   { type: 'web_search_20260209', name: 'web_search', max_uses: 4 },
-  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 6, max_content_tokens: 12000 },
+  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 4, max_content_tokens: 6000 },
 ]
 
 async function research(system: string, prompt: string, maxTokens = 8000): Promise<string> {

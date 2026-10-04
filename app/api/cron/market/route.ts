@@ -9,13 +9,14 @@ export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { loadTopMemories, saveMemory } from '@/lib/verdant-memory'
 import { getCRMSummary } from '@/lib/outreach-crm'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { thinkStrategically } from '@/lib/verdant-strategy'
 
-const client = new Anthropic()
+const client = createAnthropic('cron-market')
 
 async function sendMarketBriefing(period: string, analysis: string) {
   const apiKey = process.env.RESEND_API_KEY

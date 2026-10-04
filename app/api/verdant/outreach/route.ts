@@ -1,11 +1,12 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { NextResponse } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-outreach')
 
 const OUTREACH_SYSTEM = `You are VERDANT — GreenStack AI's sovereign tender intelligence agent. You write cold outreach emails to procurement teams and sustainability leads.
 

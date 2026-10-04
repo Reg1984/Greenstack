@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { sendOutreachEmail, queryCRM } from '@/lib/outreach-crm'
 import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
@@ -7,7 +8,7 @@ import { scrapeUrl, searchAndScrape } from '@/lib/firecrawl'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
 import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
 
-const client = new Anthropic()
+const client = createAnthropic('chat')
 
 interface ChatMessage {
   role: 'user' | 'assistant'

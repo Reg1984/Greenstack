@@ -127,8 +127,10 @@ export const VERDANT_BASE_TOOLS: any[] = [
   {
     type: 'web_fetch_20260209',
     name: 'web_fetch',
-    max_uses: 10,
-    max_content_tokens: 8000,
+    // Every fetched page is resent on each later loop turn, so page size and
+    // count drive most of the cycle's cost.
+    max_uses: 5,
+    max_content_tokens: 4000,
   },
   // Native Anthropic memory tool — persistent files under /memories, addressable
   // across every cycle and chat session. Replaces having to re-derive context
@@ -505,7 +507,10 @@ async function executeBaseToolInner(name: string, input: any): Promise<string> {
       try {
         const res = await fetch(`${appUrl}/api/verdant/browser`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
           body: JSON.stringify({
             url: input.url,
             purpose: input.purpose,

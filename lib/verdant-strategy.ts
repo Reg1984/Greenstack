@@ -6,9 +6,10 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { COMPANY_PROFILE } from './company-profile'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('strategy')
 
 const ADVISOR_SYSTEM = `You are VERDANT's strategic advisor — a senior partner who has reviewed over 500 public sector and international development bids. You have no emotional stake in the outcome. Your only job is to be right.
 

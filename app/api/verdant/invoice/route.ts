@@ -1,10 +1,11 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-invoice')
 
 // POST — create an invoice (optionally with AI assistance)
 export async function POST(request: Request) {

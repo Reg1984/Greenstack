@@ -16,12 +16,13 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createHash } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { saveMemory } from '@/lib/verdant-memory'
 import { extractJson } from '@/lib/verdant-academy'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('regulatory-radar')
 const MODEL = 'claude-sonnet-4-6'
 const MAX_ANALYSES_PER_RUN = 8
 

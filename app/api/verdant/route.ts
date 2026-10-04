@@ -1,6 +1,7 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { fetchContractsFinder, fetchDevolvedTenders } from '@/lib/contracts-finder'
 import { fetchAllInternationalTenders } from '@/lib/international-tenders'
@@ -16,7 +17,7 @@ import { formatDirectivesForVerdant } from '@/lib/verdant-directives'
 import { formatRadarForVerdant } from '@/lib/regulatory-radar'
 import { NextResponse } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-cycle')
 
 const VERDANT_SYSTEM_PROMPT = `## IDENTITY & MISSION
 
@@ -425,14 +426,8 @@ function buildSystemPrompt(cycleStartHourUTC: number): string {
   return VERDANT_SYSTEM_PROMPT.replace('{{ROTATING_REGION_DIRECTIVES}}', rotatingBlock)
 }
 
-export async function GET(request: Request) {
-  // Allow Vercel cron (passes CRON_SECRET) or unauthenticated internal calls
-  // POST is already open — GET is cron-only so no meaningful security benefit
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+// Auth for both methods (cron secret or admin password) is enforced in middleware.ts
+export async function GET() {
   return runVerdantCycle()
 }
 
@@ -586,7 +581,7 @@ ${followupsDue.length > 0
 
 Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN: qualify live tenders (UK + international + devolved). THEN: act on HIGH priority buyer intent signals with new outreach. Write complete bids for any tender scoring ≥ 70. After the cycle, include a MEMORY UPDATE section noting what you learned this cycle that should be remembered.`
 
-    // Agentic loop — VERDANT runs until end_turn or 8 iterations
+    // Agentic loop — VERDANT runs until end_turn or 8 iterations (each turn resends the whole history, so turns are the main cost lever)
     // First user message caches the large context block (same across all iterations in a cycle)
     const apiMessages: Anthropic.MessageParam[] = [{
       role: 'user',
@@ -596,7 +591,7 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
     let containerId: string | null = null
     const cycleSystemPrompt = buildSystemPrompt(new Date(cycleStart).getUTCHours())
 
-    for (let iteration = 0; iteration < 10; iteration++) {
+    for (let iteration = 0; iteration < 8; iteration++) {
       const response: Anthropic.Message = await (client.messages.create as any)({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,

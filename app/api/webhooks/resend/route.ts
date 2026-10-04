@@ -14,8 +14,9 @@ import { markContactReplied, checkContactExists } from '@/lib/outreach-crm'
 import { sendTelegramMessage } from '@/lib/verdant-tools'
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('webhook-resend')
 
 export async function POST(request: Request) {
   try {

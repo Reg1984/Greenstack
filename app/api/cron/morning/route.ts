@@ -6,17 +6,18 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { sendOutreachEmail, queryCRM } from '@/lib/outreach-crm'
 import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
 import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
 
-const client = new Anthropic()
+const client = createAnthropic('cron-morning')
 
 const MORNING_TOOLS: any[] = [
   // Native server tools — executed by API automatically
   { type: 'web_search_20260209', name: 'web_search', max_uses: 8, user_location: { type: 'approximate', city: 'London', region: 'England', country: 'GB', timezone: 'Europe/London' } },
-  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 10, max_content_tokens: 6000 },
+  { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 5, max_content_tokens: 4000 },
   {
     name: 'send_email',
     description: 'Send an outreach email and log to CRM.',
@@ -214,7 +215,7 @@ At the end, produce a concise briefing summarising: follow-ups sent, new outreac
     let finalReport = ''
     let containerId: string | null = null
 
-    for (let iteration = 0; iteration < 10; iteration++) {
+    for (let iteration = 0; iteration < 8; iteration++) {
       const response: Anthropic.Message = await (client.messages.create as any)({
         model: 'claude-sonnet-4-6',
         max_tokens: 4096,

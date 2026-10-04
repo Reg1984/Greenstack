@@ -1,12 +1,13 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-build')
 
 const BUILD_SYSTEM_PROMPT = `You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You also have the ability to read and modify the GreenStack platform's own codebase.
 

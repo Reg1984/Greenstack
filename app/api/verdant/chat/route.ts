@@ -1,6 +1,7 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, loadTopMemories } from '@/lib/verdant-memory'
@@ -9,7 +10,7 @@ import { VERDANT_BASE_TOOLS, executeBaseTool } from '@/lib/verdant-tools'
 import { extractTenderFields, isGemmaAvailable } from '@/lib/gemma'
 import { thinkStrategically } from '@/lib/verdant-strategy'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-chat')
 
 const CHAT_EXTRA_TOOLS: Anthropic.Tool[] = [
   {

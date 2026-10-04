@@ -12,12 +12,13 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { getFollowupsDue, upsertContact } from '@/lib/outreach-crm'
 import { NextResponse } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-followup')
 
 const FOLLOWUP_SYSTEM = `You are VERDANT — GreenStack AI's outreach agent. You write short, professional follow-up emails.
 

@@ -1,12 +1,13 @@
 export const maxDuration = 300
 
 import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { fillFormForReview, submitForm } from '@/lib/browser-agent'
 import { NextResponse } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const client = createAnthropic('verdant-browser')
 
 const BROWSER_SYSTEM = `You are VERDANT — the Sovereign Tender Intelligence Agent for GreenStack AI. You have been given browser access to fill out a form on behalf of GreenStack AI.
 
