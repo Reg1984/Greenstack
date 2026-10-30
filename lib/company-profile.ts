@@ -5,14 +5,17 @@ export const COMPANY_PROFILE = `
 **Registered Company Name:** SATSSTRATEGY EDUCATION LTD
 **Company Number:** 16348591
 **Company Type:** Private Limited Company (England & Wales)
-**Incorporated:** 27 March 2025 (note: SATSSTRATEGY EDUCATION LTD has been registered for ~13 months, but GreenStack AI as a trading brand began actively operating in April 2026 — only a few weeks ago)
+**Incorporated:** 27 March 2025
 **Status:** Active
-**Registered Address:** 29 Chillingham Street, Liverpool, England, L8 9RX
+**Registered Address:** Liverpool, England
 **Contact Email:** info@greenstackai.co.uk
 **Website:** https://greenstackai.co.uk
 
-**CRITICAL CONTEXT — COMPANY STAGE:**
-GreenStack AI is a brand-new market entrant. It has been actively trading for only a few weeks (since April 2026). It has no completed client projects yet, no published case studies, and no revenue history. The registered company (SATSSTRATEGY EDUCATION LTD) is 13 months old but was operating under a different purpose. Do NOT claim months or years of sustainability consultancy experience. Do NOT reference past client wins. Be honest about early-stage status — position newness as an advantage (AI-native from day one, no legacy processes, founder-led personal attention) not as a liability.
+**FOUNDER:**
+Reg, GreenStack's founder, is an education specialist and consultant, also working with an edtech company.
+
+**HOW TO PRESENT THE COMPANY:**
+Lead with the founder's education expertise, AI-native delivery and methodology. Don't mention that GreenStack is new or hasn't won tenders yet. Never invent client wins, case studies or qualifications. If a tender form directly asks for past contracts or references, flag it to Reg rather than answering.
 
 **Type:** AI-native consultancy — intelligence and strategy delivered through artificial intelligence
 **Mission:** Delivering sustainability intelligence, net zero strategy and organisational transformation through artificial intelligence — faster, deeper and cheaper than any traditional consultancy.
@@ -109,7 +112,7 @@ GreenStack AI operates globally. AI delivery means no geographic limitations —
 - Company Number: 16348591
 - Status: Active
 - Incorporated: 27 March 2025
-- Registered Address: 29 Chillingham Street, Liverpool, L8 9RX
+- Registered Address: Liverpool, England
 
 ---
 
@@ -136,10 +139,10 @@ GreenStack AI operates globally. AI delivery means no geographic limitations —
 - Result: UNSUCCESSFUL — "overall strength of shortlisted bids"
 - No specific feedback provided in rejection letter
 - Lessons / hypotheses:
-  - As a brand-new company with no completed client case studies, small local councils may favour established incumbents or firms with a proven local government track record
+  - Small local councils may favour established incumbents or firms with a proven local government track record
   - "Carbon Emissions Report" is a commoditised service — price and demonstrated experience likely dominated the scoring
   - Consider requesting a formal debrief from the council to understand scoring breakdown
-  - For future local authority carbon/emissions bids: lead with methodology transparency, AI speed advantage, and cost savings — frame newness as AI-native not as inexperience
+  - For future local authority carbon/emissions bids: lead with methodology transparency, AI speed advantage, and cost savings and founder expertise
   - Small town councils (Lowestoft population ~70k) may have tight budgets — pricing competitively is critical
   - Worth following up for future opportunities — rejection does not mean a closed door
 `
