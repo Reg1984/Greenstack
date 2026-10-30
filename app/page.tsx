@@ -278,10 +278,10 @@ function Navbar({ onDashboard }: { onDashboard: () => void }) {
         </div>
 
         <div className="gs-nav-links">
+          <Link href="/climate" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Climate</Link>
+          <Link href="/education" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Education</Link>
+          <Link href="/impact" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Impact</Link>
           <Link href="/insights" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Insights</Link>
-          <a href="/cbam" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>CBAM</a>
-          <Link href="/credentials" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Knowledge</Link>
-          <Link href="/partners" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Partners</Link>
           <Link href="/contact" style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Contact</Link>
         </div>
 
@@ -348,8 +348,8 @@ function Hero({ onDashboard }: { onDashboard: () => void }) {
           color: "#fff", letterSpacing: "-0.02em",
           marginBottom: "32px", lineHeight: 1.05,
         }}>
-          Intelligence for a<br />
-          <SI>greener</SI> tomorrow
+          Intelligence for a <SI>greener,</SI><br />
+          smarter and <SI>fairer</SI> future
         </h1>
 
         <div className="liquid-glass" style={{
@@ -385,7 +385,7 @@ function Hero({ onDashboard }: { onDashboard: () => void }) {
         </div>
 
         <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.85rem", maxWidth: "360px", lineHeight: 1.7 }}>
-          Automated sustainability tender intelligence. Find, bid, and win — without the overhead.
+          AI-powered research, delivery and innovation for public services — across climate, education and impact.
         </p>
 
         <div className="liquid-glass" style={{
@@ -425,10 +425,16 @@ function AboutSection() {
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
   const stats = [
-    { value: "60–80%", label: "cheaper than Big Four" },
-    { value: "2–3 wks", label: "average delivery time" },
+    { value: "3", label: "specialist divisions" },
+    { value: "AI-native", label: "research and delivery" },
     { value: "UNGM", label: "Vendor No. 1203916" },
     { value: "PI £50k", label: "professionally insured" },
+  ];
+
+  const divisions = [
+    { href: "/climate", name: "Climate", desc: "Carbon accounting, decarbonisation planning, local-authority climate strategy, energy efficiency, CBAM and sustainability reporting." },
+    { href: "/education", name: "Education", desc: "Curriculum, teaching and assessment, school improvement, SEND and inclusion, education policy, AI in education and green skills." },
+    { href: "/impact", name: "Impact", desc: "Monitoring, evaluation and learning, theory of change, programme and policy evaluation, evidence synthesis and social value." },
   ];
 
   const pillars = [
@@ -439,13 +445,13 @@ function AboutSection() {
     },
     {
       icon: "🔬",
-      title: "Full-organisation depth",
-      desc: "Not just energy bills. We cover every Scope, every department — people, culture, leadership, supply chain, regulatory exposure — in one intelligence report.",
+      title: "Research-led rigour",
+      desc: "Every important claim traced to reliable evidence. Methods chosen to fit the question, with assumptions and limitations stated plainly.",
     },
     {
       icon: "💷",
       title: "Transparent pricing",
-      desc: "AI eliminates 60–80% of traditional consultancy overhead. We pass every penny of that saving directly to our clients. Fixed fees, no surprises.",
+      desc: "Fixed, clearly scoped fees. AI removes overhead, so more of your budget goes on expertise and less on process. No surprises.",
     },
     {
       icon: "🌍",
@@ -476,7 +482,7 @@ function AboutSection() {
           transition={{ duration: 0.8, delay: 0.1 }}
           style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)", color: "#fff", lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: "40px" }}
         >
-          Sustainability intelligence,<br /><SI dim>built for the AI age.</SI>
+          Specialist consultancy,<br /><SI dim>built for the AI age.</SI>
         </motion.h2>
 
         {/* Mission paragraph */}
@@ -485,8 +491,29 @@ function AboutSection() {
           transition={{ duration: 0.8, delay: 0.2 }}
           style={{ color: "rgba(255,255,255,0.6)", fontSize: "1.1rem", lineHeight: 1.8, maxWidth: "640px", marginBottom: "80px" }}
         >
-          GreenStack AI is an AI-native sustainability consultancy. We deliver net zero roadmaps, carbon assessments, ESG reports and CBAM compliance intelligence — faster, deeper and cheaper than any traditional firm. Our clients range from UK public sector bodies and NHS trusts to international manufacturers navigating EU carbon tariffs.
+          GreenStack AI is an AI-native consultancy delivering research, analysis and expert advice for public services and the organisations that serve them. Our three specialist divisions share one research engine, so every assignment gets specialist methods and current evidence, delivered faster.
         </motion.p>
+
+        {/* Divisions */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.25 }}
+          className="gs-grid-3"
+          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "80px" }}
+        >
+          {divisions.map(d => (
+            <Link key={d.href} href={d.href} style={{ textDecoration: "none" }}>
+              <div className="liquid-glass" style={{ borderRadius: "20px", padding: "28px", height: "100%" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase" }}>GreenStack</span>
+                  <ArrowUpRight size={14} color="rgba(255,255,255,0.6)" />
+                </div>
+                <h3 style={{ color: "#fff", fontSize: "1.6rem", letterSpacing: "-0.02em", marginBottom: "10px" }}><SI>{d.name}</SI></h3>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.875rem", lineHeight: 1.7 }}>{d.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </motion.div>
 
         {/* Stats row */}
         <motion.div
