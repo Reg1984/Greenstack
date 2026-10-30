@@ -15,24 +15,23 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
+import { EMAIL_STYLE, SENDER_NAME, checkEmailBody, withSignoff } from '@/lib/email-style'
 import { getFollowupsDue, upsertContact } from '@/lib/outreach-crm'
 import { NextResponse } from 'next/server'
 
 const client = createAnthropic('verdant-followup')
 
-const FOLLOWUP_SYSTEM = `You are VERDANT — GreenStack AI's outreach agent. You write short, professional follow-up emails.
+const FOLLOWUP_SYSTEM = `You write short follow-up emails for GreenStack AI on behalf of Reginald Orme.
 
 ${COMPANY_PROFILE}
 
-## FOLLOW-UP EMAIL RULES
-- This is a follow-up to a previous cold email — acknowledge it briefly and naturally
-- Add NEW value — a relevant regulatory deadline, new statistic, or insight not in the first email
-- Email 2 (followup_count=0 → sending 1st follow-up): "I wanted to follow up briefly..." + one new angle
-- Email 3 (followup_count=1 → sending 2nd follow-up): "I won't keep chasing..." + leave door open, offer free pilot
-- Maximum 120 words — shorter than the first email
-- No hard sell — peer-to-peer professional tone
-- Include https://greenstackai.co.uk/cbam for CBAM contacts, https://greenstackai.co.uk for others
-- Sign off: VERDANT | GreenStack AI | verdant@greenstackai.co.uk`
+${EMAIL_STYLE}
+
+## FOLLOW-UPS SPECIFICALLY
+- A light, natural nod to the earlier note — never "just following up" or "circling back", never apologise.
+- Bring one genuinely new and useful thing: a relevant deadline, a change in policy, or an idea specific to them.
+- Final follow-up: short and gracious, leave the door open, no pressure.
+- Under 90 words.`
 
 async function sendFollowupEmail(contact: any): Promise<boolean> {
   try {
@@ -70,6 +69,8 @@ Return the JSON object only.`
     if (!rawText) return false
 
     const emailContent: { subject: string; body: string } = JSON.parse(rawText)
+    if (checkEmailBody(emailContent.body)) return false // asked for a call — skip; retried next run
+    emailContent.body = withSignoff(emailContent.body)
 
     // Send via Resend
     const apiKey = process.env.RESEND_API_KEY
@@ -79,8 +80,9 @@ Return the JSON object only.`
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'VERDANT | GreenStack AI <verdant@greenstackai.co.uk>',
+        from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
         to: contact.contact_email,
+        bcc: 'info@greenstackai.co.uk',
         subject: `Re: ${emailContent.subject}`,
         text: emailContent.body,
         html: `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${emailContent.body.replace(/\n/g, '<br/>')}</div>`,

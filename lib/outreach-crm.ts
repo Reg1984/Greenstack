@@ -5,6 +5,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { checkEmailBody, withSignoff, SENDER_NAME } from '@/lib/email-style'
 
 export interface OutreachContact {
   id: string
@@ -190,8 +191,12 @@ export async function sendOutreachEmail(params: {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { success: false, error: 'RESEND_API_KEY not set' }
 
+  const problem = checkEmailBody(params.body)
+  if (problem) return { success: false, error: `Not sent — ${problem}` }
+  const body = withSignoff(params.body)
+
   try {
-    const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.6">${params.body.replace(/\n/g, '<br>')}</div>`
+    const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${body.replace(/\n/g, '<br>')}</div>`
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -200,10 +205,11 @@ export async function sendOutreachEmail(params: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Reginald Orme — GreenStack AI <verdant@greenstackai.co.uk>',
+        from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
         to: params.to,
         bcc: 'info@greenstackai.co.uk',
         subject: params.subject,
+        text: body,
         html,
       }),
     })

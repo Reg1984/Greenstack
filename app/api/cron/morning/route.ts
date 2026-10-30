@@ -11,6 +11,13 @@ import { sendOutreachEmail, queryCRM } from '@/lib/outreach-crm'
 import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
 import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
+import { EMAIL_STYLE } from '@/lib/email-style'
+
+const MORNING_DIVISIONS = [
+  { name: 'Climate', news: 'UK organisations announcing net zero targets, CBAM/CSRD compliance challenges, ESG reporting requirements, council climate plans' },
+  { name: 'Education', news: 'multi-academy trusts, local authority education services and education charities announcing curriculum reviews, SEND reforms, attendance or school-improvement programmes, DfE and FCDO education funding' },
+  { name: 'Impact', news: 'funders, charities, councils and government departments launching programmes that will need evaluation, new What Works / evidence initiatives, social value commitments, FCDO and international development programmes' },
+]
 
 const client = createAnthropic('cron-morning')
 
@@ -20,7 +27,7 @@ const MORNING_TOOLS: any[] = [
   { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 5, max_content_tokens: 4000 },
   {
     name: 'send_email',
-    description: 'Send an outreach email and log to CRM.',
+    description: 'Send an outreach email and log to CRM. Follow HOW TO WRITE EMAILS: human, specific, under 150 words, no sign-off (added automatically with our contact email), and never ask for a call or meeting — emails that do are rejected unsent.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -178,25 +185,25 @@ export async function GET(request: NextRequest) {
   try {
     const persistentMemory = await loadTopMemories().catch(() => '')
 
-    const systemPrompt = `You are VERDANT — the world's most advanced green energy and sustainability AI agent, running your autonomous morning session for GreenStack AI.
+    const division = MORNING_DIVISIONS[new Date().getUTCDate() % MORNING_DIVISIONS.length]
+
+    const systemPrompt = `You are VERDANT, GreenStack AI's research and business development agent, running your autonomous morning session.
 
 Today is ${today}. This is your daily autonomous run. Work through each task systematically and report what you did.
 
-GreenStack AI is a UK sustainability consultancy offering:
-- CSRD Compliance Reports — £8,000 (competitors charge £16,000)
-- Net Zero Roadmaps — £11,250 (competitors charge £22,500)
-- CBAM Compliance Assessments — £5,750
-- ESG Due Diligence — £18,750
-- ESOS Energy Audits — £3,750
-- Bid Writing — £2,750
+GreenStack AI has three divisions: GreenStack Climate (carbon, net zero, energy, CBAM, sustainability reporting), GreenStack Education (curriculum, school improvement, SEND and inclusion, education policy and research, AI in education) and GreenStack Impact (evaluation, MEL, theory of change, evidence reviews, social value, policy research). The founder is an education specialist and consultant. Never quote prices in cold emails.
+
+**TODAY'S FOCUS DIVISION: ${division.name}** (the morning session rotates divisions day by day).
+
+${EMAIL_STYLE}
 
 MORNING TASKS — complete all of these:
 
 **TASK 1: News-driven outreach**
-Search for 2-3 recent news stories about: UK companies announcing net zero targets, CBAM/CSRD compliance challenges, ESG reporting requirements, energy transition investments. For the most promising story, find the company involved, look them up on Companies House, check the CRM (don't email if already contacted), then send a highly personalised outreach email referencing the specific news story.
+Search for 2-3 recent news stories relevant to today's focus: ${division.news}. For the most promising story, find the organisation and the right named person, check the CRM (don't email if already contacted), then send one personalised email referencing the specific story.
 
 **TASK 2: Publish one blog post**
-Pick a timely, SEO-valuable topic in green energy/sustainability. Write a high-quality 800-1000 word blog post. Publish it to the website at app/insights/[slug]/page.tsx. Make it genuinely useful — not generic. Include specific data, regulations, and practical advice.
+Pick a timely, genuinely useful topic for today's focus division (${division.name}). Write a high-quality 800-1000 word blog post. Only state facts you have sourced; never invent statistics, case studies or client work. Publish it to the website at app/insights/[slug]/page.tsx. Make it genuinely useful — not generic. Include specific data, regulations, and practical advice.
 
 **TASK 3: Save learnings**
 Save 2-3 key facts or decisions from today's session to memory for future reference.

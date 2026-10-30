@@ -14,7 +14,8 @@ export interface InternationalTender {
   organisation: string
   country: string
   url: string
-  source: 'ungm' | 'worldbank' | 'giz' | 'gem'
+  source: 'ungm' | 'worldbank' | 'giz' | 'gem' | 'ted'
+  division?: 'climate' | 'education' | 'impact'
   published: string
 }
 
@@ -42,46 +43,44 @@ const SUSTAINABILITY_KEYWORDS = [
   'environmental',
 ]
 
-// World Bank procurement API — consulting contracts
+const WB_EDUCATION = /educat|school|teacher|curricul|learning|literacy|skills|tvet/i
+const WB_IMPACT = /evaluation|monitoring|impact assessment|baseline|end-?line|survey|research|theory of change|learning agenda/i
+const WB_CLIMATE = /climate|carbon|emission|energy efficiency|decarbon|net zero|renewable energy strategy|environmental (impact|assessment|management plan)/i
+
+/** World Bank-financed consulting notices (every country, incl. India). The old
+ * /v2/procurement endpoint 404s; /v2/procnotices is the live one (checked 2026-10-30). */
 export async function fetchWorldBankTenders(): Promise<InternationalTender[]> {
   const tenders: InternationalTender[] = []
 
   try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const url = `https://search.worldbank.org/api/v2/procurement?format=json&rows=20&fl=id,project_name,contract_description,procurement_method,contact_country_name,submission_date,totalamt,contact_email&fq=procurement_category:consulting&fq=submission_date:[${thirtyDaysAgo}T00:00:00Z TO NOW]`
-
-    const res = await fetchWithTimeout(url, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    })
-
+    const url = 'https://search.worldbank.org/api/v2/procnotices?format=json&rows=300&srt=noticedate&order=desc' +
+      '&fl=id,bid_description,project_name,notice_type,submission_deadline_date,project_ctry_name,procurement_group,noticedate'
+    const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' }, cache: 'no-store' }, 15000)
     if (!res.ok) return []
 
-    const data = await res.json()
-    const docs = data?.procurement?.docs ?? []
-
-    for (const doc of docs) {
-      const title = doc.project_name ?? doc.contract_description ?? ''
+    const notices: any[] = (await res.json())?.procnotices ?? []
+    for (const n of notices) {
+      if (n.procurement_group !== 'CS') continue // consulting services only
+      if (!/expression of interest|invitation for bids|prequalification/i.test(n.notice_type ?? '')) continue
+      const title: string = n.bid_description ?? ''
       if (!title) continue
-
-      // Filter for sustainability relevance
-      const isRelevant = SUSTAINABILITY_KEYWORDS.some(kw =>
-        title.toLowerCase().includes(kw) ||
-        (doc.contract_description ?? '').toLowerCase().includes(kw)
-      )
-      if (!isRelevant) continue
+      const text = `${title} ${n.project_name ?? ''}`
+      // Evaluation first (an evaluation of an education project is Impact work)
+      const division = WB_IMPACT.test(title) ? 'impact' : WB_EDUCATION.test(text) ? 'education' : WB_CLIMATE.test(title) ? 'climate' : null
+      if (!division) continue
 
       tenders.push({
-        id: `wb-${doc.id}`,
+        id: `wb-${n.id}`,
         title,
-        description: doc.contract_description ?? '',
-        value: parseFloat(doc.totalamt) || 0,
-        deadline: doc.submission_date ? new Date(doc.submission_date).toLocaleDateString('en-GB') : 'TBC',
-        organisation: 'World Bank',
-        country: doc.contact_country_name ?? 'International',
-        url: `https://projects.worldbank.org/en/projects-operations/procurement-detail/${doc.id}`,
+        description: `Project: ${n.project_name ?? 'n/a'} | ${n.notice_type}`,
+        division,
+        value: 0,
+        deadline: n.submission_deadline_date ? new Date(n.submission_deadline_date).toLocaleDateString('en-GB') : 'TBC',
+        organisation: 'World Bank-financed project',
+        country: n.project_ctry_name ?? 'International',
+        url: `https://projects.worldbank.org/en/projects-operations/procurement-detail/${n.id}`,
         source: 'worldbank',
-        published: doc.submission_date ?? new Date().toISOString(),
+        published: n.noticedate ?? new Date().toISOString(),
       })
     }
   } catch {
@@ -186,48 +185,69 @@ export async function fetchGIZTenders(): Promise<InternationalTender[]> {
   return tenders
 }
 
-// TED (Tenders Electronic Daily) — EU Official Journal procurement
-// Covers German federal, Berlin state, and all EU sustainability tenders
+// EU service categories (CPV) for the three divisions. TED's free-text title search
+// matches across translations ("monitoring" → cardiac monitors, "climate" → air
+// conditioning), so we search by category instead.
+const TED_CPV_DIVISION: Record<string, 'climate' | 'education' | 'impact'> = {
+  '79419000': 'impact',    // evaluation consultancy
+  '79315000': 'impact',    // social research
+  '73110000': 'impact',    // research services
+  '73210000': 'impact',    // research consultancy
+  '80410000': 'education', // various school services
+  '71314000': 'climate',   // energy and related services
+  '90711000': 'climate',   // environmental impact assessment
+  '90713000': 'climate',   // environmental issues consultancy
+}
+
+const pickLang = (field: any): string => {
+  if (!field) return ''
+  if (typeof field === 'string') return field
+  const v = field.eng ?? Object.values(field)[0]
+  return Array.isArray(v) ? String(v[0] ?? '') : String(v ?? '')
+}
+
+/** TED (EU Official Journal) — open notices across Europe in our service categories.
+ * Uses the v3 POST search API; the old GET /api/v3.0 call returned nothing. */
 export async function fetchTEDTenders(): Promise<InternationalTender[]> {
   const tenders: InternationalTender[] = []
 
   try {
-    const keywords = ['sustainability', 'carbon']
-    const results = await Promise.allSettled(keywords.map(async keyword => {
-      const url = `https://ted.europa.eu/api/v3.0/notices/search?q=${encodeURIComponent(keyword)}&scope=ACTIVE&fields=title,deadline-date,country-code,organisation-name,total-value&filters=country-code%3ADE&page=1&pageSize=10`
-      const res = await fetchWithTimeout(url, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      }, 10000)
-      if (!res.ok) return []
-      const data = await res.json()
-      return data?.notices ?? data?.results ?? []
-    }))
+    const since = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10).replace(/-/g, '')
+    const query = `(classification-cpv IN (${Object.keys(TED_CPV_DIVISION).join(' ')})) AND (publication-date >= ${since}) AND (notice-type IN (cn-standard cn-social pin-only))`
+    const res = await fetchWithTimeout('https://api.ted.europa.eu/v3/notices/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        query,
+        fields: ['publication-number', 'notice-title', 'buyer-name', 'buyer-country', 'notice-type', 'classification-cpv', 'deadline-receipt-tender-date-lot', 'estimated-value-lot', 'estimated-value-cur-lot'],
+        limit: 60,
+      }),
+      cache: 'no-store',
+    }, 15000)
+    if (!res.ok) return []
 
-    const seen = new Set<string>()
-    for (const result of results) {
-      if (result.status !== 'fulfilled') continue
-      for (const notice of result.value) {
-        const title = notice.title ?? notice['notice-title'] ?? ''
-        if (!title || seen.has(title)) continue
-        seen.add(title)
-        tenders.push({
-          id: `ted-${notice.id ?? notice['notice-number'] ?? Math.random()}`,
-          title,
-          description: notice.description ?? notice['short-description'] ?? 'TED EU procurement notice — Germany',
-          value: parseFloat(notice['total-value'] ?? '0') || 0,
-          deadline: notice['deadline-date']
-            ? new Date(notice['deadline-date']).toLocaleDateString('en-GB')
-            : 'See tender',
-          organisation: notice['organisation-name'] ?? 'German/EU Authority',
-          country: 'Germany',
-          url: notice.id
-            ? `https://ted.europa.eu/en/notice/-/detail/${notice.id}`
-            : 'https://ted.europa.eu',
-          source: 'giz',
-          published: notice['publication-date'] ?? new Date().toISOString(),
-        })
-      }
+    for (const n of (await res.json())?.notices ?? []) {
+      const title = pickLang(n['notice-title'])
+      if (!title) continue
+      const cpvs: string[] = n['classification-cpv'] ?? []
+      const division = cpvs.map(c => TED_CPV_DIVISION[c]).find(Boolean)
+      const deadline = (n['deadline-receipt-tender-date-lot'] ?? [])[0]
+      const value = parseFloat((n['estimated-value-lot'] ?? [])[0] ?? '0') || 0
+      const currency = (n['estimated-value-cur-lot'] ?? [])[0] ?? 'EUR'
+
+      tenders.push({
+        id: `ted-${n['publication-number']}`,
+        title,
+        description: `${n['notice-type'] === 'pin-only' ? 'Prior information notice (pipeline)' : 'Contract notice'}${value ? ` | est. ${currency} ${value.toLocaleString()}` : ''}`,
+        division,
+        value: 0, // in local currency, so shown in the description instead of as GBP
+        deadline: deadline ? new Date(deadline.slice(0, 10)).toLocaleDateString('en-GB') : 'See notice',
+        organisation: pickLang(n['buyer-name']) || 'EU public buyer',
+        country: (n['buyer-country'] ?? [])[0] ?? 'EU',
+        url: `https://ted.europa.eu/en/notice/-/detail/${n['publication-number']}`,
+        source: 'ted',
+        published: new Date().toISOString(),
+      })
     }
   } catch {
     // Non-fatal
@@ -458,15 +478,18 @@ export async function fetchGeM(): Promise<InternationalTender[]> {
   return tenders
 }
 
+/**
+ * Live international feeds. Tested 2026-10-30: World Bank and TED return real data.
+ * Not fetched automatically because they never returned anything: UNGM blocks
+ * automated requests (403), the GIZ page and GeM/CPPP scrapes found 0 notices, and
+ * fetchIndiaTenders used the dead World Bank endpoint (World Bank now covers India).
+ * VERDANT browses UNGM, GIZ and GeM itself via the regional directives instead.
+ */
 export async function fetchAllInternationalTenders(): Promise<InternationalTender[]> {
-  const [worldBank, ungm, giz, ted, india, gem] = await Promise.all([
+  const [worldBank, ted] = await Promise.all([
     fetchWorldBankTenders(),
-    fetchUNGMTenders(),
-    fetchGIZTenders(),
     fetchTEDTenders(),
-    fetchIndiaTenders(),
-    fetchGeM(),
   ])
 
-  return [...worldBank, ...ungm, ...giz, ...ted, ...india, ...gem]
+  return [...worldBank, ...ted]
 }

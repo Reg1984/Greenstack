@@ -19,6 +19,8 @@ import { formatRadarForVerdant } from '@/lib/regulatory-radar'
 import { searchFactors, latestFactorSet, createCalculationPack, factorPath } from '@/lib/emissions-engine'
 import { findPartners, proposeReferral } from '@/lib/partner-network'
 import { signToken, siteUrl } from '@/lib/admin-token'
+import { priceBid } from '@/lib/bid-pricing'
+import { checkEmailBody, withSignoff, SENDER_NAME } from '@/lib/email-style'
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
 
@@ -63,12 +65,13 @@ export async function executeOutreachEmail(input: {
     }
   }
 
+  const problem = checkEmailBody(input.body)
+  if (problem) return `NOT SENT — ${problem}`
+
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return `Email queued for ${input.to_email} — no RESEND_API_KEY configured`
 
-  // Ensure every email is signed off as Reginald Orme
-  const signoff = `\n\nKind regards,\n\nReginald Orme\nGreenStack AI\nverdant@greenstackai.co.uk\ngreenstackai.co.uk`
-  const bodyWithSignoff = input.body.includes('Reginald') ? input.body : input.body.trimEnd() + signoff
+  const bodyWithSignoff = withSignoff(input.body)
 
   const html = `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${bodyWithSignoff.replace(/\n/g, '<br/>')}</div>`
 
@@ -77,7 +80,7 @@ export async function executeOutreachEmail(input: {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: 'VERDANT | GreenStack AI <verdant@greenstackai.co.uk>',
+      from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
       to: input.to_email,
       bcc: 'info@greenstackai.co.uk',
       subject: input.subject,
@@ -153,7 +156,7 @@ export const VERDANT_BASE_TOOLS: any[] = [
   },
   {
     name: 'send_outreach_email',
-    description: 'Send a personalised cold outreach email to a qualified lead. Always call check_crm first. Keep under 200 words. Peer-to-peer tone.',
+    description: 'Send a personalised cold outreach email to a qualified lead. Always call check_crm first. Follow HOW TO WRITE EMAILS: human, specific, under 150 words, and never ask for a call or meeting — emails that do are rejected unsent.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -163,7 +166,7 @@ export const VERDANT_BASE_TOOLS: any[] = [
         subject: { type: 'string', description: 'Specific subject line — not generic' },
         body: {
           type: 'string',
-          description: 'Full email body, under 200 words. For CBAM leads include https://greenstackai.co.uk/cbam. For general outreach use https://greenstackai.co.uk. Do NOT add a sign-off — Reginald Orme sign-off is added automatically.',
+          description: 'Email body only, under 150 words, starting with the greeting. You may mention one relevant page (https://greenstackai.co.uk/cbam, /climate, /education or /impact). No sign-off, signature or contact line — the standard sign-off with our contact email is added automatically.',
         },
         signal: { type: 'string', description: 'Why this lead is warm, e.g. cbam_exposure, sustainability_job, net_zero_target' },
       },
@@ -294,7 +297,7 @@ export const VERDANT_BASE_TOOLS: any[] = [
         contact_name: { type: 'string', description: 'Their name if known' },
         their_reply: { type: 'string', description: 'What they said — paste the key content of their reply' },
         draft_subject: { type: 'string', description: 'Subject line for your draft response' },
-        draft_body: { type: 'string', description: 'Full draft response body. Under 300 words. No sign-off — Reginald Orme sign-off added automatically. Be warm, move toward a discovery call.' },
+        draft_body: { type: 'string', description: 'Full draft response body. Under 250 words. No sign-off. Warm and human, answer what they actually asked. If THEY asked to talk, agree and suggest they email info@greenstackai.co.uk with times — otherwise don\'t propose a call.' },
       },
       required: ['organisation', 'contact_email', 'their_reply', 'draft_subject', 'draft_body'],
     },
@@ -414,6 +417,21 @@ export const VERDANT_BASE_TOOLS: any[] = [
         why_this_partner: { type: 'string' },
       },
       required: ['partner_id', 'opportunity', 'why_this_partner'],
+    },
+  },
+  {
+    name: 'price_bid',
+    description: 'REQUIRED before stating any price in a bid, proposal or quote. Applies GreenStack pricing policy: if the buyer published a price or budget, bid that figure (never undercut it, never exceed a fixed price or ceiling); if no price was published, undercut large incumbents but never go below the cost floor. Read the notice carefully first to tell a fixed price, a maximum budget and an estimated value apart — Contracts Finder shows £0 when no value was published.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        division: { type: 'string', enum: ['climate', 'education', 'impact'] },
+        value_type: { type: 'string', enum: ['fixed', 'ceiling', 'estimate', 'none'], description: 'What the published figure is. "none" when the buyer gave no price.' },
+        published_value: { type: 'number', description: 'Published price/budget in GBP. Omit when value_type is "none".' },
+        estimated_days: { type: 'number', description: 'Honest estimate of days of work to deliver the full scope well' },
+        subcontract_cost: { type: 'number', description: 'Optional partner/subcontractor cost in GBP' },
+      },
+      required: ['division', 'value_type', 'estimated_days'],
     },
   },
 ]
@@ -620,6 +638,11 @@ Lines calculated: ${pack.lines.length} | Unresolved: ${pack.unresolved.length}${
 
     case 'propose_partner_referral':
       return proposeReferral(input)
+
+    case 'price_bid': {
+      const r = priceBid(input)
+      return `${r.bid ? 'BID' : 'DO NOT BID AS SCOPED'} — recommended price £${r.recommended_price.toLocaleString('en-GB')} (basis: ${r.basis}, floor £${r.floor_price.toLocaleString('en-GB')}).\n${r.rationale}`
+    }
 
     default:
       return `Unknown tool: ${name}`

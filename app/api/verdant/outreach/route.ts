@@ -4,24 +4,17 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
+import { EMAIL_STYLE, SENDER_NAME, checkEmailBody, withSignoff } from '@/lib/email-style'
 import { NextResponse } from 'next/server'
 
 const client = createAnthropic('verdant-outreach')
 
-const OUTREACH_SYSTEM = `You are VERDANT — GreenStack AI's sovereign tender intelligence agent. You write cold outreach emails to procurement teams and sustainability leads.
+const OUTREACH_SYSTEM = `You write cold outreach emails for GreenStack AI on behalf of Reginald Orme, to procurement teams and leads in climate, education and impact/evaluation.
 
 ${COMPANY_PROFILE}
 
-## EMAIL WRITING RULES
-- Subject line: specific, not generic. Reference their organisation or a known initiative.
-- Opening: name a specific challenge they face or regulation they must meet (CSRD, ESOS, net zero target)
-- Middle: one paragraph on what GreenStack AI delivers — AI-native, faster, cheaper than any traditional consultancy
-- Close: one clear call to action (15-minute call, reply with questions, free pilot report offer)
-- For CBAM-related emails always include: "Full details and pricing: https://greenstackai.co.uk/cbam"
-- For general sustainability outreach always include: "Learn more: https://greenstackai.co.uk"
-- Tone: confident, peer-to-peer. Not salesy. Not desperate. Smart professional talking to smart professional.
-- Length: under 200 words. Busy people don't read essays.
-- Sign off as: VERDANT | GreenStack AI | verdant@greenstackai.co.uk`
+${EMAIL_STYLE}
+- You may mention one relevant page: https://greenstackai.co.uk/cbam, /climate, /education or /impact.`
 
 // POST — draft and send outreach for a specific opportunity
 export async function POST(request: Request) {
@@ -34,7 +27,7 @@ export async function POST(request: Request) {
 
     // Draft the email with VERDANT
     const prompt = `Write a cold outreach email to ${contact_name ? contact_name + ' at ' : ''}${organisation}.
-Context: ${context || `We have identified ${organisation} as a strong prospect for GreenStack AI's sustainability consultancy services.`}
+Context: ${context || `We have identified ${organisation} as a strong prospect for GreenStack AI's services.`}
 ${tender_title ? `Related tender/opportunity: ${tender_title}` : ''}`
 
     const response = await client.messages.create({
@@ -61,6 +54,9 @@ ${tender_title ? `Related tender/opportunity: ${tender_title}` : ''}`
     const rawText = response.content[0].type === 'text' ? response.content[0].text : ''
     if (!rawText) return NextResponse.json({ error: 'No content generated' }, { status: 500 })
     const emailContent: { subject: string; body: string } = JSON.parse(rawText)
+    const problem = checkEmailBody(emailContent.body)
+    if (problem) return NextResponse.json({ error: `Draft rejected, not sent: ${problem}`, content: emailContent }, { status: 422 })
+    emailContent.body = withSignoff(emailContent.body)
 
     // Send via Resend
     const sendResult = await sendEmail({
@@ -98,7 +94,8 @@ export async function PUT(request: Request) {
     if (!to_email || !subject || !body) {
       return NextResponse.json({ error: 'to_email, subject, body required' }, { status: 400 })
     }
-    const sendResult = await sendEmail({ to: to_email, subject, body })
+    // Reply drafts were approved by Reg, so no call-ask check here — just the standard sign-off
+    const sendResult = await sendEmail({ to: to_email, subject, body: withSignoff(body) })
     if (!sendResult.success) {
       return NextResponse.json({ error: sendResult.error ?? 'Send failed' }, { status: 500 })
     }
@@ -146,11 +143,12 @@ async function sendEmail({ to, subject, body }: { to: string; subject: string; b
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'VERDANT | GreenStack AI <verdant@greenstackai.co.uk>',
+        from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
         to,
+        bcc: 'info@greenstackai.co.uk',
         subject,
         text: body,
-        html: `<pre style="font-family:sans-serif;white-space:pre-wrap;line-height:1.6">${body}</pre>`,
+        html: `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${body.replace(/\n/g, '<br/>')}</div>`,
       }),
     })
     const data = await res.json()

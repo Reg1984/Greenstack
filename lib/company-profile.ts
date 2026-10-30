@@ -17,13 +17,16 @@ Reg, GreenStack's founder, is an education specialist and consultant, also worki
 **HOW TO PRESENT THE COMPANY:**
 Lead with the founder's education expertise, AI-native delivery and methodology. Don't mention that GreenStack is new or hasn't won tenders yet. Never invent client wins, case studies or qualifications. If a tender form directly asks for past contracts or references, flag it to Reg rather than answering.
 
-**Type:** AI-native consultancy — intelligence and strategy delivered through artificial intelligence
-**Mission:** Delivering sustainability intelligence, net zero strategy and organisational transformation through artificial intelligence — faster, deeper and cheaper than any traditional consultancy.
+**Type:** AI-native consultancy — research, analysis and expert advice for public services and the organisations that serve them
+**Positioning:** AI-powered research, delivery and innovation for public services. "Intelligence for a greener, smarter and fairer future."
+**Mission:** Deliver specialist consultancy that competes on expertise and quality, using AI to research deeper and deliver faster.
 
-**CORE STRENGTH — CONSULTANCY & INTELLIGENCE REPORTS**
-GreenStack AI's primary superpower is producing world-class sustainability intelligence reports and consultancy deliverables faster, deeper and cheaper than any traditional consultancy. Where a Big Four firm takes 12 weeks and charges £500K, GreenStack AI delivers in days at a fraction of the cost — with no loss of quality.
+**THREE DIVISIONS (website: /climate, /education, /impact)**
+- **GreenStack Climate** — carbon accounting and reporting, decarbonisation and net zero planning, local-authority climate strategies, energy efficiency, CBAM, sustainability reporting, biodiversity and nature recovery, sustainable procurement, climate programme evaluation.
+- **GreenStack Education** — curriculum research and development; teaching, learning and assessment; school improvement; SEND, inclusion and equity; attainment and education data analysis; education policy and research; professional development; AI in education; green skills and vocational education; education programme evaluation. Led by the founder's education expertise.
+- **GreenStack Impact** — monitoring, evaluation and learning (MEL); theory of change and logic models; process, impact and economic evaluation (HM Treasury Magenta Book-aligned); literature reviews and evidence synthesis; social value and outcome frameworks; stakeholder consultation and social research; policy research; international development evaluation (OECD DAC criteria).
 
-**Consultancy Services:**
+**Climate Consultancy Services:**
 - Whole-organisation energy efficiency audits — every department, every process
 - Net zero roadmaps and carbon reduction strategies
 - ESOS compliance assessments and reporting
@@ -52,18 +55,16 @@ A comprehensive, AI-generated organisational sustainability report covering:
 10. Implementation roadmap
 
 **What makes GreenStack AI different:**
-- AI-native — faster, cheaper, consistent, scalable
-- No human bottlenecks — full reports delivered in hours not months
-- Covers the full organisation — not just energy bills, but people, culture, leadership, supply chain
-- Links sustainability to business performance — we speak CFO and CEO language
-- Transparent AI delivery — buyers know what they are getting and pay accordingly
-- 60-80% cheaper than traditional consultancies
+- Specialist methods in each division, backed by current, traceable evidence
+- AI-native research and analysis — deeper and faster, with methodological judgement kept human
+- Founder-led: direct access to the person accountable for the work
+- Transparent AI delivery — buyers know how the work is produced
 
-**On certifications:** GreenStack AI is an AI-native consultancy and discloses this clearly. We do not hold traditional accreditations. Our value proposition is intelligence, speed and cost efficiency — not legacy credentials.
+**On certifications:** GreenStack AI is an AI-native consultancy and discloses this clearly. We do not hold traditional accreditations; where work needs an accredited professional we bring in a vetted partner.
 
-**On case studies:** As a new company, we offer detailed methodology demonstrations, pilot project proposals, and AI capability showcases in place of traditional case studies.
+**On case studies:** Offer detailed methodology demonstrations and pilot proposals. Never invent case studies or past clients.
 
-**Pricing advantage:** AI operations eliminate 60-80% of overhead vs traditional consultancies. Savings passed directly to buyers.
+**Pricing:** Always use the \`price_bid\` tool. Published budget → bid that figure, never undercut it. No published price → undercut large incumbents, never below the cost floor. Never quote prices in cold emails.
 
 **Geographic Reach:** WORLDWIDE
 GreenStack AI operates globally. AI delivery means no geographic limitations — we can serve clients in any country, any timezone, any language. This is a core competitive advantage over traditional consultancies tied to local offices.

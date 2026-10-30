@@ -13,7 +13,9 @@
  *        Override via GEMMA_MODEL env var (e.g. gemma-4-31b-it for max capability)
  */
 
-const GEMMA_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
+import { EMAIL_STYLE } from '@/lib/email-style'
+
+const GEMMA_BASE ='https://generativelanguage.googleapis.com/v1beta/models'
 
 function getModel() {
   return process.env.GEMMA_MODEL ?? 'gemma-4-26b-a4b-it'
@@ -104,9 +106,24 @@ export async function classifyTenders(
       .map((t, i) => `${i + 1}. [ID:${t.id.slice(-8)}] "${t.title}" | ${t.authority} | £${t.value > 0 ? t.value.toLocaleString() : 'TBC'}`)
       .join('\n')
 
-    const prompt = `You are classifying UK procurement tenders for GreenStack AI, a sustainability consultancy.
+    const prompt = `You are classifying UK procurement tenders for GreenStack AI, a consultancy with three divisions: Climate, Education and Impact (evaluation and policy research).
 
-MARK RELEVANT (score 60-100):
+MARK RELEVANT (score 60-100) — EDUCATION consultancy and research (not teaching delivery):
+- Curriculum research or development
+- School improvement, teaching, learning or assessment reviews
+- SEND, inclusion, attendance or disadvantage research and reviews
+- Education policy research or education programme evaluation
+- Professional development design or evaluation for teachers and leaders
+- AI in education, green skills or vocational education research
+
+MARK RELEVANT (score 60-100) — IMPACT evaluation and research:
+- Programme, policy, process or impact evaluation
+- Monitoring, evaluation and learning (MEL), learning partner roles
+- Theory of change, logic models, outcome frameworks
+- Literature reviews, evidence reviews, evidence synthesis
+- Social value measurement, social research, stakeholder consultation research
+
+MARK RELEVANT (score 60-100) — CLIMATE:
 - Sustainability consultancy or strategy
 - Net zero roadmap or strategy
 - ESG / TCFD / CSRD / GRI reporting
@@ -128,6 +145,7 @@ MARK NOT RELEVANT (score 0-40):
 - Cleaning, catering, security, printing
 - Medical, clinical, legal services
 - Furniture, stationery
+- Classroom teaching, tutoring, supply staff or school places (we research and advise, we don't staff classrooms)
 
 Tenders:
 ${list}
@@ -287,24 +305,13 @@ export async function draftOutreachEmail(params: {
 }): Promise<{ subject: string; body: string } | null> {
   if (!isGemmaAvailable()) return null
 
-  const prompt = `Write a short cold outreach email on behalf of GreenStack AI, an AI-native sustainability consultancy.
+  const prompt = `Write a short cold outreach email from Reginald Orme at GreenStack AI, an AI-native consultancy with Climate, Education and Impact divisions.
 
 Target: ${params.contactTitle ?? 'Sustainability/ESG team'} at ${params.organisation} (${params.sector}, ${params.country})
 Why we're contacting: ${params.signal}
-${params.isCBAM ? 'Include CBAM compliance angle and link: https://greenstackai.co.uk/cbam' : 'Include link: https://greenstackai.co.uk'}
+${params.isCBAM ? 'Mention the CBAM angle and link: https://greenstackai.co.uk/cbam' : 'You may link: https://greenstackai.co.uk'}
 
-GreenStack AI delivers:
-- AI-native sustainability intelligence reports
-- Net zero roadmaps, ESG/CSRD reports, carbon assessments
-- 60-80% cheaper than Big Four, delivered in weeks not months
-- Registered on UNGM (Vendor No. 1203916)
-
-Rules:
-- Under 180 words
-- Specific to their situation — reference ${params.signal}
-- Professional peer-to-peer tone, not salesy
-- Clear CTA: 30-minute call or free pilot report
-- Sign off: VERDANT | GreenStack AI | verdant@greenstackai.co.uk
+${EMAIL_STYLE}
 
 Return JSON only: {"subject": "...", "body": "..."}`
 
