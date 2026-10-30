@@ -28,12 +28,33 @@ function estimateCost(model: string, usage: any): number {
   return tokens / 1e6 + (usage.server_tool_use?.web_search_requests ?? 0) * WEB_SEARCH_USD
 }
 
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g
+
+/**
+ * Strips unpaired UTF-16 surrogates from every string in the request. A single
+ * one anywhere in the body (a tender title or memory note truncated mid-emoji,
+ * scraped text, an email body) makes Anthropic reject the whole request as
+ * invalid JSON ("unexpected end of hex escape" / "no low surrogate in string"),
+ * killing the cycle. executeBaseTool only cleans tool results; this covers the
+ * system prompt and every message too.
+ */
+function sanitize(value: any): any {
+  if (typeof value === 'string') return value.replace(LONE_SURROGATE, '')
+  if (Array.isArray(value)) return value.map(sanitize)
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    const out: any = {}
+    for (const key in value) out[key] = sanitize(value[key])
+    return out
+  }
+  return value
+}
+
 export function createAnthropic(source: string): Anthropic {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const create = client.messages.create.bind(client.messages)
 
   ;(client.messages as any).create = async (params: any, options?: any) => {
-    const response: any = await create(params, options)
+    const response: any = await create(sanitize(params), options)
     if (!params.stream && response?.usage) {
       const u = response.usage
       console.log(
