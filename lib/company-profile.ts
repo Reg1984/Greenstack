@@ -107,7 +107,8 @@ GreenStack AI operates globally. AI delivery means no geographic limitations —
 - Public Liability: £1,000,000
 - Professional Indemnity: £50,000
 - Valid: 04 April 2026 – 03 April 2027
-- Trade: Consultant — energy conservation
+- Trade: Consultant — energy conservation (Reg is extending cover to education consultancy and evaluation work — until confirmed, flag Education/Impact bids that require insurance details to Reg)
+- Territory: Worldwide
 
 **Companies House**
 - Company Number: 16348591
