@@ -5,7 +5,32 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { checkEmailBody, withSignoff, SENDER_NAME } from '@/lib/email-style'
+import { checkEmailBody, withSignoff, OUTREACH_FROM, CONTACT_EMAIL, DAILY_EMAIL_CAP } from '@/lib/email-style'
+
+/**
+ * How many more prospect emails may go out today under DAILY_EMAIL_CAP. Counts
+ * outreach_emails sent since 00:00 UTC — every sender (cycle, morning, outreach,
+ * follow-ups) logs there. If the count can't be read, allow the full cap.
+ */
+export async function emailsLeftToday(): Promise<number> {
+  try {
+    const supabase = await createClient()
+    const startOfDay = new Date()
+    startOfDay.setUTCHours(0, 0, 0, 0)
+    const { count, error } = await supabase
+      .from('outreach_emails')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'sent')
+      .gte('sent_at', startOfDay.toISOString())
+    if (error) throw error
+    return Math.max(0, DAILY_EMAIL_CAP - (count ?? 0))
+  } catch (err) {
+    console.error('Daily email count failed:', err)
+    return DAILY_EMAIL_CAP
+  }
+}
+
+export const DAILY_CAP_REACHED = `Daily limit of ${DAILY_EMAIL_CAP} prospect emails reached — not sent. Keep the draft for tomorrow; sending more from a young domain gets every email marked as spam.`
 
 export interface OutreachContact {
   id: string
@@ -193,6 +218,7 @@ export async function sendOutreachEmail(params: {
 
   const problem = checkEmailBody(params.body)
   if (problem) return { success: false, error: `Not sent — ${problem}` }
+  if ((await emailsLeftToday()) <= 0) return { success: false, error: DAILY_CAP_REACHED }
   const body = withSignoff(params.body)
 
   try {
@@ -205,9 +231,10 @@ export async function sendOutreachEmail(params: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
+        from: OUTREACH_FROM,
+        reply_to: CONTACT_EMAIL,
         to: params.to,
-        bcc: 'info@greenstackai.co.uk',
+        bcc: CONTACT_EMAIL,
         subject: params.subject,
         text: body,
         html,
@@ -218,6 +245,20 @@ export async function sendOutreachEmail(params: {
       const err = await res.text()
       return { success: false, error: err }
     }
+
+    // Log the send so it counts towards the daily cap, like every other sender
+    const sendData = await res.json().catch(() => ({}))
+    const supabase = await createClient()
+    await supabase.from('outreach_emails').insert({
+      to_email: params.to,
+      to_name: params.contact_name ?? null,
+      organisation: params.organisation,
+      subject: params.subject,
+      body,
+      status: 'sent',
+      resend_id: sendData.id ?? null,
+      sent_at: new Date().toISOString(),
+    })
 
     // Log to CRM
     await upsertContact({

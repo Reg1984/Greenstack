@@ -9,18 +9,47 @@
  * 4. Resend will forward all inbound emails as JSON to this endpoint
  */
 
+import { createHmac, timingSafeEqual } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { markContactReplied, checkContactExists } from '@/lib/outreach-crm'
-import { sendTelegramMessage } from '@/lib/verdant-tools'
+import { sendPrivateTelegram } from '@/lib/alerts'
+import { EMAIL_STYLE } from '@/lib/email-style'
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { createAnthropic } from '@/lib/anthropic'
 
 const client = createAnthropic('webhook-resend')
 
+/**
+ * This route is public and spends Anthropic credit, so only accept requests
+ * signed by Resend (Svix scheme, secret RESEND_WEBHOOK_SECRET "whsec_…" from the
+ * Resend webhook settings). No secret configured → closed.
+ */
+function verifyResendSignature(request: Request, rawBody: string): boolean {
+  const secret = process.env.RESEND_WEBHOOK_SECRET
+  const id = request.headers.get('svix-id')
+  const timestamp = request.headers.get('svix-timestamp')
+  const signatures = request.headers.get('svix-signature')
+  if (!secret || !id || !timestamp || !signatures) return false
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 5 * 60) return false // replay guard
+
+  const key = Buffer.from(secret.replace(/^whsec_/, ''), 'base64')
+  const expected = createHmac('sha256', key).update(`${id}.${timestamp}.${rawBody}`).digest()
+  return signatures.split(' ').some(entry => {
+    const [, sig] = entry.split(',')
+    if (!sig) return false
+    const given = Buffer.from(sig, 'base64')
+    return given.length === expected.length && timingSafeEqual(given, expected)
+  })
+}
+
 export async function POST(request: Request) {
+  const rawBody = await request.text()
+  if (!verifyResendSignature(request, rawBody)) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+
   try {
-    const payload = await request.json()
+    const payload = JSON.parse(rawBody)
 
     // Resend inbound email schema
     const fromEmail: string = payload.from?.email ?? payload.from ?? ''
@@ -42,18 +71,19 @@ export async function POST(request: Request) {
 
     // Use Claude to draft a response
     const orgName = contact?.organisation ?? fromName ?? fromEmail.split('@')[1]
-    const draftPrompt = `A prospect replied to our cold outreach email. Draft a warm, concise response that moves toward booking a 20-minute discovery call.
+    const draftPrompt = `A prospect replied to our outreach email. Draft Reg's reply for him to review.
 
 FROM: ${fromName || fromEmail} at ${orgName}
 SUBJECT: ${subject}
 THEIR MESSAGE:
 ${textBody.slice(0, 1500)}
 
-Write a response under 250 words. Be warm and human — not salesy. Reference something specific from their reply. End with a clear call to action: suggest a 20-minute call and offer two time slots (leave as [TIME SLOT 1] and [TIME SLOT 2]). No sign-off needed.`
+Answer what they actually said or asked, and reference something specific from their reply. If they're interested, say clearly what GreenStack could do for them next (e.g. a short written outline of how we'd approach it). If they asked not to be contacted, write a brief, gracious acknowledgement. Never invent facts, prices or past work — put [CHECK WITH REG] where something needs Reg's input. Under 200 words. Output the email body only.`
 
     const draftResponse = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
+      system: EMAIL_STYLE,
       messages: [{ role: 'user', content: draftPrompt }],
     })
 
@@ -77,15 +107,15 @@ Write a response under 250 words. Be warm and human — not salesy. Reference so
       created_at: new Date().toISOString(),
     })
 
-    // Telegram alert
+    // Private alert — a prospect's reply must never go to the public channel
     const telegramMsg =
-      `💬 *Inbound reply from ${orgName}*\n\n` +
-      `*From:* ${fromName || fromEmail}\n` +
-      `*Subject:* ${subject}\n\n` +
-      `*They said:* ${textBody.slice(0, 300)}${textBody.length > 300 ? '...' : ''}\n\n` +
-      `*Draft response ready — review on dashboard → Reply Drafts*`
+      `💬 Inbound reply from ${orgName}\n\n` +
+      `From: ${fromName || fromEmail}\n` +
+      `Subject: ${subject}\n\n` +
+      `They said: ${textBody.slice(0, 300)}${textBody.length > 300 ? '...' : ''}\n\n` +
+      `Draft response ready — review on dashboard → Reply Drafts`
 
-    await sendTelegramMessage(telegramMsg)
+    await sendPrivateTelegram(telegramMsg)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

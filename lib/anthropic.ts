@@ -8,6 +8,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { alertReg, anthropicAccountProblem } from '@/lib/alerts'
 
 // USD per million tokens [input, output], matched by model-id prefix.
 const PRICES: [string, number, number][] = [
@@ -54,7 +55,15 @@ export function createAnthropic(source: string): Anthropic {
   const create = client.messages.create.bind(client.messages)
 
   ;(client.messages as any).create = async (params: any, options?: any) => {
-    const response: any = await create(sanitize(params), options)
+    let response: any
+    try {
+      response = await create(sanitize(params), options)
+    } catch (err) {
+      // No credit / bad key stops every job silently — tell Reg (deduped), then fail as before
+      const problem = anthropicAccountProblem(err)
+      if (problem) await alertReg(problem.key, problem.subject, problem.detail)
+      throw err
+    }
     if (!params.stream && response?.usage) {
       const u = response.usage
       console.log(

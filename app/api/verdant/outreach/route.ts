@@ -4,7 +4,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
-import { EMAIL_STYLE, SENDER_NAME, checkEmailBody, withSignoff } from '@/lib/email-style'
+import { EMAIL_STYLE, OUTREACH_FROM, CONTACT_EMAIL, checkEmailBody, withSignoff } from '@/lib/email-style'
+import { emailsLeftToday, DAILY_CAP_REACHED } from '@/lib/outreach-crm'
 import { NextResponse } from 'next/server'
 
 const client = createAnthropic('verdant-outreach')
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
 
     if (!contact_email) {
       return NextResponse.json({ error: 'contact_email required' }, { status: 400 })
+    }
+    if ((await emailsLeftToday()) <= 0) {
+      return NextResponse.json({ error: DAILY_CAP_REACHED }, { status: 429 })
     }
 
     // Draft the email with VERDANT
@@ -94,8 +98,9 @@ export async function PUT(request: Request) {
     if (!to_email || !subject || !body) {
       return NextResponse.json({ error: 'to_email, subject, body required' }, { status: 400 })
     }
-    // Reply drafts were approved by Reg, so no call-ask check here — just the standard sign-off
-    const sendResult = await sendEmail({ to: to_email, subject, body: withSignoff(body) })
+    // Reply drafts were approved by Reg, so no call-ask check or daily cap here — just the standard
+    // sign-off, without the opt-out line (they wrote to us)
+    const sendResult = await sendEmail({ to: to_email, subject, body: withSignoff(body, { optOut: false }) })
     if (!sendResult.success) {
       return NextResponse.json({ error: sendResult.error ?? 'Send failed' }, { status: 500 })
     }
@@ -143,9 +148,10 @@ async function sendEmail({ to, subject, body }: { to: string; subject: string; b
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
+        from: OUTREACH_FROM,
+        reply_to: CONTACT_EMAIL,
         to,
-        bcc: 'info@greenstackai.co.uk',
+        bcc: CONTACT_EMAIL,
         subject,
         text: body,
         html: `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${body.replace(/\n/g, '<br/>')}</div>`,

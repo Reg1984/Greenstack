@@ -6,7 +6,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
-import { checkContactExists, upsertContact, markContactReplied } from '@/lib/outreach-crm'
+import { checkContactExists, upsertContact, markContactReplied, emailsLeftToday, DAILY_CAP_REACHED } from '@/lib/outreach-crm'
 import { saveMemory, recallMemory } from '@/lib/verdant-memory'
 import { createDirective, updateDirective } from '@/lib/verdant-directives'
 import { executeMemoryCommand } from '@/lib/verdant-native-memory'
@@ -20,7 +20,8 @@ import { searchFactors, latestFactorSet, createCalculationPack, factorPath } fro
 import { findPartners, proposeReferral } from '@/lib/partner-network'
 import { signToken, siteUrl } from '@/lib/admin-token'
 import { priceBid } from '@/lib/bid-pricing'
-import { checkEmailBody, withSignoff, SENDER_NAME } from '@/lib/email-style'
+import { checkEmailBody, withSignoff, OUTREACH_FROM, CONTACT_EMAIL } from '@/lib/email-style'
+import { sendPrivateTelegram } from '@/lib/alerts'
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ export async function executeOutreachEmail(input: {
 
   const problem = checkEmailBody(input.body)
   if (problem) return `NOT SENT — ${problem}`
+  if ((await emailsLeftToday()) <= 0) return `NOT SENT — ${DAILY_CAP_REACHED}`
 
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return `Email queued for ${input.to_email} — no RESEND_API_KEY configured`
@@ -80,9 +82,10 @@ export async function executeOutreachEmail(input: {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
+      from: OUTREACH_FROM,
+      reply_to: CONTACT_EMAIL,
       to: input.to_email,
-      bcc: 'info@greenstackai.co.uk',
+      bcc: CONTACT_EMAIL,
       subject: input.subject,
       text: bodyWithSignoff,
       html,
@@ -590,13 +593,13 @@ The screenshot is saved. Check the GreenStack dashboard → Browser Sessions to 
         created_at: new Date().toISOString(),
       })
 
-      // Telegram alert with the draft
-      const telegramMsg = `💬 *Reply received from ${input.organisation}*\n\n` +
-        `*From:* ${input.contact_name ?? input.contact_email}\n` +
-        `*They said:* ${input.their_reply.slice(0, 300)}\n\n` +
-        `*Draft response ready:*\n*Subject:* ${input.draft_subject}\n\n${input.draft_body.slice(0, 600)}\n\n` +
-        `_Review on dashboard → Reply Drafts to approve and send_`
-      await sendTelegramMessage(telegramMsg)
+      // Private alert with the draft — a prospect's reply must never go to the public channel
+      const telegramMsg = `💬 Reply received from ${input.organisation}\n\n` +
+        `From: ${input.contact_name ?? input.contact_email}\n` +
+        `They said: ${input.their_reply.slice(0, 300)}\n\n` +
+        `Draft response ready:\nSubject: ${input.draft_subject}\n\n${input.draft_body.slice(0, 600)}\n\n` +
+        `Review on dashboard → Reply Drafts to approve and send`
+      await sendPrivateTelegram(telegramMsg)
 
       return `✅ Reply logged for ${input.organisation}. Follow-up sequence cancelled. Draft response saved and Telegram alert sent. Review on dashboard to approve and send.`
     }

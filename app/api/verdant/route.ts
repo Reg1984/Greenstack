@@ -8,14 +8,15 @@ import { fetchAllInternationalTenders } from '@/lib/international-tenders'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
 import { loadVerdantMemory, loadTopMemories, saveVerdantMemory } from '@/lib/verdant-memory'
 import { runBuyerIntentScan, formatSignalsForVerdant } from '@/lib/buyer-intent'
-import { getCRMSummary, getFollowupsDue, getOutreachPerformance } from '@/lib/outreach-crm'
+import { getCRMSummary, getFollowupsDue, getOutreachPerformance, emailsLeftToday } from '@/lib/outreach-crm'
 import { VERDANT_BASE_TOOLS, executeBaseTool, sendTelegramMessage } from '@/lib/verdant-tools'
 import { bootstrapNativeMemory } from '@/lib/verdant-native-memory'
 import { classifyTenders, isGemmaAvailable } from '@/lib/gemma'
 import { formatGoalsForVerdant, updateGoalProgress } from '@/lib/verdant-goals'
 import { formatDirectivesForVerdant } from '@/lib/verdant-directives'
 import { formatRadarForVerdant } from '@/lib/regulatory-radar'
-import { EMAIL_STYLE } from '@/lib/email-style'
+import { EMAIL_STYLE, DAILY_EMAIL_CAP } from '@/lib/email-style'
+import { alertJobFailed } from '@/lib/alerts'
 import { NextResponse } from 'next/server'
 
 const client = createAnthropic('verdant-cycle')
@@ -515,6 +516,7 @@ async function runCycleInternal() {
       60000,
       [[], [], [], [], 'CRM: timeout', [], 'Outreach performance: timed out this cycle.']
     )
+    const emailBudget = await emailsLeftToday()
 
     // Fetch existing pipeline from Supabase
     const [{ data: tenders }, { data: bids }] = await Promise.all([
@@ -604,6 +606,9 @@ ${devolvedSummary}
 ${internationalSummary}
 
 ${buyerIntentSummary}
+
+## 📮 EMAIL BUDGET: ${emailBudget} of ${DAILY_EMAIL_CAP} prospect emails left today (new outreach + follow-ups, all jobs combined)
+The domain is young, so sending more gets every email marked as spam — further sends are refused. Spend the budget on the best-fit, best-researched contacts: follow-ups first, then the strongest new prospects. If it's 0, research and draft but don't send.
 
 ## ⚡ FOLLOW-UP QUEUE — ACTION REQUIRED FIRST (${followupsDue.length} contacts due):
 ${followupsDue.length > 0
@@ -708,6 +713,7 @@ Run a full VERDANT cycle. FIRST: process all follow-ups in the queue above. THEN
     })
   } catch (error) {
     console.error('VERDANT cycle error:', error)
+    await alertJobFailed('cycle', error)
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
   }
 }

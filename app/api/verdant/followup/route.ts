@@ -15,8 +15,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createAnthropic } from '@/lib/anthropic'
 import { createClient } from '@/lib/supabase/server'
 import { COMPANY_PROFILE } from '@/lib/company-profile'
-import { EMAIL_STYLE, SENDER_NAME, checkEmailBody, withSignoff } from '@/lib/email-style'
-import { getFollowupsDue, upsertContact } from '@/lib/outreach-crm'
+import { EMAIL_STYLE, OUTREACH_FROM, CONTACT_EMAIL, checkEmailBody, withSignoff } from '@/lib/email-style'
+import { getFollowupsDue, emailsLeftToday } from '@/lib/outreach-crm'
+import { alertJobFailed } from '@/lib/alerts'
 import { NextResponse } from 'next/server'
 
 const client = createAnthropic('verdant-followup')
@@ -80,9 +81,10 @@ Return the JSON object only.`
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: `${SENDER_NAME} <verdant@greenstackai.co.uk>`,
+        from: OUTREACH_FROM,
+        reply_to: CONTACT_EMAIL,
         to: contact.contact_email,
-        bcc: 'info@greenstackai.co.uk',
+        bcc: CONTACT_EMAIL,
         subject: `Re: ${emailContent.subject}`,
         text: emailContent.body,
         html: `<div style="font-family:sans-serif;max-width:600px;line-height:1.7;color:#222">${emailContent.body.replace(/\n/g, '<br/>')}</div>`,
@@ -130,10 +132,16 @@ Return the JSON object only.`
 }
 
 async function runFollowupCycle() {
-  const contacts = await getFollowupsDue()
+  const due = await getFollowupsDue()
 
-  if (contacts.length === 0) {
+  if (due.length === 0) {
     return NextResponse.json({ success: true, message: 'No follow-ups due', sent: 0 })
+  }
+
+  // Stay inside the daily cap; the rest stay due and go out on a later run
+  const contacts = due.slice(0, await emailsLeftToday())
+  if (contacts.length === 0) {
+    return NextResponse.json({ success: true, message: 'Daily email cap reached — follow-ups wait for tomorrow', sent: 0, due: due.length })
   }
 
   let sent = 0
@@ -156,6 +164,8 @@ async function runFollowupCycle() {
     metadata: { results, cycle_date: new Date().toISOString() },
     created_at: new Date().toISOString(),
   })
+
+  if (sent === 0) await alertJobFailed('follow-ups', `0 of ${contacts.length} follow-ups sent — check the Vercel logs for "Follow-up error"`)
 
   return NextResponse.json({ success: true, sent, total: contacts.length, results })
 }

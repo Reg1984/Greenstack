@@ -12,6 +12,7 @@ import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
 import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
 import { EMAIL_STYLE } from '@/lib/email-style'
+import { alertJobFailed } from '@/lib/alerts'
 
 const MORNING_DIVISIONS = [
   { name: 'Climate', news: 'UK organisations announcing net zero targets, CBAM/CSRD compliance challenges, ESG reporting requirements, council climate plans' },
@@ -268,6 +269,7 @@ At the end, produce a concise briefing summarising: follow-ups sent, new outreac
     return NextResponse.json({ success: true, report: finalReport })
   } catch (error) {
     console.error('Morning cron error:', error)
+    await alertJobFailed('morning session', error)
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
 }
