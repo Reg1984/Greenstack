@@ -12,12 +12,13 @@ import { publishFile, readRepoFile, listRepoDir } from '@/lib/github-publisher'
 import { lookupCompaniesHouse } from '@/lib/companies-house'
 import { saveMemory, recallMemory, loadTopMemories } from '@/lib/verdant-memory'
 import { EMAIL_STYLE } from '@/lib/email-style'
-import { alertJobFailed } from '@/lib/alerts'
+import { alertJobFailed, alertReg } from '@/lib/alerts'
+import { parseMarkdownInsight } from '@/lib/insights'
 
 const MORNING_DIVISIONS = [
-  { name: 'Climate', news: 'UK organisations announcing net zero targets, CBAM/CSRD compliance challenges, ESG reporting requirements, council climate plans' },
-  { name: 'Education', news: 'multi-academy trusts, local authority education services and education charities announcing curriculum reviews, SEND reforms, attendance or school-improvement programmes, DfE and FCDO education funding' },
-  { name: 'Impact', news: 'funders, charities, councils and government departments launching programmes that will need evaluation, new What Works / evidence initiatives, social value commitments, FCDO and international development programmes' },
+  { name: 'Climate', audience: 'sustainability leads, councils, public bodies and manufacturers', news: 'UK organisations announcing net zero targets, CBAM/CSRD compliance challenges, ESG reporting requirements, council climate plans' },
+  { name: 'Education', audience: 'trust and school leaders, local authority education and SEND teams, education charities and funders', news: 'multi-academy trusts, local authority education services and education charities announcing curriculum reviews, SEND reforms, attendance or school-improvement programmes, DfE and FCDO education funding' },
+  { name: 'Impact', audience: 'funders, programme managers, charities, councils and government analysts who commission evaluation and evidence work', news: 'funders, charities, councils and government departments launching programmes that will need evaluation, new What Works / evidence initiatives, social value commitments, FCDO and international development programmes' },
 ]
 
 const client = createAnthropic('cron-morning')
@@ -45,13 +46,13 @@ const MORNING_TOOLS: any[] = [
   },
   {
     name: 'publish_to_website',
-    description: 'Publish a blog post or page to the GreenStack website.',
+    description: 'Publish an insight article to the website as content/insights/<slug>.md (front matter + Markdown, format in TASK 1). The insights index and the division page pick it up automatically. Malformed files are refused with the reason — fix and retry.',
     input_schema: {
       type: 'object' as const,
       properties: {
-        path: { type: 'string' },
-        content: { type: 'string' },
-        message: { type: 'string' },
+        path: { type: 'string', description: 'content/insights/<slug>.md — slug is lowercase words joined by hyphens' },
+        content: { type: 'string', description: 'The whole file: front matter then Markdown body' },
+        message: { type: 'string', description: 'Commit message' },
       },
       required: ['path', 'content', 'message'],
     },
@@ -118,8 +119,21 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
           : `❌ Email failed: ${result.error}`
       }
       case 'publish_to_website': {
+        // Insights only, as validated Markdown — a broken .tsx page would fail the whole site's build
+        const slug = String(input.path ?? '').match(/^content\/insights\/([^/]+)\.md$/)?.[1]
+        if (!slug) return `❌ Not published — path must be content/insights/<slug>.md`
+        const parsed = parseMarkdownInsight(slug, String(input.content ?? ''))
+        if ('errors' in parsed) return `❌ Not published — fix and retry: ${parsed.errors.join('; ')}`
+        if (await readRepoFile(input.path)) return `❌ Not published — ${input.path} already exists; choose a new slug`
         const result = await publishFile({ path: input.path, content: input.content, message: input.message })
-        return result.success ? `✅ Published ${input.path}` : `❌ Publish failed: ${result.error}`
+        if (!result.success) {
+          if (/Bad credentials|401|403|Resource not accessible/i.test(result.error ?? '')) {
+            await alertReg('github-token', 'VERDANT can\'t publish: GitHub token rejected',
+              'GitHub refused VERDANT\'s token, so no articles can be published. Create a new token with Contents read/write on Reg1984/Greenstack and update GITHUB_TOKEN in Vercel.')
+          }
+          return `❌ Publish failed: ${result.error}`
+        }
+        return `✅ Published ${input.path} — live at /insights/${slug} after the deploy`
       }
       case 'read_website_file': {
         const content = await readRepoFile(input.path)
@@ -198,19 +212,34 @@ GreenStack AI has three divisions: GreenStack Climate (carbon, net zero, energy,
 
 ${EMAIL_STYLE}
 
-MORNING TASKS — complete all of these:
+MORNING TASKS — complete all of these, in order:
 
-**TASK 1: News-driven outreach**
-Search for 2-3 recent news stories relevant to today's focus: ${division.news}. For the most promising story, find the organisation and the right named person, check the CRM (don't email if already contacted), then send one personalised email referencing the specific story.
+**TASK 1: Publish one GreenStack ${division.name} article**
+Pick a timely, genuinely useful topic for ${division.name} — written for the people who commission this work (${division.audience}). Research it with web_search, then write an 800-1000 word article with specific, sourced facts, current policy and practical guidance. Never invent statistics, case studies, quotes or client work, and don't claim GreenStack has done work it hasn't. Publish it with publish_to_website to content/insights/<slug>.md, exactly in this format:
 
-**TASK 2: Publish one blog post**
-Pick a timely, genuinely useful topic for today's focus division (${division.name}). Write a high-quality 800-1000 word blog post. Only state facts you have sourced; never invent statistics, case studies or client work. Publish it to the website at app/insights/[slug]/page.tsx. Make it genuinely useful — not generic. Include specific data, regulations, and practical advice.
+---
+title: Clear, specific title
+date: ${new Date().toISOString().slice(0, 10)}
+division: ${division.name.toLowerCase()}
+description: One or two sentences on what the reader will learn.
+tags: Topic one, Topic two, Topic three
+---
+Opening paragraph…
+
+## Section heading
+
+Paragraphs, - bullet lists, **bold**, [source links](https://…) and | tables | are all fine. Plain Markdown only — no HTML or JSX.
+
+Don't edit any other file: the insights page and the ${division.name} page update automatically. If the tool refuses the file, fix what it says and retry.
+
+**TASK 2: News-driven outreach**
+Search for 2-3 recent news stories relevant to today's focus: ${division.news}. For the most promising story, find the organisation and the right named person, check the CRM (don't email if already contacted), then send one personalised email referencing the specific story. If the daily email limit has been reached, skip sending.
 
 **TASK 3: Save learnings**
 Save 2-3 key facts or decisions from today's session to memory for future reference.
 
 **TASK 4: Morning report**
-At the end, produce a concise briefing summarising: follow-ups sent, new outreach sent, blog post published, and anything notable you found.${persistentMemory}`
+At the end, produce a concise briefing summarising: article published (title and link), new outreach sent, and anything notable you found.${persistentMemory}`
 
     const messages: Anthropic.MessageParam[] = [
       {
@@ -226,7 +255,8 @@ At the end, produce a concise briefing summarising: follow-ups sent, new outreac
     for (let iteration = 0; iteration < 8; iteration++) {
       const response: Anthropic.Message = await (client.messages.create as any)({
         model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        // A 1,000-word article goes out as one tool call; at 4096 it was cut off mid-post and never published
+        max_tokens: 16000,
         tools: MORNING_TOOLS,
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: currentMessages,

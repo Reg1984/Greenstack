@@ -32,7 +32,7 @@ const content: DivisionContent = {
     'We say when regulated or accredited professional sign-off is needed.',
     'Recommendations are costed and prioritised, not generic.',
   ],
-  extraLinks: [['/cbam', 'CBAM advisory'], ['/credentials', 'VERDANT knowledge base'], ['/partners', 'Partner network'], ['/insights', 'Climate insights']],
+  extraLinks: [['/cbam', 'CBAM advisory'], ['/credentials', 'VERDANT knowledge base'], ['/partners', 'Partner network'], ['/insights#climate', 'Climate insights']],
 }
 
 export default function ClimatePage() {

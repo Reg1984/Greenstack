@@ -6,7 +6,10 @@ interface Article {
   description: string
   author: string
   tags?: string[]
+  division?: 'climate' | 'education' | 'impact'
 }
+
+const DIVISION_NAMES = { climate: 'Climate', education: 'Education', impact: 'Impact' }
 
 export function ArticleLayout({ article, children }: { article: Article; children: React.ReactNode }) {
   const formatted = new Date(article.date).toLocaleDateString('en-GB', {
@@ -33,7 +36,11 @@ export function ArticleLayout({ article, children }: { article: Article; childre
           textTransform: 'uppercase',
           marginBottom: '16px',
         }}>
-          Insights · {formatted}
+          <a href="/insights" style={{ color: 'inherit', textDecoration: 'none' }}>Insights</a>
+          {article.division && (
+            <> · <a href={`/${article.division}`} style={{ color: 'inherit', textDecoration: 'none' }}>GreenStack {DIVISION_NAMES[article.division]}</a></>
+          )}
+          {' · '}{formatted}
         </p>
         <h1 style={{
           fontSize: 'clamp(2rem, 5vw, 3rem)',

@@ -35,7 +35,7 @@ const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: 'publish_to_website',
-    description: 'Create or update a file on the GreenStack website. Use this to add blog posts, case studies, service pages, or update existing content. The file will be committed to GitHub and Vercel will auto-deploy it. For new Next.js pages use path like "app/insights/cbam-guide/page.tsx". For markdown content use "content/blog/post-title.md".',
+    description: 'Create or update a file on the GreenStack website. Use this to add blog posts, case studies, service pages, or update existing content. The file will be committed to GitHub and Vercel will auto-deploy it. Insight articles go in "content/insights/<slug>.md": front matter (title, date YYYY-MM-DD, division climate|education|impact, description, tags comma-separated) between --- lines, then a plain Markdown body — they appear on /insights and the division page automatically. Only use .tsx for real pages, e.g. "app/some-page/page.tsx".',
     input_schema: {
       type: 'object' as const,
       properties: {

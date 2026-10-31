@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getInsights, type InsightDivision } from '@/lib/insights'
 
 const serif = { fontFamily: "'Instrument Serif', serif", fontStyle: 'italic' as const }
 const eyebrow = { color: 'rgba(134,239,172,0.8)', fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, marginBottom: '16px' }
@@ -23,6 +24,8 @@ export type DivisionContent = {
 
 export function DivisionPage({ c }: { c: DivisionContent }) {
   const [before, emphasis, after] = c.headline
+  const divisionId = c.division.toLowerCase() as InsightDivision
+  const publications = getInsights(divisionId).slice(0, 3)
   return (
     <main style={{ background: '#000', color: '#e4e4e7', minHeight: '100vh', fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
@@ -82,6 +85,26 @@ export function DivisionPage({ c }: { c: DivisionContent }) {
             ))}
           </ul>
         </section>
+
+        {publications.length > 0 && (
+          <section style={{ marginBottom: '72px' }}>
+            <p style={eyebrow}>Latest publications</p>
+            <div className="dv-grid">
+              {publications.map(p => (
+                <Link key={p.slug} href={`/insights/${p.slug}`} style={{ ...card, textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem', marginBottom: '10px' }}>
+                    {new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                  <h3 style={{ color: '#fff', fontSize: '1.02rem', fontWeight: 600, lineHeight: 1.4, marginBottom: '10px', flex: 1 }}>{p.title}</h3>
+                  <span className="dv-link" style={{ fontSize: '0.85rem' }}>Read →</span>
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: '20px', fontSize: '0.9rem' }}>
+              <Link href={`/insights#${divisionId}`} className="dv-link">All {c.division} publications →</Link>
+            </p>
+          </section>
+        )}
 
         <section style={{ maxWidth: '760px' }}>
           <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 600, marginBottom: '12px' }}>
